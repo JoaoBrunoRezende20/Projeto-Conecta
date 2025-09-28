@@ -7,7 +7,7 @@
 
 - [Figma - Modelagem Banco de Dados](https://www.figma.com/board/59zRcmloSsH86XuRaMHDxn/Modelagem-Bando-de-dados-do-Projeto-Conecta?t=u9nRe2SGSXVMXupK-1)
 
-## Documentação
+## 📁Documentação
 - [Google Docs - Funcionalidade Essenciais](https://docs.google.com/document/d/1HBfWQqgaRsTdZX4qMIJOjrhrURpDBSAFMn2JLTIcym4/edit?usp=sharing)
 
 - [Google Docs - Levantamento de Requisitos](https://docs.google.com/document/d/1YQwmb-8FjKkA2QChebpWVzxmww3qSIw400AU0PH2MFs/edit?usp=sharing)
