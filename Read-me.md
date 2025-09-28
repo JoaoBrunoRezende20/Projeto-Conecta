@@ -1,6 +1,9 @@
 🚀 GUIA DE PARA EVITAR CONFLITOS  GITHUB - PARA O TIME
+
 📋 REGRAS DE OURO (LEIAM ANTES!)
+
 🚨 NUNCA FAÇAM:
+
 ❌ Commitar direto na main
 
 ❌ Trabalhar sem atualizar o repositório primeiro
