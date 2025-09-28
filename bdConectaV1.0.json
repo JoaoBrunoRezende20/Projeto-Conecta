@@ -1,0 +1,117 @@
+{
+    "usuarioComum": {
+        "uidUsuarioComum": {
+        "nome": "Kenil", // tipo string
+        "sobrenome": "Santos", // tipo string
+        "cpf": "00000000000", // tipo string
+        "email": "exemplo@provedor.com", // tipo string
+        "telefone": "5511911112222", // tipo string
+        "status": true, // tipo boolean online/offline
+        "tipo": "comum" // tipo string
+        }
+
+    },
+    "prestadorServicos": {
+        "uidPrestadorServicos": {
+            "nome": "Mariana", // tipo string
+            "sobrenome": "Costa", // tipo string
+            "telefone": "5521988887777", // tipo string
+            "cpf": "222.333.444-55", // tipo string
+            "areaAtuação": "Elétrica Residencial", //tipo string
+            "descricaoServicos": "Instalação e manutenção.", // tipo string
+            "areaAtendimento": "bairro exemplo", // tipo string
+            "disponibilidadeAtendimento": "segunda a sexta das 08:00 as 17:00", //tipo string
+            "faixaPrecos": 80.00, // tipo number
+            "qualificacoes": "opcional", //tipo string
+            "portfolio": ["https://imagensemalgumlugar"],// tipo string array de lista de urls na cloud imagens de seus trabalhos
+            "cnpj": "opcional dependendo do serviço", // tipo string
+            "registroProficional": "obrigatorio apenas se a profição exigir", // tipo string
+            "status": false, // tipo boolean online/offline
+            "statusCadastro": "pendente", // tipo string pendente/ aceito / rejeitado
+            "motivosRejeicao": "", // tipo string prenchido apenas se for rejeitado
+            "documentosUrl": [] // tipo string array de lista de urls de imagens de seus documentos na cloud para analise
+        }
+    },
+    "administrador": {
+        "uidAdministrador": {
+            "uidUsuarioComum": "ad54es56dsfsdfscc51511", // tipo string
+            "nome": "Admim Fulano", // tipo string
+            "cargo": "Gerente de cadastro" //tipo string
+           
+        }
+    },
+    "logsAdministrativos": {
+        "idlog": {
+            "dataHora": "2025-09-24T18:37:00Z", // tipo Timestamp
+            "administradorUid": "uidDeUmUsuarioComumQueEhAdmin", // tipo string
+            "administradorNome": "Admin Fulano", // tipo string
+            "usuarioAfetadoUid": "uidLojista1", // tipo string
+            "usuarioAfetadoNome": "Magazine do Carlos", // tipo string
+            "acao": false, // tipo boolean ou seja rejeitado
+            "justificativa": "CNPJ inválido." // tipo string
+        }
+
+    },
+    "lojistas": {
+        "uidLojista": {
+            "cnpj": "11.222.333/0001-44", // tipo string
+            "emailComercial": "emailempresaria@provedor.com", //tipo string
+            "razaoSocial": "Magazine do Carlos", //tipo string
+            "telefoneComercial": "34514477", // tipo string
+            "cnae": "Comércio varejista de eletrodomésticos e equipamentos de áudio e vídeo", // tipo string
+            "endereco":{
+                "rua": "Rua dos bobos", // tipo  string
+                "numero": "00", // tipo  string
+                "complemento": "opcional", // tipo string
+                "bairro": "Setor banana", // tipo string
+                "estado": "MG", // tipo string
+                "cep": "38900000" // tipo string
+            },
+            "dadosDoResponsavel": {
+                "nome": "Carlos", // tipo string
+                "sobrenome": "Medeiros", // tipo string
+                "cpf": "11111111122", // tipo string
+                "email": "carlos.lojista@email.com", // tipo string ESSE É O EMAIL USADOO NO LOGIN
+                "telefone": "" // tipo string
+            },
+            "dataCriacao": "2025-09-24T18:35:00Z",// tipo Timestamp (tipo de dado para pegar data e hora)
+            "status": false, // tipo boolean online/offline 
+            "statusCadastro": "pendente", // tipo string pendente/ aceito / rejeitado
+            "motivosRejeicao": "CNPJ inválido.", // tipo string prenchido apenas se for rejeitado
+            "documentosUrl": [] // tipo string array de lista de urls na cloud para analise
+        }
+        
+    },
+    "produtos": {
+        "idProduto": {  // tipo string
+        "uidLojista": "uidLojista1", // tipo string
+        "nome": "Furadeira de Impacto", // tipo string
+        "preco": 399.90, // tipo number
+        "quantidadeProduto": 50, // tipo number
+        "status": true, // tipo boolean disponivel ou não 
+        "imagens": [] // tipo array de strings lista de urls de imagens do produto
+
+        }
+
+            },
+    "pedidos": { // esses coleção pedidos é para ser  possivel de usar tanto no historico  de pedidos de usuarios comuns e historicos de pedidos de lojistas
+        "idPedido": {
+            "lojistaId": "uidLojista1", // tipo string
+            "uidUsuarioComum": "kenil343223ssnxc", // tipo string
+            "itens": [
+                {
+                "idProduto": "idProduto1", // tipo string
+                "quantidadeProduto": 1, // tipo number
+                "observacao": "Testar na hora da entrega"// tipo string
+                }
+        ],
+        "dataHora": "2025-09-24T18:37:14Z", // tipo Timestamp
+        "tipoEntrega": "Motoboy", // tipo string
+        "tipoPagamento": "PIX", // tipo string
+        "valorTotal": 399.90, // tipo number 
+        "status": false //tipo boolean true foi aceito etc, false não foi aceito/concluido
+        }
+    }
+        
+    
+}
