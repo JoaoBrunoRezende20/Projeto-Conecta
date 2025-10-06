@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "568534953987",
+    "project_id": "enosso-e1144",
+    "storage_bucket": "enosso-e1144.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:568534953987:android:2dd66cb96c59c63b089e36",
+        "android_client_info": {
+          "package_name": "com.example.e_nosso"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfVTpJt9g6VXnDfk9CKmOdJRoMyhTbVNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
