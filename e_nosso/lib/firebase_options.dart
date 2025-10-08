@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'enosso-e1144.firebasestorage.app',
     measurementId: 'G-S4MFTN5C16',
   );
+
 }
