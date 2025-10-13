@@ -1,15 +1,15 @@
-// importando os pacotes necessários
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // <-- IMPORTE O PACOTE DE AUTENTICAÇÃO
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
-// IMPORTE AS NOVAS TELAS QUE CRIAMOS
-import 'Telas/telaTipoUsuario.dart';
-import 'Telas/telaInicialComum.dart';
+// <<< CORREÇÃO 1: Padronizando o nome da pasta para 'telas' (tudo minúsculo)
+import 'telas/telaTipoUsuario.dart';
+import 'telas/telaInicialComum.dart';
+import 'telas/telaInicialLojista.dart';
+import 'telas/telaInicialPrestadorServico.dart';
 
-
-// O bloco principal de inicialização (continua o mesmo)
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -18,55 +18,80 @@ void main() async {
   runApp(const MyApp());
 }
 
-// O início do app (continua o mesmo)
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Meu App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      // AQUI ESTÁ A MUDANÇA: a "home" agora é o nosso Porteiro Inteligente
-      home: AuthWrapper(),
+      title: 'Conecta App',
+      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      // <<< DICA 2: Adicionando 'const' para performance
+      home: const AuthWrapper(),
     );
   }
 }
 
-
-// O "PORTEIRO INTELIGENTE" QUE VERIFICA O LOGIN
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
+  // Sua lógica para buscar o tipo de usuário está perfeita!
+  Future<String> _getUserType(String uid) async {
+    var doc = await FirebaseFirestore.instance.collection('lojistas').doc(uid).get();
+    if (doc.exists) return 'lojista';
+
+    doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(uid).get();
+    if (doc.exists) return 'prestador';
+
+    // Você pode adicionar a busca por 'administrador' aqui também se precisar
+    // doc = await FirebaseFirestore.instance.collection('administrador').doc(uid).get();
+    // if (doc.exists) return 'administrador';
+
+    return 'comum';
+  }
+
+  // Sua lógica para escolher a tela home está perfeita!
+  Widget _getHomeScreen(String tipo) {
+    switch (tipo) {
+      case 'lojista':
+      // <<< CORREÇÃO 1: Usando PascalCase para chamar as classes
+        return  TelaInicialLojista();
+      case 'prestador':
+        return  TelaInicialPrestador();
+      case 'comum':
+      default:
+        return  TelaInicialComum();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // O StreamBuilder fica "ouvindo" o status da autenticação em tempo real
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-
-        // Se estiver esperando a resposta do Firebase, mostra um "carregando"
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          // <<< DICA 2: Usando 'const'
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (snapshot.hasData) {
+          // Sua lógica de FutureBuilder está perfeita!
+          return FutureBuilder<String>(
+            future: _getUserType(snapshot.data!.uid),
+            builder: (context, typeSnapshot) {
+              if (typeSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              final tipo = typeSnapshot.data ?? 'comum';
+              return _getHomeScreen(tipo);
+            },
           );
         }
 
-        // Se o snapshot TEM um usuário (ou seja, o usuário ESTÁ LOGADO)...
-        if (snapshot.hasData) {
-          // Manda ele para a tela inicial
-          // MAIS TARDE, AQUI VAI A LÓGICA PARA ESCOLHER ENTRE AS HOMES
-          return telaInicialComum();
-        }
-
-        // Se NÃO TEM um usuário (ou seja, está DESLOGADO)...
-        else {
-          // Manda ele para a tela de escolher o tipo de usuário
-          return telaTipoUsuario();
-        }
+        // <<< CORREÇÃO 1: Usando PascalCase
+        return  TelaTipoUsuario();
       },
     );
   }
 }
+
