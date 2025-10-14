@@ -9,6 +9,7 @@ import 'telas/telaTipoUsuario.dart';
 import 'telas/telaInicialComum.dart';
 import 'telas/telaInicialLojista.dart';
 import 'telas/telaInicialPrestadorServico.dart';
+import 'telas/telaInicialAdministrador.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +25,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Conecta App',
+      title: 'E_nosso App',
       theme: ThemeData(primarySwatch: Colors.deepPurple),
-      // <<< DICA 2: Adicionando 'const' para performance
       home: const AuthWrapper(),
     );
   }
@@ -37,22 +37,24 @@ class AuthWrapper extends StatelessWidget {
 
   // Sua lógica para buscar o tipo de usuário está perfeita!
   Future<String> _getUserType(String uid) async {
-    var doc = await FirebaseFirestore.instance.collection('lojistas').doc(uid).get();
+    var doc = await FirebaseFirestore.instance.collection('administrador').doc(uid).get();
+    if (doc.exists) return 'administrador';
+
+    doc = await FirebaseFirestore.instance.collection('lojistas').doc(uid).get();
     if (doc.exists) return 'lojista';
 
     doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(uid).get();
     if (doc.exists) return 'prestador';
 
-    // Você pode adicionar a busca por 'administrador' aqui também se precisar
-    // doc = await FirebaseFirestore.instance.collection('administrador').doc(uid).get();
-    // if (doc.exists) return 'administrador';
-
+    // Se não for nenhum dos acima, é um usuário comum
     return 'comum';
   }
 
   // Sua lógica para escolher a tela home está perfeita!
   Widget _getHomeScreen(String tipo) {
     switch (tipo) {
+      case 'administrador':
+        return TelaInicialAdministrador();
       case 'lojista':
       // <<< CORREÇÃO 1: Usando PascalCase para chamar as classes
         return  TelaInicialLojista();
@@ -88,7 +90,7 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // <<< CORREÇÃO 1: Usando PascalCase
+
         return  TelaTipoUsuario();
       },
     );

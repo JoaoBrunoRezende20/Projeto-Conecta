@@ -7,6 +7,7 @@
         "email": "exemplo@provedor.com", // tipo string
         "telefone": "5511911112222", // tipo string
         "status": true, // tipo boolean online/offline
+        "dataCriacao": "", // tipo timestamp
         "tipo": "comum" // tipo string
         }
 
@@ -29,15 +30,18 @@
             "status": false, // tipo boolean online/offline
             "statusCadastro": "pendente", // tipo string pendente/ aceito / rejeitado
             "motivosRejeicao": "", // tipo string prenchido apenas se for rejeitado
-            "documentosUrl": [] // tipo string array de lista de urls de imagens de seus documentos na cloud para analise
+            "documentosUrl": [], // tipo string array de lista de urls de imagens de seus documentos na cloud para analise
+            "tipo": "prestador", // tipo string
+            "dataCriacao": "" // tipo timestamp
         }
     },
     "administrador": {
         "uidAdministrador": {
             "uidUsuarioComum": "ad54es56dsfsdfscc51511", // tipo string
             "nome": "Admim Fulano", // tipo string
-            "cargo": "Gerente de cadastro" //tipo string
-           
+            "cargo": "Gerente de cadastro", //tipo string
+            "tipo": "administrador", // tipo string
+            "dataCriacao": "" // tipo timestamp
         }
     },
     "logsAdministrativos": {
@@ -78,7 +82,9 @@
             "status": false, // tipo boolean online/offline 
             "statusCadastro": "pendente", // tipo string pendente/ aceito / rejeitado
             "motivosRejeicao": "CNPJ inválido.", // tipo string prenchido apenas se for rejeitado
-            "documentosUrl": [] // tipo string array de lista de urls na cloud para analise
+            "documentosUrl": [], // tipo string array de lista de urls na cloud para analise
+            "tipo": "lojista" // tipo string
+
         }
         
     },

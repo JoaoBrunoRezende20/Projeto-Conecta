@@ -2,29 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// <<< CORREÇÃO AQUI: Nome da classe em PascalCase
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
-
-  // <<< CORREÇÃO AQUI: Construtor com o mesmo nome da classe
   const TelaCadastro({super.key, required this.tipoUsuario});
 
   @override
-  // <<< CORREÇÃO AQUI: Padrão _ClassNameState
   State<TelaCadastro> createState() => _TelaCadastroState();
 }
 
-// <<< CORREÇÃO AQUI: Padrão _ClassNameState
 class _TelaCadastroState extends State<TelaCadastro> {
+  // controllers
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _nomeController = TextEditingController();
   final _sobrenomeController = TextEditingController();
   final _cpfController = TextEditingController();
+  final _telefoneController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    // É uma boa prática limpar todos os controllers
+    _emailController.dispose();
+    _senhaController.dispose();
+    _nomeController.dispose();
+    _sobrenomeController.dispose();
+    _cpfController.dispose();
+    _telefoneController.dispose();
+    super.dispose();
+  }
+
   Future<void> _cadastrar() async {
-    // DICA DE PROFISSIONAL: Usando .trim() para validar
+    // lógica de cadastro
     if (_emailController.text.trim().isEmpty || _senhaController.text.trim().isEmpty || _nomeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, preencha os campos obrigatórios.')),
@@ -42,7 +51,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       await _salvarDadosNoFirestore(credencial.user!.uid);
 
-      // Ótima lógica aqui! Volta para a primeira tela da pilha.
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
 
     } on FirebaseAuthException catch (e) {
@@ -50,7 +58,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
         SnackBar(content: Text('Erro no cadastro: ${e.message}')),
       );
     } finally {
-      // Excelente uso do 'mounted' check aqui!
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -58,7 +65,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   Future<void> _salvarDadosNoFirestore(String uid) {
-    // Sua lógica aqui está perfeita e alinhada com o modelo JSON.
     switch (widget.tipoUsuario) {
       case 'lojista':
         return FirebaseFirestore.instance.collection('lojistas').doc(uid).set({
@@ -67,6 +73,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             'sobrenome': _sobrenomeController.text.trim(),
             'cpf': _cpfController.text.trim(),
             'email': _emailController.text.trim(),
+            'telefone': _telefoneController.text.trim(),
           },
           'statusCadastro': 'pendente',
           'ativo': false,
@@ -79,6 +86,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'sobrenome': _sobrenomeController.text.trim(),
           'cpf': _cpfController.text.trim(),
           'email': _emailController.text.trim(),
+          'telefone': _telefoneController.text.trim(),
           'statusCadastro': 'pendente',
           'ativo': false,
           'tipo': 'prestador',
@@ -91,6 +99,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'sobrenome': _sobrenomeController.text.trim(),
           'cpf': _cpfController.text.trim(),
           'email': _emailController.text.trim(),
+          'telefone': _telefoneController.text.trim(),
           'ativo': true,
           'tipo': 'comum',
           'dataCriacao': FieldValue.serverTimestamp(),
@@ -114,7 +123,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
               const SizedBox(height: 16),
               TextField(controller: _cpfController, decoration: const InputDecoration(labelText: 'CPF')),
               const SizedBox(height: 16),
-              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+
+
+              TextField(
+                controller: _telefoneController,
+                decoration: const InputDecoration(labelText: 'Telefone / Celular'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+
+              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email'), keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
               TextField(controller: _senhaController, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
               const SizedBox(height: 24),

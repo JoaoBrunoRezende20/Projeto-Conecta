@@ -8,8 +8,8 @@ class TelaInicialComum extends StatelessWidget {
   Future<void> _signOut(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      // Não precisamos navegar para lugar nenhum. O AuthWrapper no main.dart
-      // vai detectar a mudança e fazer o redirecionamento sozinho!
+      // Após o logout, volta para a primeira tela
+
     } catch (e) {
       // Opcional: Mostrar uma mensagem de erro se o logout falhar por algum motivo
       ScaffoldMessenger.of(context).showSnackBar(
