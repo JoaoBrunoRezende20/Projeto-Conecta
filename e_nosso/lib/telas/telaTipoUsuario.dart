@@ -103,7 +103,7 @@ class TelaTipoUsuario extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Dúvidas no cadastro? Acesse o '),
+                  const Text('Dúvidas? Acesse o '),
                   InkWell(
                     onTap: () {
                       // TODO: Implementar navegação para a tela de FAQ
