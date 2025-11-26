@@ -5,8 +5,6 @@ import 'categorias/categoriaFeiraLivre.dart';
 import 'categorias/categoriaServicos.dart';
 import 'categorias/categoriaOutros.dart';
 
-
-
 class TelaDivisaoCategoria extends StatelessWidget {
   const TelaDivisaoCategoria({super.key});
 
@@ -64,11 +62,13 @@ class TelaDivisaoCategoria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(">>> A TELA REAL FOI CARREGADA <<<");
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
-          "categorias",
+          "Categorias",
           style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,
