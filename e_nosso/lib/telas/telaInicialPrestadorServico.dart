@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'telaTipoUsuario.dart';
+import 'package:e_nosso/telas/telaMenuLateral.dart'; //**********
 
 // --- Modelos de Dados (para organizar a informação) ---
 
@@ -86,10 +87,24 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
         elevation: 0,
         centerTitle: true,
         title: const Text('Seu Perfil', style: TextStyle(color: Colors.black)),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () { /* TODO: Abrir Drawer */ },
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
         ),
+        /*leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.black),
+          /*onPressed: () { /* TODO: Abrir Drawer */ },*/
+          onPressed: (){ //**********
+            Scaffold.of(context).openDrawer();
+          },
+        ),*/
+         */
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
@@ -98,7 +113,10 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           ),
         ],
       ),
-      body: _isLoading
+
+    //drawer: const MenuLateral(), //**********
+    drawer: MenuLateral(nomeUsuario: _prestador?.nome ?? "Usuário"),
+    body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildProfileContent(),
       floatingActionButton: FloatingActionButton(
@@ -223,4 +241,3 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
     );
   }
 }
-
