@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'telaTipoUsuario.dart';
-import 'package:e_nosso/telas/menu_lateral.dart'; //**********
+import 'package:e_nosso/telas/telaMenuLateral.dart'; //**********
 
 // --- Modelos de Dados (para organizar a informação) ---
 
