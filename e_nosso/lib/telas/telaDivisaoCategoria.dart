@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
+
+// Importe as telas das categorias que você já criou
+// Se ainda não criou alguma, comente o import correspondente
 import 'categorias/categoriaBebidas.dart';
 import 'categorias/categoriaQuitandas.dart';
 import 'categorias/categoriaFeiraLivre.dart';
 import 'categorias/categoriaServicos.dart';
 import 'categorias/categoriaOutros.dart';
 
-
-
 class TelaDivisaoCategoria extends StatelessWidget {
   const TelaDivisaoCategoria({super.key});
 
+  // Função para construir cada card
   Widget _buildCategoriaCard({
     required BuildContext context,
     required IconData icon,
     required String label,
-    required Widget destino,
+    required Widget destino, // Recebe a tela para onde vai
   }) {
     return InkWell(
       onTap: () {
+        // Navega para a tela de destino
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => destino),
+          MaterialPageRoute(builder: (context) => destino),
         );
       },
       borderRadius: BorderRadius.circular(20),
@@ -68,15 +71,17 @@ class TelaDivisaoCategoria extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
-          "categorias",
-          style: TextStyle(color: Colors.black),
+          "Categorias",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
       body: Padding(
@@ -87,35 +92,44 @@ class TelaDivisaoCategoria extends StatelessWidget {
           crossAxisSpacing: 20,
           mainAxisSpacing: 20,
           children: [
+            // Card Quitandas
             _buildCategoriaCard(
               context: context,
-              icon: Icons.local_grocery_store,
+              icon: Icons.local_grocery_store, // Ícone de carrinho/mercado
               label: "Quitandas",
-              destino: const CategoriaQuitandas(),
+              destino: const CategoriaQuitandas(), // Manda para a tela de Quitandas
             ),
+
+            // Card Bebidas
             _buildCategoriaCard(
               context: context,
-              icon: Icons.local_drink,
+              icon: Icons.local_drink, // Ícone de bebida
               label: "Bebidas",
-              destino: const CategoriaBebidas(),
+              destino: const CategoriaBebidas(), // Manda para a tela de Bebidas
             ),
+
+            // Card Serviços
             _buildCategoriaCard(
               context: context,
-              icon: Icons.build,
+              icon: Icons.build, // Ícone de ferramenta
               label: "Serviços",
-              destino: const CategoriaServicos(),
+              destino: const CategoriaServicos(), // Manda para a tela de Serviços
             ),
+
+            // Card Feira Livre
             _buildCategoriaCard(
               context: context,
-              icon: Icons.shopping_basket,
+              icon: Icons.shopping_basket, // Ícone de cesta
               label: "Feira Livre",
-              destino: const CategoriaFeiraLivre(),
+              destino: const CategoriaFeiraLivre(), // Manda para a tela de Feira Livre
             ),
+
+            // Card Outros
             _buildCategoriaCard(
               context: context,
-              icon: Icons.more_horiz,
+              icon: Icons.more_horiz, // Ícone de três pontinhos
               label: "Outros",
-              destino: const CategoriaOutros(),
+              destino: const CategoriaOutros(), // Manda para a tela de Outros
             ),
           ],
         ),

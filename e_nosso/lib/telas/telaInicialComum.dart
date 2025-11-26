@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'telaTipoUsuario.dart';
 
+// <<< IMPORTANTE: Importe as telas de categoria que você já criou >>>
+// Verifique se os nomes dos arquivos e pastas estão exatos
+import 'categorias/categoriaQuitandas.dart';
+import 'categorias/categoriaBebidas.dart';
+import 'categorias/categoriaFeiraLivre.dart';
+import 'categorias/categoriaServicos.dart';
+import 'categorias/categoriaOutros.dart';
+
 class TelaInicialComum extends StatefulWidget {
   const TelaInicialComum({super.key});
 
@@ -10,18 +18,23 @@ class TelaInicialComum extends StatefulWidget {
 }
 
 class _TelaInicialComumState extends State<TelaInicialComum> {
-  // Ação para usuários logados
+
   Future<void> _signOut() async {
-    // Apenas desloga o usuário. O AuthWrapper cuidará da navegação.
     await FirebaseAuth.instance.signOut();
   }
 
-  // <<< NOVA FUNÇÃO: Ação para visitantes >>>
-  // Apenas navega de volta para a tela de escolha, limpando o histórico.
   void _exitVisitorMode() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const TelaTipoUsuario()),
           (route) => false,
+    );
+  }
+
+  // Função auxiliar para navegar
+  void _navegarPara(Widget pagina) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => pagina),
     );
   }
 
@@ -37,27 +50,23 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'categorias',
+          'Categorias',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.black),
           onPressed: () {
-            // TODO: Implementar lógica para abrir o menu lateral (Drawer)
+            // TODO: Menu lateral
           },
         ),
-        // <<< CORREÇÃO PRINCIPAL AQUI >>>
-        // Agora, sempre haverá um botão, mas ele muda dependendo do usuário.
         actions: [
           if (isVisitor)
-          // Botão para o VISITANTE
             IconButton(
               icon: const Icon(Icons.exit_to_app, color: Colors.black),
               tooltip: 'Sair',
               onPressed: _exitVisitorMode,
             )
           else
-          // Botão para o USUÁRIO LOGADO
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.black),
               tooltip: 'Logout',
@@ -77,41 +86,32 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
+                  // --- AQUI ESTÁ A CORREÇÃO: ADICIONAMOS A NAVEGAÇÃO ---
                   _buildCategoryCard(
                     icon: Icons.cake_outlined,
                     label: 'Quitandas',
-                    onTap: () {
-                      // TODO: Navegar para a tela da categoria Quitandas
-                    },
+                    onTap: () => _navegarPara(const CategoriaQuitandas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.local_drink_outlined,
                     label: 'Bebidas',
-                    onTap: () {
-                      // TODO: Navegar para a tela da categoria Bebidas
-                    },
+                    onTap: () => _navegarPara(const CategoriaBebidas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.build_outlined,
                     label: 'Serviços',
-                    onTap: () {
-                      // TODO: Navegar para a tela da categoria Serviços
-                    },
+                    onTap: () => _navegarPara(const CategoriaServicos()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.shopping_basket_outlined,
                     label: 'Feira Livre',
-                    onTap: () {
-                      // TODO: Navegar para a tela da categoria Feira Livre
-                    },
+                    onTap: () => _navegarPara(const CategoriaFeiraLivre()),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               _buildOutrosButton(
-                onTap: () {
-                  // TODO: Navegar para a tela de "Outras" categorias
-                },
+                onTap: () => _navegarPara(const CategoriaOutros()),
               ),
             ],
           ),
@@ -120,10 +120,9 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 
-  // Os widgets de construção (_build...) continuam iguais e podem ficar aqui
   Widget _buildCategoryCard({required IconData icon, required String label, required VoidCallback onTap}) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap, // Agora o onTap recebe a função de navegar!
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
@@ -194,4 +193,3 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 }
-
