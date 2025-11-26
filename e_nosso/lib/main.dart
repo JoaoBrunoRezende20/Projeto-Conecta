@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
-// <<< CORREÇÃO 1: Padronizando o nome da pasta para 'telas' (tudo minúsculo)
+// telas
 import 'telas/telaTipoUsuario.dart';
 import 'telas/telaInicialComum.dart';
 import 'telas/telaInicialLojista.dart';
 import 'telas/telaInicialPrestadorServico.dart';
 import 'telas/telaInicialAdministrador.dart';
+import 'telas/telaDivisaoCategoria.dart';
+import 'telas/categorias/categoriaBebidas.dart';
+import 'telas/categorias/categoriaFeiraLivre.dart';
+import 'telas/categorias/categoriaOutros.dart';
+import 'telas/categorias/categoriaQuitandas.dart';
+import 'telas/categorias/categoriaServicos.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +33,20 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'E_nosso App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.deepPurple),
+
+      // AQUI ESTÁ A CORREÇÃO
       home: const AuthWrapper(),
+
+      routes: {
+        '/categorias': (_) => const TelaDivisaoCategoria(),
+        '/bebidas': (_) => const CategoriaBebidas(),
+        '/quitandas': (_) => const CategoriaQuitandas(),
+        '/servicos': (_) => const CategoriaServicos(),
+        '/feira': (_) => const CategoriaFeiraLivre(),
+        '/outros': (_) => const CategoriaOutros(),
+      },
     );
   }
 }
@@ -35,7 +54,6 @@ class MyApp extends StatelessWidget {
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
-  // Sua lógica para buscar o tipo de usuário está perfeita!
   Future<String> _getUserType(String uid) async {
     var doc = await FirebaseFirestore.instance.collection('administrador').doc(uid).get();
     if (doc.exists) return 'administrador';
@@ -46,23 +64,20 @@ class AuthWrapper extends StatelessWidget {
     doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(uid).get();
     if (doc.exists) return 'prestador';
 
-    // Se não for nenhum dos acima, é um usuário comum
     return 'comum';
   }
 
-  // Sua lógica para escolher a tela home está perfeita!
   Widget _getHomeScreen(String tipo) {
     switch (tipo) {
       case 'administrador':
         return TelaInicialAdministrador();
       case 'lojista':
-      // <<< CORREÇÃO 1: Usando PascalCase para chamar as classes
-        return  TelaInicialLojista();
+        return TelaInicialLojista();
       case 'prestador':
-        return  TelaInicialPrestador();
+        return TelaInicialPrestador();
       case 'comum':
       default:
-        return  TelaInicialComum();
+        return TelaInicialComum();
     }
   }
 
@@ -72,12 +87,10 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // <<< DICA 2: Usando 'const'
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         if (snapshot.hasData) {
-          // Sua lógica de FutureBuilder está perfeita!
           return FutureBuilder<String>(
             future: _getUserType(snapshot.data!.uid),
             builder: (context, typeSnapshot) {
@@ -90,10 +103,9 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-
-        return  TelaTipoUsuario();
+        // se não estiver logado → vai para escolha de tipo de usuário
+        return const TelaTipoUsuario();
       },
     );
   }
 }
-

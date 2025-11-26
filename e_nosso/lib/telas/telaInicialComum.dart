@@ -37,7 +37,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'Categorias',
+          'categorias',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
