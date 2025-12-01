@@ -24,7 +24,6 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Future<void> _login() async {
-    // Sua lógica de login continua a mesma...
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
@@ -38,8 +37,16 @@ class _TelaLoginState extends State<TelaLogin> {
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        String mensagemErro;
+        if (e.code == 'user-not-found') {
+          mensagemErro = 'Usuário não encontrado.';
+        } else if (e.code == 'wrong-password') {
+          mensagemErro = 'Senha incorreta.';
+        } else {
+          mensagemErro = 'Erro no login: ${e.message}';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "Ocorreu um erro no login.")),
+          SnackBar(content: Text(mensagemErro)),
         );
       }
     } finally {
@@ -49,8 +56,121 @@ class _TelaLoginState extends State<TelaLogin> {
     }
   }
 
-  // <<< NOVA FUNÇÃO AJUDANTE >>>
-  // Esta função "traduz" o tipo de usuário para um texto amigável.
+  // <<< FUNÇÃO DE RECUPERAÇÃO CORRIGIDA >>>
+  Future<void> _esqueceuSenha() async {
+    final emailControllerRecuperacao = TextEditingController();
+
+    // Pré-preenche se já tiver digitado no login
+    if (_emailController.text.isNotEmpty) {
+      emailControllerRecuperacao.text = _emailController.text;
+    }
+
+    return showDialog(
+      context: context,
+      builder: (dialogContext) { // Usei um nome diferente para o contexto do Dialog
+        return AlertDialog(
+          title: const Text('Recuperar Senha'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Digite seu email para receber o link de redefinição.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailControllerRecuperacao,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = emailControllerRecuperacao.text.trim();
+                if (email.isEmpty) {
+                  // Mostra aviso rápido se o campo estiver vazio
+                  // Usamos ScaffoldMessenger.of(context) aqui porque dialogContext é local
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Por favor, digite o email.')),
+                  );
+                  return;
+                }
+
+                // 1. Fecha o diálogo de digitação PRIMEIRO
+                Navigator.pop(dialogContext);
+
+                // 2. Mostra um novo diálogo de "Enviando..." que não pode ser fechado pelo usuário
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (loadingContext) => const Center(child: CircularProgressIndicator()),
+                );
+
+                try {
+                  // 3. Tenta enviar o e-mail (Isso pode demorar um pouco)
+                  await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+                  // 4. Se chegou aqui, deu certo! Fecha o diálogo de loading
+                  // Usamos o 'context' principal e pop() para tirar o loading da frente
+                  if (mounted) Navigator.of(context).pop();
+
+                  // 5. Mostra o FEEDBACK DE SUCESSO
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Expanded(child: Text('Email enviado! Verifique sua caixa de entrada e spam.')),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 5),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  }
+                } on FirebaseAuthException catch (e) {
+                  // Fecha o loading se der erro
+                  if (mounted) Navigator.of(context).pop();
+
+                  if (mounted) {
+                    String erroMsg = 'Erro ao enviar email.';
+                    if (e.code == 'user-not-found') erroMsg = 'Email não cadastrado.';
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(erroMsg),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  // Fecha o loading para qualquer outro erro
+                  if (mounted) Navigator.of(context).pop();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.redAccent),
+                    );
+                  }
+                }
+              },
+              child: const Text('Enviar Link'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _getTituloBoasVindas() {
     switch (widget.tipoUsuario) {
       case 'lojista':
@@ -60,7 +180,7 @@ class _TelaLoginState extends State<TelaLogin> {
       case 'comum':
         return 'Olá! Que bom te ver de novo.';
       default:
-        return 'Login'; // Um texto padrão caso algo dê errado
+        return 'Login';
     }
   }
 
@@ -91,18 +211,14 @@ class _TelaLoginState extends State<TelaLogin> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 60),
-
                     const CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey,
                       child: Icon(Icons.person, size: 80, color: Colors.white),
                     ),
                     const SizedBox(height: 40),
-
-                    // <<< MUDANÇA AQUI >>>
-                    // Em vez de um texto fixo 'LOGIN', chamamos nossa função inteligente.
                     Text(
-                      _getTituloBoasVindas().toUpperCase(), // Deixa o texto em maiúsculas
+                      _getTituloBoasVindas().toUpperCase(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 28,
@@ -111,11 +227,8 @@ class _TelaLoginState extends State<TelaLogin> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
                     _buildLoginForm(),
-
                     const SizedBox(height: 20),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -142,7 +255,6 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Widget _buildLoginForm() {
-    // ... O resto do seu código (o formulário) continua exatamente o mesmo
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -183,9 +295,7 @@ class _TelaLoginState extends State<TelaLogin> {
               ],
             ),
             TextButton(
-              onPressed: () {
-                // TODO: Implementar lógica de "Esqueceu a senha?"
-              },
+              onPressed: _esqueceuSenha,
               child: const Text('Esqueceu a senha?'),
             ),
           ],
@@ -210,7 +320,6 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 }
 
-// A classe do WaveClipper continua a mesma
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -226,4 +335,3 @@ class WaveClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-
