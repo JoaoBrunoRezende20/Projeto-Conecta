@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'telaCadastroUsuarios.dart';
+import 'telaCadastroUsuarios.dart'; // Certifique-se de que este import está correto
 
 class TelaLogin extends StatefulWidget {
   final String tipoUsuario;
@@ -15,6 +15,8 @@ class _TelaLoginState extends State<TelaLogin> {
   final _senhaController = TextEditingController();
   bool _isLoading = false;
   bool _lembrarMe = false;
+  // NOVO: Estado para controlar a visibilidade da senha
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -33,6 +35,8 @@ class _TelaLoginState extends State<TelaLogin> {
         password: _senhaController.text.trim(),
       );
       if (mounted) {
+        // Exemplo: Navegar para a tela inicial após o login
+        // Se a sua navegação for diferente (por exemplo, ir para uma TelaPrincipal), ajuste aqui.
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
@@ -56,6 +60,8 @@ class _TelaLoginState extends State<TelaLogin> {
     }
   }
 
+<<<<<<< HEAD
+=======
   // <<< FUNÇÃO DE RECUPERAÇÃO CORRIGIDA >>>
   Future<void> _esqueceuSenha() async {
     final emailControllerRecuperacao = TextEditingController();
@@ -171,6 +177,7 @@ class _TelaLoginState extends State<TelaLogin> {
     );
   }
 
+>>>>>>> eed5abed6e0c7baed7e9c0fc7ab7c7c1e4176d34
   String _getTituloBoasVindas() {
     switch (widget.tipoUsuario) {
       case 'lojista':
@@ -217,6 +224,10 @@ class _TelaLoginState extends State<TelaLogin> {
                       child: Icon(Icons.person, size: 80, color: Colors.white),
                     ),
                     const SizedBox(height: 40),
+<<<<<<< HEAD
+
+=======
+>>>>>>> eed5abed6e0c7baed7e9c0fc7ab7c7c1e4176d34
                     Text(
                       _getTituloBoasVindas().toUpperCase(),
                       textAlign: TextAlign.center,
@@ -270,17 +281,36 @@ class _TelaLoginState extends State<TelaLogin> {
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 20),
+
+        // Campo Senha
         const Text('Senha:', style: TextStyle(color: Colors.black54)),
         const SizedBox(height: 8),
         TextField(
           controller: _senhaController,
+          // MUDANÇA 1: Usa o estado para ocultar/mostrar o texto
+          obscureText: !_isPasswordVisible,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            // MUDANÇA 2: Adiciona o ícone de toggle
+            suffixIcon: IconButton(
+              icon: Icon(
+                // MUDANÇA 3: Alterna entre os ícones eye e eye-slash
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: Colors.grey,
+              ),
+              onPressed: () {
+                // MUDANÇA 4: Altera o estado para fazer o toggle
+                setState(() {
+                  _isPasswordVisible = !_isPasswordVisible;
+                });
+              },
+            ),
           ),
-          obscureText: true,
         ),
+        // Fim do Campo Senha modificado
+
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
