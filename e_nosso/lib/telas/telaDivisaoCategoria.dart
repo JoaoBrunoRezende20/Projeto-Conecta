@@ -67,12 +67,17 @@ class TelaDivisaoCategoria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(">>> A TELA REAL FOI CARREGADA <<<");
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
           "Categorias",
+
+
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
