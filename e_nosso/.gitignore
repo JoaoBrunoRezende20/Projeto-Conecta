@@ -1,9 +1,49 @@
+# ===========================
+# 🚨 SEGURANÇA E AMBIENTE (Novo)
+# ===========================
+.env
+.env.*
+!.env.example
+*.pem
+
+# ===========================
+# 📦 DEPENDÊNCIAS NODE (Novo)
+# ===========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================
+# 🖥️ SISTEMA OPERACIONAL (Novo - Focado em Windows/Mac)
+# ===========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ===========================
+# 🛠️ IDEs e EDITORES
+# ===========================
+# VS Code (Recomendado ignorar para evitar conflito de settings)
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# ===========================
+# 🐦 FLUTTER / DART (Seu original + melhorias)
+# ===========================
 # Miscellaneous
 *.class
 *.log
 *.pyc
 *.swp
-.DS_Store
 .atom/
 .build/
 .buildlog/
@@ -12,21 +52,11 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
@@ -39,7 +69,7 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
+# Android Studio build artifacts
 /android/app/debug
 /android/app/profile
 /android/app/release
