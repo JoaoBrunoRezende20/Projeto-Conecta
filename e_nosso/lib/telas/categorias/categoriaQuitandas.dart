@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../telaProdutosDisponiveis.dart';
+
 
 class CategoriaQuitandas extends StatefulWidget {
   const CategoriaQuitandas({super.key});
@@ -30,7 +32,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
       ),
       body: Column(
         children: [
-          // Barra de busca
+          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -50,7 +52,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
             ),
           ),
 
-          // Lista de lojas
+          // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -58,22 +60,15 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                   .where('cnae', isEqualTo: 'Quitandas')
                   .snapshots(),
               builder: (context, snapshot) {
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("Nenhuma quitanda cadastrada."),
-                  );
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial']
-                      ?? data['nomeLojista']
-                      ?? '')
+                  final nome = (data['razaoSocial'] ??
+                      data['nomeLojista'] ??
+                      '')
                       .toString()
                       .toLowerCase();
                   return nome.contains(pesquisa.toLowerCase());
@@ -87,19 +82,20 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-
-                    final nome = (data['razaoSocial']
-                        ?? data['nomeLojista']
-                        ?? 'Quitanda sem nome')
+                    final nome = (data['razaoSocial'] ??
+                        data['nomeLojista'] ??
+                        'Loja sem nome')
                         .toString();
-
-                    final descricao = (data['descricao'] ?? 'Sem descrição')
-                        .toString();
+                    final descricao =
+                    (data['descricao'] ?? 'Sem descrição').toString();
 
                     return _buildLojaCard(
+                      context: context,
+                      lojaId: docs[index].id,
                       nome: nome,
                       categoriaTexto: "Quitandas",
                       descricaoExtra: descricao,
+                      avaliacao: 5.0,
                     );
                   },
                 );
@@ -112,66 +108,69 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
   }
 
   Widget _buildLojaCard({
+    required BuildContext context,
+    required String lojaId,
     required String nome,
     required String categoriaTexto,
     required String descricaoExtra,
+    required double avaliacao,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EEEE),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Imagem da loja
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TelaProdutosDisponiveis(
+              lojaId: lojaId,
+              storeName: nome,
+              rating: avaliacao,
             ),
           ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3EEEE),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(width: 12),
 
-          const SizedBox(width: 12),
-
-          // Informações
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  nome,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nome,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-
-                Text("⭐ 5.0  •  $categoriaTexto"),
-
-                Text("40–60 min  •  R\$ 3,00"),
-
-                // Descrição extra (mantida porque você pediu para não remover nada)
-                Text(
-                  descricaoExtra,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-              ],
+                  Text("⭐ $avaliacao  •  $categoriaTexto"),
+                  Text("50–60 min  •  R\$ 5,00"),
+                  Text(
+                    descricaoExtra,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          const Icon(Icons.star_border),
-        ],
+            const Icon(Icons.arrow_forward_ios, size: 18),
+          ],
+        ),
       ),
     );
   }
