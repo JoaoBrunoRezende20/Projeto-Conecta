@@ -30,7 +30,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
       ),
       body: Column(
         children: [
-          // Busca
+          // Barra de busca
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -49,7 +49,8 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
               ),
             ),
           ),
-          // Lista
+
+          // Lista de prestadores
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -59,17 +60,20 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
                     child: Text("Nenhum prestador cadastrado."),
                   );
                 }
 
+                // Filtro por nome
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final nome =
                   ("${data['nome'] ?? ''} ${data['sobrenome'] ?? ''}")
                       .toLowerCase();
+
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
@@ -81,9 +85,15 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
+
                     final nomeCompleto =
                         "${data['nome'] ?? ''} ${data['sobrenome'] ?? ''}";
-                    final area = (data['areaAtuação'] ?? 'Serviços').toString();
+
+                    // 🔥 CORREÇÃO IMPORTANTE:
+                    // No cadastro, o campo é salvo como "areaAtuacao" (sem acento)
+                    final area =
+                    (data['areaAtuacao'] ?? 'Serviços').toString();
+
                     final preco =
                     (data['faixaPrecos'] ?? 'Sob consulta').toString();
 
@@ -123,6 +133,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
       ),
       child: Row(
         children: [
+          // Foto / ícone do prestador
           Container(
             height: 60,
             width: 60,
@@ -131,7 +142,10 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Informações
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +162,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
               ],
             ),
           ),
+
           const Icon(Icons.star_border),
         ],
       ),

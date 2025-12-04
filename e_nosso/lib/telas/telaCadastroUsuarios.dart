@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+// lib/telas/telaCadastroUsuarios.dart
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
@@ -20,7 +21,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final ImagePicker _picker = ImagePicker();
 
   // --- VARIÁVEIS PARA OS DROPDOWNS E SELETORES ---
-  String? _categoriaSelecionadaCnae;
+  String? _categoriaSelecionadaCnae; // Usada para categoria do lojista (visível no dropdown)
   String? _estadoSelecionado;
   String? _categoriaPrestadorSelecionada;
   String? _bairroSelecionado;
@@ -29,67 +30,92 @@ class _TelaCadastroState extends State<TelaCadastro> {
   List<String> _imagensPortfolioBase64 = [];
   List<String> _imagensDocumentosBase64 = [];
 
-  // --- VARIÁVEIS DE VALIDAÇÃO DE SENHA (NOVAS) ---
+  // --- VALIDAÇÃO DE SENHA ---
   bool _temMinimoCaracteres = false;
   bool _temMaiuscula = false;
   bool _temMinuscula = false;
   bool _temNumero = false;
   bool _temEspecial = false;
 
-  // --- LISTAS E REGRAS ---
+  // --- MAPA E LISTAS ---
   final Map<String, String> _mapaRegistroProfissional = {
-    'Advogado(a)': 'OAB', 'Arquiteto(a)': 'CAU', 'Contador(a)': 'CRC',
-    'Corretor(a) de Imóveis': 'CRECI', 'Dentista': 'CRO', 'Eletricista': 'Certificação (NR10)',
-    'Enfermeiro(a)': 'COREN', 'Engenheiro(a)': 'CREA', 'Médico(a)': 'CRM',
-    'Motorista': 'CNH', 'Nutricionista': 'CRN', 'Personal Trainer': 'CREF',
-    'Psicólogo(a)': 'CRP', 'Veterinário(a)': 'CRMV',
+    'Advogado(a)': 'OAB',
+    'Arquiteto(a)': 'CAU',
+    'Contador(a)': 'CRC',
+    'Corretor(a) de Imóveis': 'CRECI',
+    'Dentista': 'CRO',
+    'Eletricista': 'NR10',
+    'Enfermeiro(a)': 'COREN',
+    'Engenheiro(a)': 'CREA',
+    'Médico(a)': 'CRM',
+    'Motorista': 'CNH',
+    'Nutricionista': 'CRN',
+    'Personal Trainer': 'CREF',
+    'Psicólogo(a)': 'CRP',
+    'Veterinário(a)': 'CRMV',
   };
 
   late final List<String> _categoriasPrestador;
   final List<String> _listaBairros = [
-    'Açudes', 'Alto Cruzeiro', 'Campos', 'Candola/Sion', 'Centro', 'Distrito Industrial',
-    'Gabiroba', 'Lagoa dos Monjolos', 'Lava Pés', 'Nações', 'Nossa Senhora das Graças',
-    'Nossa Senhora de Fátima', 'Rola Moça', 'Sagrado Coração de Jesus', 'São Conrado',
-    'Senhora Santana', 'Vila Luchesi', 'Vista Alegre', 'Outros',
+    'Açudes',
+    'Alto Cruzeiro',
+    'Campos',
+    'Candola/Sion',
+    'Centro',
+    'Distrito Industrial',
+    'Gabiroba',
+    'Lagoa dos Monjolos',
+    'Lava Pés',
+    'Nações',
+    'Nossa Senhora das Graças',
+    'Nossa Senhora de Fátima',
+    'Rola Moça',
+    'Sagrado Coração de Jesus',
+    'São Conrado',
+    'Senhora Santana',
+    'Vila Luchesi',
+    'Vista Alegre',
+    'Outros',
   ]..sort();
 
   final List<String> _estadosLojista = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
-    'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'SP', 'TO'
+    'AC',
+    'AL',
+    'AP',
+    'AM',
+    'BA',
+    'CE',
+    'DF',
+    'ES',
+    'GO',
+    'MA',
+    'MT',
+    'MS',
+    'MG',
+    'PA',
+    'PB',
+    'PR',
+    'PE',
+    'PI',
+    'RJ',
+    'RN',
+    'RS',
+    'RO',
+    'RR',
+    'SC',
+    'SE',
+    'SP',
+    'TO'
   ];
 
-  final List<String> _categoriasLojista = [
-    'Comércio varejista de alimentos em geral ou supermercados',
-    'Comércio varejista de bebida',
-    'Comércio varejista de artigos de vestuário e acessório',
-    'Comércio varejista de calçados',
-    'Comércio varejista de móveis, artigos de colchoaria e decoração',
-    'Comércio varejista de eletrodomésticos e equipamentos de áudio e vídeo',
-    'Comércio varejista de equipamentos de informática e comunicação',
-    'Comércio varejista de produtos farmacêuticos',
-    'Comércio varejista de materiais de construção',
-    'Comércio varejista de artigos de papelaria e material para escritório',
-    'Comércio varejista de cosméticos e perfumaria',
-    'Comércio varejista de veículos automotores novos',
-    'Comércio varejista de peças e acessórios para veículos',
-    'Comércio varejista de artigos esportivos',
-    'Comércio varejista de brinquedos e artigos recreativos',
-    'Comércio varejista de livros, jornais, revistas e papelaria',
+  // lista reduzida e padronizada de categorias que serão exibidas no dropdown do lojista
+  final List<String> categoriasLojista = [
+    'Quitandas',
+    'Bebidas',
+    'Feira Livre',
+    'Serviços',
     'Outros',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _categoriasPrestador = [
-      ..._mapaRegistroProfissional.keys,
-      'Babá / Cuidador', 'Barbeiro / Cabeleireiro(a)', 'Chaveiro', 'Confeiteiro(a) / Cozinheiro(a)',
-      'Diarista / Limpeza', 'Encanador(a)', 'Fotógrafo(a)', 'Jardineiro(a)', 'Manicure / Pedicure',
-      'Maquiador(a)', 'Marceneiro', 'Mecânico', 'Montador de Móveis', 'Pedreiro', 'Pintor',
-      'Professor(a) Particular', 'Serralheiro', 'Técnico em Informática/Celular',
-      'Técnico em Refrigeração/Ar-cond.', 'Técnico em fogões a gás', 'Vidraceiro', 'Outros',
-    ]..sort();
-  }
 
   final Map<String, String> _horariosSemanais = {};
   final List<String> _diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -122,6 +148,36 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final _registroProfissionalController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _categoriasPrestador = [
+      ..._mapaRegistroProfissional.keys,
+      'Babá / Cuidador',
+      'Barbeiro / Cabeleireiro(a)',
+      'Chaveiro',
+      'Confeiteiro(a) / Cozinheiro(a)',
+      'Diarista / Limpeza',
+      'Encanador(a)',
+      'Fotógrafo(a)',
+      'Jardineiro(a)',
+      'Manicure / Pedicure',
+      'Maquiador(a)',
+      'Marceneiro',
+      'Mecânico',
+      'Montador de Móveis',
+      'Pedreiro',
+      'Pintor',
+      'Professor(a) Particular',
+      'Serralheiro',
+      'Técnico em Informática/Celular',
+      'Técnico em Refrigeração/Ar-cond.',
+      'Técnico em fogões a gás',
+      'Vidraceiro',
+      'Outros',
+    ]..sort();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _senhaController.dispose();
@@ -147,7 +203,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     super.dispose();
   }
 
-  // --- LÓGICA DE VALIDAÇÃO DE SENHA (O CÉREBRO) ---
+  // --- LÓGICA DE VALIDAÇÃO DE SENHA ---
   void _validarSenha(String senha) {
     setState(() {
       _temMinimoCaracteres = senha.length >= 8;
@@ -165,7 +221,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // --- FUNÇÕES DE IMAGEM ---
   Future<void> _selecionarImagem(bool isPortfolio) async {
     try {
-      final List<XFile> imagensSelecionadas = await _picker.pickMultiImage(imageQuality: 50);
+      final List<XFile>? imagensSelecionadas = await _picker.pickMultiImage(imageQuality: 50);
+      if (imagensSelecionadas == null) return;
       for (var imagem in imagensSelecionadas) {
         final bytes = await imagem.readAsBytes();
         final String base64String = base64Encode(bytes);
@@ -179,7 +236,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
     }
   }
 
@@ -193,7 +250,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     });
   }
 
-  // --- FUNÇÕES AUXILIARES DE HORÁRIO ---
+  // --- HORÁRIOS ---
   Future<void> _selecionarHorario(String dia) async {
     final TimeOfDay? inicio = await showTimePicker(
       context: context,
@@ -209,7 +266,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
       helpText: 'Fim do atendimento na $dia',
       builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), child: child!),
     );
-    if (fim == null) return;
+    if (fim == null || !mounted) return;
 
     setState(() {
       final inicioStr = '${inicio.hour.toString().padLeft(2, '0')}:${inicio.minute.toString().padLeft(2, '0')}';
@@ -244,43 +301,44 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // --- CADASTRO ---
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, verifique os campos obrigatórios.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, verifique os campos obrigatórios.')));
       return;
     }
 
-    // <<< VALIDAÇÃO DE SENHA FORTE >>>
+    // senha forte
     if (!_isSenhaValida()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sua senha é muito fraca. Verifique os requisitos em vermelho.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sua senha é muito fraca. Verifique os requisitos em vermelho.'), backgroundColor: Colors.red));
       return;
     }
 
     if (widget.tipoUsuario == 'prestador') {
       if (_categoriaPrestadorSelecionada == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione sua área de atuação.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione sua área de atuação.')));
         return;
       }
       if (_bairroSelecionado == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione o bairro de atendimento.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione o bairro de atendimento.')));
         return;
       }
       if (_categoriaPrestadorSelecionada == 'Outros' && _outraAreaAtuacaoController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Especifique sua área de atuação.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Especifique sua área de atuação.')));
         return;
       }
       if (_horariosSemanais.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adicione pelo menos um dia de disponibilidade.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adicione pelo menos um dia de disponibilidade.')));
         return;
       }
       String? labelRegistro = _getLabelRegistroProfissional();
       if (labelRegistro != null && _imagensDocumentosBase64.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Por favor, anexe uma foto do seu $labelRegistro ou documento.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Por favor, anexe uma foto do seu $labelRegistro ou documento.')));
         return;
       }
+    }
+
+    // lojista precisa selecionar categoria (CNAE simplificada)
+    if (widget.tipoUsuario == 'lojista' && _categoriaSelecionadaCnae == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione a categoria da loja.')));
+      return;
     }
 
     setState(() => _isLoading = true);
@@ -293,10 +351,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       await _salvarDadosNoFirestore(credencial.user!.uid);
 
-      if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
-
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadastro realizado com sucesso!'), backgroundColor: Colors.green));
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro no cadastro: ${e.message}')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -311,6 +373,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'razaoSocial': _razaoSocialController.text.trim(),
           'telefoneComercial': _telefoneComercialController.text.trim(),
           'cnae': _categoriaSelecionadaCnae,
+          'categoria': _categoriaSelecionadaCnae, // <- salva a categoria padronizada para filtros
           'endereco': {
             'rua': _ruaController.text.trim(),
             'numero': _numeroController.text.trim(),
@@ -335,7 +398,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         });
 
       case 'prestador':
-        String areaFinal = _categoriaPrestadorSelecionada!;
+        String areaFinal = _categoriaPrestadorSelecionada ?? '';
         if (areaFinal == 'Outros') {
           areaFinal = _outraAreaAtuacaoController.text.trim();
         }
@@ -381,7 +444,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   // --- WIDGETS VISUAIS ---
-
   Widget _buildImagePreview(List<String> imagensBase64, bool isPortfolio) {
     if (imagensBase64.isEmpty) return const SizedBox.shrink();
     return SizedBox(
@@ -402,7 +464,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 child: Image.memory(bytes, fit: BoxFit.cover),
               ),
               Positioned(
-                top: 0, right: 8,
+                top: 0,
+                right: 8,
                 child: InkWell(
                   onTap: () => _removerImagem(index, isPortfolio),
                   child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)),
@@ -415,7 +478,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     );
   }
 
-  // <<< NOVO WIDGET: LINHA DO CHECKLIST >>>
   Widget _buildRequisitoRow(String texto, bool atendido) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -430,22 +492,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   List<Widget> _buildSpecificFields() {
-    // (Mantenha o conteúdo anterior da função _buildSpecificFields aqui, igual ao que você já tinha)
-    // Vou omitir para não ficar gigante, mas você deve manter a lógica do Lojista e Prestador
-    // Se quiser o código completo dessa parte também, me avisa.
-    // ...
-    // ...
-    // Mas ATENÇÃO: Se você copiar e colar o arquivo todo, use a versão anterior
-    // do _buildSpecificFields que te passei na resposta passada, ela já estava completa.
-    // Aqui vou colocar apenas o "retorno" para exemplificar.
     if (widget.tipoUsuario == 'lojista') {
-      // ... (retorne a lista de campos do lojista que fizemos antes)
       return [
         const SizedBox(height: 24),
         const Text('Dados da Empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         TextFormField(controller: _razaoSocialController, decoration: const InputDecoration(labelText: 'Razão Social'), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-        // ... adicione todos os outros campos do lojista aqui ...
         const SizedBox(height: 16),
         TextFormField(controller: _cnpjController, decoration: const InputDecoration(labelText: 'CNPJ'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
@@ -453,7 +505,18 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(controller: _telefoneComercialController, decoration: const InputDecoration(labelText: 'Telefone Comercial'), keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(value: _categoriaSelecionadaCnae, decoration: const InputDecoration(labelText: 'Categoria da Loja (CNAE)'), hint: const Text('Selecione uma categoria'), isExpanded: true, items: _categoriasLojista.map((String categoria) => DropdownMenuItem(value: categoria, child: Text(categoria, overflow: TextOverflow.ellipsis))).toList(), onChanged: (v) => setState(() => _categoriaSelecionadaCnae = v), validator: (v) => v == null ? 'Selecione uma categoria.' : null),
+
+        // Dropdown de categoria padronizada (CNAE simplificado)
+        DropdownButtonFormField<String>(
+          value: _categoriaSelecionadaCnae,
+          decoration: const InputDecoration(labelText: 'Categoria da Loja (CNAE)'),
+          hint: const Text('Selecione uma categoria'),
+          isExpanded: true,
+          items: categoriasLojista.map((String categoria) => DropdownMenuItem(value: categoria, child: Text(categoria, overflow: TextOverflow.ellipsis))).toList(),
+          onChanged: (v) => setState(() => _categoriaSelecionadaCnae = v),
+          validator: (v) => v == null ? 'Selecione uma categoria.' : null,
+        ),
+
         const SizedBox(height: 24),
         const Text('Endereço', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
@@ -465,7 +528,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(controller: _bairroController, decoration: const InputDecoration(labelText: 'Bairro'), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(value: _estadoSelecionado, decoration: const InputDecoration(labelText: 'Estado (UF)'), hint: const Text('Selecione'), isExpanded: true, menuMaxHeight: 300, items: _estadosLojista.map((String estado) => DropdownMenuItem(value: estado, child: Text(estado))).toList(), onChanged: (v) => setState(() => _estadoSelecionado = v), validator: (v) => v == null ? 'Selecione um estado.' : null),
+        DropdownButtonFormField<String>(
+          value: _estadoSelecionado,
+          decoration: const InputDecoration(labelText: 'Estado (UF)'),
+          hint: const Text('Selecione'),
+          isExpanded: true,
+          menuMaxHeight: 300,
+          items: _estadosLojista.map((String estado) => DropdownMenuItem(value: estado, child: Text(estado))).toList(),
+          onChanged: (v) => setState(() => _estadoSelecionado = v),
+          validator: (v) => v == null ? 'Selecione um estado.' : null,
+        ),
         const SizedBox(height: 16),
         TextFormField(controller: _cepController, decoration: const InputDecoration(labelText: 'CEP'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 24),
@@ -473,7 +545,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 8),
         const Text('Anexe documentos da empresa (Alvará, Cartão CNPJ)', style: TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 8),
-        ElevatedButton.icon(onPressed: () => _selecionarImagem(false), icon: const Icon(Icons.upload_file), label: const Text('Adicionar Documento'), style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black)),
+        ElevatedButton.icon(
+          onPressed: () => _selecionarImagem(false),
+          icon: const Icon(Icons.upload_file),
+          label: const Text('Adicionar Documento'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black),
+        ),
         const SizedBox(height: 8),
         _buildImagePreview(_imagensDocumentosBase64, false),
       ];
@@ -484,25 +561,90 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 24),
         const Text('Dados do Serviço', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(value: _categoriaPrestadorSelecionada, decoration: const InputDecoration(labelText: 'Área de Atuação'), hint: const Text('Selecione sua profissão'), isExpanded: true, items: _categoriasPrestador.map((String categoria) => DropdownMenuItem(value: categoria, child: Text(categoria, overflow: TextOverflow.ellipsis))).toList(), onChanged: (v) => setState(() { _categoriaPrestadorSelecionada = v; if (!isRegistroObrigatorio) _registroProfissionalController.clear(); }), validator: (v) => v == null ? 'Selecione sua área.' : null),
+        DropdownButtonFormField<String>(
+          value: _categoriaPrestadorSelecionada,
+          decoration: const InputDecoration(labelText: 'Área de Atuação'),
+          hint: const Text('Selecione sua profissão'),
+          isExpanded: true,
+          items: _categoriasPrestador.map((String categoria) => DropdownMenuItem(value: categoria, child: Text(categoria, overflow: TextOverflow.ellipsis))).toList(),
+          onChanged: (v) => setState(() {
+            _categoriaPrestadorSelecionada = v;
+          }),
+          validator: (v) => v == null ? 'Selecione sua área.' : null,
+        ),
         if (_categoriaPrestadorSelecionada == 'Outros') Padding(padding: const EdgeInsets.only(top: 16.0), child: TextFormField(controller: _outraAreaAtuacaoController, decoration: const InputDecoration(labelText: 'Especifique sua área (ex: Jardineiro)'), validator: (v) => v!.isEmpty ? 'Por favor, especifique.' : null)),
         const SizedBox(height: 16),
         TextFormField(controller: _descricaoServicosController, decoration: const InputDecoration(labelText: 'Descrição dos Serviços'), maxLines: 3, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(value: _bairroSelecionado, decoration: const InputDecoration(labelText: 'Área de Atendimento (Bairro)'), hint: const Text('Selecione o bairro principal'), isExpanded: true, menuMaxHeight: 300, items: _listaBairros.map((String bairro) => DropdownMenuItem(value: bairro, child: Text(bairro))).toList(), onChanged: (v) => setState(() => _bairroSelecionado = v), validator: (v) => v == null ? 'Selecione o bairro.' : null),
+        DropdownButtonFormField<String>(
+          value: _bairroSelecionado,
+          decoration: const InputDecoration(labelText: 'Área de Atendimento (Bairro)'),
+          hint: const Text('Selecione o bairro principal'),
+          isExpanded: true,
+          menuMaxHeight: 300,
+          items: _listaBairros.map((String bairro) => DropdownMenuItem(value: bairro, child: Text(bairro))).toList(),
+          onChanged: (v) => setState(() => _bairroSelecionado = v),
+          validator: (v) => v == null ? 'Selecione o bairro.' : null,
+        ),
         const SizedBox(height: 24),
         const Text('Disponibilidade de Atendimento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         const Text('Toque nos dias da semana para adicionar horários:', style: TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 12),
-        Wrap(spacing: 8.0, runSpacing: 8.0, alignment: WrapAlignment.center, children: _diasSemana.map((dia) { bool selecionado = _horariosSemanais.containsKey(dia); return ChoiceChip(label: Text(dia), selected: selecionado, selectedColor: Colors.deepPurple.shade100, onSelected: (bool selected) { if (selected) { _selecionarHorario(dia); } else { _removerHorario(dia); } }); }).toList()),
-        if (_horariosSemanais.isNotEmpty) ...[const SizedBox(height: 16), Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: _horariosSemanais.entries.map((entry) { return Padding(padding: const EdgeInsets.only(bottom: 4.0), child: Row(children: [Text('${entry.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)), Text(entry.value), const Spacer(), InkWell(onTap: () => _removerHorario(entry.key), child: const Icon(Icons.close, size: 16, color: Colors.red))])); }).toList()))],
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          alignment: WrapAlignment.center,
+          children: _diasSemana.map((dia) {
+            bool selecionado = _horariosSemanais.containsKey(dia);
+            return ChoiceChip(
+              label: Text(dia),
+              selected: selecionado,
+              selectedColor: Colors.deepPurple.shade100,
+              onSelected: (bool selected) {
+                if (selected) {
+                  _selecionarHorario(dia);
+                } else {
+                  _removerHorario(dia);
+                }
+              },
+            );
+          }).toList(),
+        ),
+        if (_horariosSemanais.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _horariosSemanais.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: Row(
+                    children: [
+                      Text('${entry.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(entry.value),
+                      const Spacer(),
+                      InkWell(onTap: () => _removerHorario(entry.key), child: const Icon(Icons.close, size: 16, color: Colors.red)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        ],
         const SizedBox(height: 16),
         TextFormField(controller: _faixaPrecosController, decoration: const InputDecoration(labelText: 'Faixa de Preço Média (R\$)'), keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 24),
         const Text('Informações Adicionais', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        TextFormField(controller: _registroProfissionalController, decoration: InputDecoration(labelText: isRegistroObrigatorio ? 'Número do $labelRegistro' : 'Registro Profissional (Opcional)', helperText: isRegistroObrigatorio ? 'Obrigatório. Anexe o documento abaixo.' : null), validator: (v) { if (isRegistroObrigatorio && (v == null || v.isEmpty)) { return 'Por favor, informe seu $labelRegistro.'; } return null; }),
+        TextFormField(controller: _registroProfissionalController, decoration: InputDecoration(labelText: isRegistroObrigatorio ? 'Número do ${_getLabelRegistroProfissional()}' : 'Registro Profissional (Opcional)', helperText: isRegistroObrigatorio ? 'Obrigatório. Anexe o documento abaixo.' : null), validator: (v) {
+          if (isRegistroObrigatorio && (v == null || v.isEmpty)) {
+            return 'Por favor, informe o ${_getLabelRegistroProfissional()}.';
+          }
+          return null;
+        }),
         const SizedBox(height: 16),
         const Text('Documentos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         const Text('Anexe documentos, registros, certificados (Obrigatório para profissões regulamentadas)', style: TextStyle(color: Colors.grey, fontSize: 12)),
@@ -528,7 +670,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Cadastro - ${widget.tipoUsuario}')),
+      appBar: AppBar(
+        title: Text('Cadastro - ${widget.tipoUsuario}'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -548,15 +695,19 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 TextFormField(controller: _telefoneController, decoration: const InputDecoration(labelText: 'Telefone / Celular'), keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
                 const SizedBox(height: 16),
                 const Divider(),
-                TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email de Login'), keyboardType: TextInputType.emailAddress, validator: (v) { if (v == null || v.isEmpty) return 'Obrigatório'; if (!v.contains('@')) return 'Email inválido'; return null; }),
-
-                // <<< CAMPO DE SENHA COM LISTENER >>>
+                TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email de Login'), keyboardType: TextInputType.emailAddress, validator: (v) {
+                  if (v == null || v.isEmpty) return 'Obrigatório';
+                  if (!v.contains('@')) return 'Email inválido';
+                  return null;
+                }),
                 const SizedBox(height: 16),
+
+                // senha
                 TextFormField(
                   controller: _senhaController,
                   decoration: const InputDecoration(labelText: 'Senha'),
                   obscureText: true,
-                  onChanged: _validarSenha, // <<< CHAMA A VALIDAÇÃO AO DIGITAR
+                  onChanged: _validarSenha,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Obrigatório';
                     if (!_isSenhaValida()) return 'Senha muito fraca';
@@ -564,7 +715,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   },
                 ),
 
-                // <<< CHECKLIST VISUAL DA SENHA >>>
                 const SizedBox(height: 8),
                 Column(
                   children: [
@@ -576,6 +726,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   ],
                 ),
 
+                // campos específicos para prestador / lojista
                 ..._buildSpecificFields(),
 
                 const SizedBox(height: 32),
