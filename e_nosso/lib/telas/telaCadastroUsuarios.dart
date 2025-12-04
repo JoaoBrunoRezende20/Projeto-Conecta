@@ -19,13 +19,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
 
+  // NOVO: Estado para controlar a visibilidade da senha
+  bool _isPasswordVisible = false;
+
   // --- VARIÁVEIS PARA OS DROPDOWNS E SELETORES ---
   String? _categoriaSelecionadaCnae;
   String? _estadoSelecionado;
   String? _categoriaPrestadorSelecionada;
   String? _bairroLojistaSelecionado;
 
-  // Lista para múltipla seleção de bairros (CORREÇÃO AQUI: Definindo a variável)
+  // Lista para múltipla seleção de bairros
   List<String> _bairrosSelecionados = [];
 
   // --- LISTAS DE IMAGENS (BASE64) ---
@@ -416,8 +419,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'areaAtuacao': areaFinal,
           'descricaoServicos': _descricaoServicosController.text.trim(),
 
-          // <<< SALVANDO A LISTA DE BAIRROS (CORREÇÃO) >>>
-          'areaAtendimento': _bairrosSelecionados, // Salva a lista de strings
+          // SALVANDO A LISTA DE BAIRROS
+          'areaAtendimento': _bairrosSelecionados,
 
           'disponibilidadeAtendimento': disponibilidadeFinal,
           'faixaPrecos': preco,
@@ -596,7 +599,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(controller: _descricaoServicosController, decoration: const InputDecoration(labelText: 'Descrição dos Serviços'), maxLines: 3, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
 
-        // <<< CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS (InkWell) >>>
+        // CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS (InkWell)
         InkWell(
           onTap: _mostrarSelecaoBairros,
           child: InputDecorator(
@@ -716,43 +719,59 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 const SizedBox(height: 16),
                 TextFormField(controller: _sobrenomeController, decoration: const InputDecoration(labelText: 'Sobrenome'), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
                 const SizedBox(height: 16),
-                TextFormField(controller: _cpfController, decoration: const InputDecoration(labelText: 'CPF'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-                const SizedBox(height: 16),
-                TextFormField(controller: _telefoneController, decoration: const InputDecoration(labelText: 'Telefone / Celular'), keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-                const SizedBox(height: 16),
-                const Divider(),
-                TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email de Login'), keyboardType: TextInputType.emailAddress, validator: (v) {
-                  if (v == null || v.isEmpty) return 'Obrigatório';
-                  if (!v.contains('@')) return 'Email inválido';
-                  return null;
-                }),
-                const SizedBox(height: 16),
 
-                // senha
+                // CAMPO SENHA COM TOGGLE DE VISIBILIDADE
                 TextFormField(
                   controller: _senhaController,
-                  decoration: const InputDecoration(labelText: 'Senha'),
-                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Senha',
+                    // Adiciona o ícone de toggle
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        // Altera o estado para fazer o toggle
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                  // Usa o estado para ocultar/mostrar o texto
+                  obscureText: !_isPasswordVisible,
                   onChanged: _validarSenha,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Obrigatório';
-                    if (!_isSenhaValida()) return 'Senha muito fraca';
-                    return null;
-                  },
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
+                // FIM DO CAMPO SENHA
 
                 const SizedBox(height: 8),
-                Column(
-                  children: [
-                    _buildRequisitoRow('Mínimo de 8 caracteres', _temMinimoCaracteres),
-                    _buildRequisitoRow('Pelo menos uma letra maiúscula (A-Z)', _temMaiuscula),
-                    _buildRequisitoRow('Pelo menos uma letra minúscula (a-z)', _temMinuscula),
-                    _buildRequisitoRow('Pelo menos um número (0-9)', _temNumero),
-                    _buildRequisitoRow('Pelo menos um caractere especial (ex: !@#\$%&*)', _temEspecial),
-                  ],
+                // Requisitos de Senha
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('A senha deve conter:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      _buildRequisitoRow('Mínimo de 8 caracteres', _temMinimoCaracteres),
+                      _buildRequisitoRow('Pelo menos uma letra maiúscula (A-Z)', _temMaiuscula),
+                      _buildRequisitoRow('Pelo menos uma letra minúscula (a-z)', _temMinuscula),
+                      _buildRequisitoRow('Pelo menos um número (0-9)', _temNumero),
+                      _buildRequisitoRow('Pelo menos um caractere especial (!@#\$%&*)', _temEspecial),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 16),
 
-                // campos específicos para prestador / lojista
+                TextFormField(controller: _cpfController, decoration: const InputDecoration(labelText: 'CPF'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+                const SizedBox(height: 16),
+                TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email Principal'), keyboardType: TextInputType.emailAddress, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+                const SizedBox(height: 16),
+                TextFormField(controller: _telefoneController, decoration: const InputDecoration(labelText: 'Telefone'), keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+
+                // Campos específicos (Lojista ou Prestador)
                 ..._buildSpecificFields(),
 
                 const SizedBox(height: 32),
@@ -762,10 +781,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
                       ? const Center(child: CircularProgressIndicator())
                       : ElevatedButton(
                     onPressed: _cadastrar,
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: const Text('Finalizar Cadastro'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('CADASTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
