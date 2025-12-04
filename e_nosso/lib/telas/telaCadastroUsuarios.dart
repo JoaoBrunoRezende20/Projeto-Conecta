@@ -1,4 +1,3 @@
-// lib/telas/telaCadastroUsuarios.dart
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,10 +20,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final ImagePicker _picker = ImagePicker();
 
   // --- VARIÁVEIS PARA OS DROPDOWNS E SELETORES ---
-  String? _categoriaSelecionadaCnae; // Usada para categoria do lojista (visível no dropdown)
+  String? _categoriaSelecionadaCnae;
   String? _estadoSelecionado;
   String? _categoriaPrestadorSelecionada;
-  String? _bairroSelecionado;
+  String? _bairroLojistaSelecionado;
+
+  // Lista para múltipla seleção de bairros (CORREÇÃO AQUI: Definindo a variável)
+  List<String> _bairrosSelecionados = [];
 
   // --- LISTAS DE IMAGENS (BASE64) ---
   List<String> _imagensPortfolioBase64 = [];
@@ -56,65 +58,21 @@ class _TelaCadastroState extends State<TelaCadastro> {
   };
 
   late final List<String> _categoriasPrestador;
+
   final List<String> _listaBairros = [
-    'Açudes',
-    'Alto Cruzeiro',
-    'Campos',
-    'Candola/Sion',
-    'Centro',
-    'Distrito Industrial',
-    'Gabiroba',
-    'Lagoa dos Monjolos',
-    'Lava Pés',
-    'Nações',
-    'Nossa Senhora das Graças',
-    'Nossa Senhora de Fátima',
-    'Rola Moça',
-    'Sagrado Coração de Jesus',
-    'São Conrado',
-    'Senhora Santana',
-    'Vila Luchesi',
-    'Vista Alegre',
-    'Outros',
+    'Açudes', 'Alto Cruzeiro', 'Campos', 'Candola/Sion', 'Centro', 'Distrito Industrial',
+    'Gabiroba', 'Lagoa dos Monjolos', 'Lava Pés', 'Nações', 'Nossa Senhora das Graças',
+    'Nossa Senhora de Fátima', 'Rola Moça', 'Sagrado Coração de Jesus', 'São Conrado',
+    'Senhora Santana', 'Vila Luchesi', 'Vista Alegre', 'Outros',
   ]..sort();
 
   final List<String> _estadosLojista = [
-    'AC',
-    'AL',
-    'AP',
-    'AM',
-    'BA',
-    'CE',
-    'DF',
-    'ES',
-    'GO',
-    'MA',
-    'MT',
-    'MS',
-    'MG',
-    'PA',
-    'PB',
-    'PR',
-    'PE',
-    'PI',
-    'RJ',
-    'RN',
-    'RS',
-    'RO',
-    'RR',
-    'SC',
-    'SE',
-    'SP',
-    'TO'
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+    'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'SP', 'TO'
   ];
 
-  // lista reduzida e padronizada de categorias que serão exibidas no dropdown do lojista
   final List<String> categoriasLojista = [
-    'Quitandas',
-    'Bebidas',
-    'Feira Livre',
-    'Serviços',
-    'Outros',
+    'Quitandas', 'Bebidas', 'Feira Livre', 'Serviços', 'Outros',
   ];
 
   final Map<String, String> _horariosSemanais = {};
@@ -152,28 +110,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
     super.initState();
     _categoriasPrestador = [
       ..._mapaRegistroProfissional.keys,
-      'Babá / Cuidador',
-      'Barbeiro / Cabeleireiro(a)',
-      'Chaveiro',
-      'Confeiteiro(a) / Cozinheiro(a)',
-      'Diarista / Limpeza',
-      'Encanador(a)',
-      'Fotógrafo(a)',
-      'Jardineiro(a)',
-      'Manicure / Pedicure',
-      'Maquiador(a)',
-      'Marceneiro',
-      'Mecânico',
-      'Montador de Móveis',
-      'Pedreiro',
-      'Pintor',
-      'Professor(a) Particular',
-      'Serralheiro',
-      'Técnico em Informática/Celular',
-      'Técnico em Refrigeração/Ar-cond.',
-      'Técnico em fogões a gás',
-      'Vidraceiro',
-      'Outros',
+      'Babá / Cuidador', 'Barbeiro / Cabeleireiro(a)', 'Chaveiro',
+      'Confeiteiro(a) / Cozinheiro(a)', 'Diarista / Limpeza', 'Encanador(a)',
+      'Fotógrafo(a)', 'Jardineiro(a)', 'Manicure / Pedicure', 'Maquiador(a)',
+      'Marceneiro', 'Mecânico', 'Montador de Móveis', 'Pedreiro', 'Pintor',
+      'Professor(a) Particular', 'Serralheiro', 'Técnico em Informática/Celular',
+      'Técnico em Refrigeração/Ar-cond.', 'Técnico em fogões a gás', 'Vidraceiro', 'Outros',
     ]..sort();
   }
 
@@ -298,6 +240,63 @@ class _TelaCadastroState extends State<TelaCadastro> {
     return _mapaRegistroProfissional[_categoriaPrestadorSelecionada];
   }
 
+  // --- NOVA FUNÇÃO: DIÁLOGO DE MÚLTIPLA SELEÇÃO DE BAIRROS ---
+  Future<void> _mostrarSelecaoBairros() async {
+    List<String> selecaoTemporaria = List.from(_bairrosSelecionados);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Selecione os Bairros'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _listaBairros.length,
+                  itemBuilder: (context, index) {
+                    final bairro = _listaBairros[index];
+                    final isSelected = selecaoTemporaria.contains(bairro);
+                    return CheckboxListTile(
+                      title: Text(bairro),
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        setStateDialog(() {
+                          if (value == true) {
+                            selecaoTemporaria.add(bairro);
+                          } else {
+                            selecaoTemporaria.remove(bairro);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _bairrosSelecionados = selecaoTemporaria;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   // --- CADASTRO ---
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) {
@@ -316,10 +315,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione sua área de atuação.')));
         return;
       }
-      if (_bairroSelecionado == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione o bairro de atendimento.')));
+
+      // Validação de Bairros (Lista)
+      if (_bairrosSelecionados.isEmpty) { // CORREÇÃO: Usando a lista
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione pelo menos um bairro.')));
         return;
       }
+
       if (_categoriaPrestadorSelecionada == 'Outros' && _outraAreaAtuacaoController.text.trim().isEmpty) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Especifique sua área de atuação.')));
         return;
@@ -335,7 +337,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
       }
     }
 
-    // lojista precisa selecionar categoria (CNAE simplificada)
+    // lojista precisa selecionar categoria
     if (widget.tipoUsuario == 'lojista' && _categoriaSelecionadaCnae == null) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione a categoria da loja.')));
       return;
@@ -373,12 +375,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'razaoSocial': _razaoSocialController.text.trim(),
           'telefoneComercial': _telefoneComercialController.text.trim(),
           'cnae': _categoriaSelecionadaCnae,
-          'categoria': _categoriaSelecionadaCnae, // <- salva a categoria padronizada para filtros
+          'categoria': _categoriaSelecionadaCnae,
           'endereco': {
             'rua': _ruaController.text.trim(),
             'numero': _numeroController.text.trim(),
             'complemento': _complementoController.text.trim(),
-            'bairro': _bairroController.text.trim(),
+            'bairro': _bairroLojistaSelecionado,
             'estado': _estadoSelecionado,
             'cep': _cepController.text.trim(),
           },
@@ -413,7 +415,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'email': _emailController.text.trim(),
           'areaAtuacao': areaFinal,
           'descricaoServicos': _descricaoServicosController.text.trim(),
-          'areaAtendimento': _bairroSelecionado,
+
+          // <<< SALVANDO A LISTA DE BAIRROS (CORREÇÃO) >>>
+          'areaAtendimento': _bairrosSelecionados, // Salva a lista de strings
+
           'disponibilidadeAtendimento': disponibilidadeFinal,
           'faixaPrecos': preco,
           'qualificacoes': _qualificacoesController.text.trim(),
@@ -526,7 +531,21 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(controller: _complementoController, decoration: const InputDecoration(labelText: 'Complemento (Opcional)')),
         const SizedBox(height: 16),
-        TextFormField(controller: _bairroController, decoration: const InputDecoration(labelText: 'Bairro'), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+        DropdownButtonFormField<String>(
+          value: _bairroLojistaSelecionado,
+          decoration: const InputDecoration(labelText: 'Bairro da Loja'),
+          hint: const Text('Selecione o Bairro'),
+          isExpanded: true,
+          menuMaxHeight: 300, // Limita altura para não ocupar a tela toda
+          items: _listaBairros.map((String bairro) {
+            return DropdownMenuItem(
+              value: bairro,
+              child: Text(bairro),
+            );
+          }).toList(),
+          onChanged: (v) => setState(() => _bairroLojistaSelecionado = v),
+          validator: (v) => v == null ? 'Selecione o bairro da loja.' : null,
+        ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           value: _estadoSelecionado,
@@ -576,16 +595,28 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(controller: _descricaoServicosController, decoration: const InputDecoration(labelText: 'Descrição dos Serviços'), maxLines: 3, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          value: _bairroSelecionado,
-          decoration: const InputDecoration(labelText: 'Área de Atendimento (Bairro)'),
-          hint: const Text('Selecione o bairro principal'),
-          isExpanded: true,
-          menuMaxHeight: 300,
-          items: _listaBairros.map((String bairro) => DropdownMenuItem(value: bairro, child: Text(bairro))).toList(),
-          onChanged: (v) => setState(() => _bairroSelecionado = v),
-          validator: (v) => v == null ? 'Selecione o bairro.' : null,
+
+        // <<< CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS (InkWell) >>>
+        InkWell(
+          onTap: _mostrarSelecaoBairros,
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Área de Atendimento (Bairros/Cidades)',
+              border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.arrow_drop_down),
+            ),
+            child: Text(
+              _bairrosSelecionados.isEmpty
+                  ? 'Selecione os bairros'
+                  : _bairrosSelecionados.join(', '),
+              style: TextStyle(
+                color: _bairrosSelecionados.isEmpty ? Colors.grey.shade600 : Colors.black,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
         ),
+
         const SizedBox(height: 24),
         const Text('Disponibilidade de Atendimento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -670,12 +701,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Cadastro - ${widget.tipoUsuario}'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text('Cadastro - ${widget.tipoUsuario}')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

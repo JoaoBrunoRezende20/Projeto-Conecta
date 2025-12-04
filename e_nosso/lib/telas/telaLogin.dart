@@ -119,7 +119,7 @@ class _TelaLoginState extends State<TelaLogin> {
                           children: [
                             Icon(Icons.check_circle, color: Colors.white),
                             SizedBox(width: 8),
-                            Expanded(child: Text('Email enviado! Verifique sua caixa de entrada e spam.')),
+                            Expanded(child: Text('Se este email estiver cadastrado, você receberá um link de redefinição em instantes.')),
                           ],
                         ),
                         backgroundColor: Colors.green,
