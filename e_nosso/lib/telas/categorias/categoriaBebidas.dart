@@ -30,7 +30,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
       ),
       body: Column(
         children: [
-          // Barra de busca
+          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -49,17 +49,19 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
               ),
             ),
           ),
-          // Lista de lojistas
+
+          // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
-                  .where('categoria', isEqualTo: 'bebidas')
+                  .where('cnae', isEqualTo: 'Bebidas')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
                     child: Text("Nenhuma loja de bebidas cadastrada."),
@@ -68,11 +70,13 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial'] ??
-                      data['nomeLojista'] ??
-                      '')
+
+                  final nome = (data['razaoSocial']
+                      ?? data['nomeLojista']
+                      ?? '')
                       .toString()
                       .toLowerCase();
+
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
@@ -84,12 +88,14 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome = (data['razaoSocial'] ??
-                        data['nomeLojista'] ??
-                        'Loja sem nome')
+
+                    final nome = (data['razaoSocial']
+                        ?? data['nomeLojista']
+                        ?? 'Loja sem nome')
                         .toString();
-                    final descricao =
-                    (data['descricao'] ?? 'Sem descrição').toString();
+
+                    final descricao = (data['descricao'] ?? 'Sem descrição')
+                        .toString();
 
                     return _buildLojaCard(
                       nome: nome,
@@ -127,7 +133,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
       ),
       child: Row(
         children: [
-          // "Imagem" da loja
+          // Foto da loja (futuro)
           Container(
             height: 60,
             width: 60,
@@ -137,7 +143,8 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
             ),
           ),
           const SizedBox(width: 12),
-          // Textos
+
+          // Informação da loja
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,11 +156,22 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                     fontSize: 16,
                   ),
                 ),
+
+                // ⭐ Avaliação + categoria
                 Text("⭐ 5.0  •  $categoriaTexto"),
+
+                // Tempo e taxa
                 Text("50–60 min  •  R\$ 5,00"),
+
+                // Descrição extra mantida (você pediu para não remover)
+                Text(
+                  descricaoExtra,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
               ],
             ),
           ),
+
           const Icon(Icons.star_border),
         ],
       ),

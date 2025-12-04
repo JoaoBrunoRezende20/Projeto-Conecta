@@ -50,17 +50,16 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
             ),
           ),
 
-          // 📌 Lista de Lojas da Categoria "outros"
+          // 📌 Lista de lojas da categoria "Outros"
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
-                  .where('categoria', isEqualTo: 'outros')
+                  .where('cnae', isEqualTo: 'Outros')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -76,12 +75,14 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                       '')
                       .toString()
                       .toLowerCase();
+
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
                   return const Center(
-                      child: Text("Nenhuma loja encontrada."));
+                    child: Text("Nenhuma loja encontrada."),
+                  );
                 }
 
                 return ListView.builder(
@@ -113,7 +114,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
     );
   }
 
-  /// 🎨 COMPONENTE DO CARD DE LOJA
+  /// 🎨 Card de cada loja
   Widget _buildLojaCard({
     required String nome,
     required String categoriaTexto,
@@ -135,7 +136,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
       ),
       child: Row(
         children: [
-          // FOTO / AVATAR
+          // Foto / ícone da loja
           Container(
             height: 60,
             width: 60,
@@ -147,7 +148,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
 
           const SizedBox(width: 12),
 
-          // TEXTOS DA LOJA
+          // Nome e descrição
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

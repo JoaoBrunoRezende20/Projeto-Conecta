@@ -30,7 +30,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
       ),
       body: Column(
         children: [
-          // Busca
+          // Barra de busca
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -49,17 +49,20 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
               ),
             ),
           ),
-          // Lista
+
+          // Lista de lojas
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
-                  .where('categoria', isEqualTo: 'feira')
+                  .where('cnae', isEqualTo: 'Feira Livre')
                   .snapshots(),
               builder: (context, snapshot) {
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
                     child: Text("Nenhuma feira cadastrada."),
@@ -73,6 +76,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                       '')
                       .toString()
                       .toLowerCase();
+
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
@@ -84,10 +88,12 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
+
                     final nome = (data['razaoSocial'] ??
                         data['nomeLojista'] ??
                         'Feira sem nome')
                         .toString();
+
                     final descricao =
                     (data['descricao'] ?? 'Sem descrição').toString();
 
@@ -127,6 +133,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
       ),
       child: Row(
         children: [
+          // Imagem da loja
           Container(
             height: 60,
             width: 60,
@@ -135,7 +142,10 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Informações do card
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,11 +157,19 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                     fontSize: 16,
                   ),
                 ),
+
                 Text("⭐ 5.0  •  $categoriaTexto"),
                 Text("30–50 min  •  R\$ 2,00"),
+
+                // Descrição extra (mantido conforme seu pedido)
+                Text(
+                  descricaoExtra,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
               ],
             ),
           ),
+
           const Icon(Icons.star_border),
         ],
       ),
