@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../telaProdutosDisponiveis.dart';
+
 
 class CategoriaOutros extends StatefulWidget {
   const CategoriaOutros({super.key});
@@ -30,7 +32,6 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
       ),
       body: Column(
         children: [
-          // 🔍 Barra de busca
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -40,7 +41,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (value) => setState(() => pesquisa = value.trim()),
+                onChanged: (v) => setState(() => pesquisa = v.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
                   hintText: "Pesquisar loja...",
@@ -50,124 +51,117 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
             ),
           ),
 
-          // 📌 Lista de lojas da categoria "Outros"
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Outros')
+                  .collection("lojistas")
+                  .where("cnae", isEqualTo: "Outros")
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("Nenhuma loja cadastrada em Outros."),
-                  );
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial'] ??
-                      data['nomeLojista'] ??
-                      '')
+                  final nome =
+                  (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
                       .toString()
                       .toLowerCase();
-
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
                   return const Center(
-                    child: Text("Nenhuma loja encontrada."),
-                  );
+                      child: Text("Nenhum estabelecimento encontrado."));
                 }
 
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final data =
-                    docs[index].data() as Map<String, dynamic>;
-
-                    final nome = (data['razaoSocial'] ??
-                        data['nomeLojista'] ??
-                        'Loja sem nome')
-                        .toString();
-
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final nome =
+                    (data["razaoSocial"] ?? data["nomeLojista"]).toString();
                     final descricao =
-                    (data['descricao'] ?? 'Sem descrição').toString();
+                    (data["descricao"] ?? "Sem descrição").toString();
 
                     return _buildLojaCard(
+                      context: context,
+                      lojaId: docs[index].id,
                       nome: nome,
                       categoriaTexto: "Outros",
                       descricaoExtra: descricao,
+                      avaliacao: 5.0,
                     );
                   },
                 );
               },
             ),
-          ),
+          )
         ],
       ),
     );
   }
 
-  /// 🎨 Card de cada loja
   Widget _buildLojaCard({
+    required BuildContext context,
+    required String lojaId,
     required String nome,
     required String categoriaTexto,
     required String descricaoExtra,
+    required double avaliacao,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EEEE),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Foto / ícone da loja
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TelaProdutosDisponiveis(
+              lojaId: lojaId,
+              storeName: nome,
+              rating: avaliacao,
             ),
           ),
-
-          const SizedBox(width: 12),
-
-          // Nome e descrição
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  nome,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text("⭐ 5.0  •  $categoriaTexto"),
-                Text(descricaoExtra),
-              ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3EEEE),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
 
-          const Icon(Icons.star_border),
-        ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nome,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text("⭐ $avaliacao  •  $categoriaTexto"),
+                  Text("50–60 min  •  R\$ 5,00"),
+                  Text(descricaoExtra,
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.black54)),
+                ],
+              ),
+            ),
+
+            const Icon(Icons.arrow_forward_ios, size: 18),
+          ],
+        ),
       ),
     );
   }
