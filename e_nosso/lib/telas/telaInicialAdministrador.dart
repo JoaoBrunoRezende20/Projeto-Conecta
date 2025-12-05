@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'telaTipoUsuario.dart';
+// Certifique-se que os nomes das classes dentro desses arquivos estão corretos
+import 'telaTodosUsuarios.dart'; // Deve conter a class TelaGerenciarUsuarios
+import 'telaLogs.dart';          // Deve conter a class TelaLogsAdm
 
 // Classe modelo para facilitar a manipulação dos dados
 class UsuarioPendente {
@@ -66,12 +68,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
     return usuarios;
   }
 
-  // <<< AQUI ESTÁ A CORREÇÃO >>>
-  // A função de Logout agora apenas desloga, sem fazer navegação manual.
   Future<void> _signOut() async {
-    // Apenas avisa ao Firebase para deslogar.
-    // O AuthWrapper no main.dart vai ouvir essa mudança e
-    // automaticamente redirecionar para a TelaTipoUsuario.
     await FirebaseAuth.instance.signOut();
   }
 
@@ -85,7 +82,6 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
-          // Chama a nova função de logout (que não precisa mais do 'context')
           onPressed: _signOut,
         ),
       ),
@@ -130,14 +126,15 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomButtons(),
+      // Chamada atualizada para os botões inferiores
+      bottomNavigationBar: _buildBottomButtons(context),
     );
   }
 
   Widget _buildSearchBar() {
     return TextField(
       decoration: InputDecoration(
-        hintText: 'Pesquise por nome, CPF, CNPJ, email ou código',
+        hintText: 'Pesquise por CPF, CNPJ, email ou código',
         prefixIcon: const Icon(Icons.search, color: Colors.grey),
         suffixIcon: const Icon(Icons.tune, color: Colors.grey),
         filled: true,
@@ -185,7 +182,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () {
-                    // TODO: Implementar lógica para ver documentos do usuário
+                    // Lógica para ver documentos (será implementada depois)
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -203,39 +200,82 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
     );
   }
 
-  Widget _buildBottomButtons() {
-    return Padding(
+  // --- FUNÇÃO CORRIGIDA SEM OS SÍMBOLOS DE CONFLITO ---
+  Widget _buildBottomButtons(BuildContext context) {
+    // Estilo padrão para os botões escuros
+    final ButtonStyle darkButtonStyle = ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF424242), // Cinza escuro
+      foregroundColor: Colors.white, // Texto branco
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      elevation: 3,
+    );
+
+    return Container(
       padding: const EdgeInsets.all(16.0),
+      color: Colors.transparent, // Fundo transparente
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implementar lógica do botão Voltar
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF424242),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+          // BOTÃO 1: VER TODOS USUARIOS
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                // Navega para a tela de Gerenciar Usuários
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaGerenciarUsuarios()),
+                );
+              },
+              style: darkButtonStyle,
+              child: const Text(
+                'Ver todos usuarios',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11), // Fonte levemente menor para caber
+              ),
             ),
-            child: const Text('Voltar'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implementar lógica do botão Cadastrar ()
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF424242),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+          
+          const SizedBox(width: 8), // Espaçamento entre botões
+
+          // BOTÃO 2: CADASTRAR (Placeholder)
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                // Lógica de cadastro (se houver)
+                print("Botão Cadastrar clicado");
+              },
+              style: darkButtonStyle,
+              child: const Text(
+                'Cadastrar',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12),
+              ),
             ),
-            child: const Text('Cadastrar'),
+          ),
+
+          const SizedBox(width: 8), // Espaçamento entre botões
+
+          // BOTÃO 3: VER HISTÓRICO
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                // Navega para a tela de Logs
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaLogsAdm()),
+                );
+              },
+              style: darkButtonStyle,
+              child: const Text(
+                'Ver Historico',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
