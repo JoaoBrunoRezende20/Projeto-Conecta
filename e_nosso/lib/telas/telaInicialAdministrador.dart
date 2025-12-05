@@ -200,7 +200,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
     );
   }
 
-  // --- AQUI ESTÁ A ATUALIZAÇÃO DOS 3 BOTÕES ---
+  // --- FUNÇÃO CORRIGIDA SEM OS SÍMBOLOS DE CONFLITO ---
   Widget _buildBottomButtons(BuildContext context) {
     // Estilo padrão para os botões escuros
     final ButtonStyle darkButtonStyle = ElevatedButton.styleFrom(
@@ -235,7 +235,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
               ),
             ),
           ),
-
+          
           const SizedBox(width: 8), // Espaçamento entre botões
 
           // BOTÃO 2: CADASTRAR (Placeholder)
