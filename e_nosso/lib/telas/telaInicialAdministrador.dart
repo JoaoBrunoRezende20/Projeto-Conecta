@@ -223,7 +223,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Implementar lógica do botão Cadastrar (talvez um novo admin?)
+              // TODO: Implementar lógica do botão Cadastrar ()
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF424242),
