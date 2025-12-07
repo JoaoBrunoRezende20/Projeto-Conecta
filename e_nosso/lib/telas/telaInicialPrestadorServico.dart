@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'telaTipoUsuario.dart';
-import 'package:e_nosso/telas/telaMenuLateral.dart'; //**********
+import 'package:e_nosso/telas/telaMenuLateral.dart';
+import 'telaBotaoNotificacao.dart';
 
 // --- Modelos de Dados (para organizar a informação) ---
 
@@ -111,6 +112,8 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
             // Chama a nova função de logout
             onPressed: _signOut,
           ),
+          BotaoNotificacao(colecaoUsuario: 'prestadorServicos'), // <--- AQUI
+          const SizedBox(width: 10),
         ],
       ),
 

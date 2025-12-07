@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'telaTipoUsuario.dart';
 import 'telaControleProdutos.dart';
+import 'telaBotaoNotificacao.dart';
 
 
 // Modelo de dados para organizar a informação de cada produto
@@ -129,6 +130,8 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: _signOut,
           ),
+          BotaoNotificacao(colecaoUsuario: 'lojistas'),
+          const SizedBox(width: 10),
         ],
       ),
       body: SingleChildScrollView(

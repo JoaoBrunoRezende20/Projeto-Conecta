@@ -57,6 +57,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
                   .where('cnae', isEqualTo: 'Bebidas')
+                  .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

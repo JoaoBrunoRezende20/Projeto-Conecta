@@ -58,6 +58,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
                   .where('cnae', isEqualTo: 'Quitandas')
+                  .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
