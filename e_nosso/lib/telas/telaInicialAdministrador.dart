@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Certifique-se que os nomes das classes dentro desses arquivos estão corretos
 import 'telaTodosUsuarios.dart'; // Deve conter a class TelaGerenciarUsuarios
 import 'telaLogs.dart';          // Deve conter a class TelaLogsAdm
+import 'telaDetalhesCadastro.dart';
 
 // Classe modelo para facilitar a manipulação dos dados
 class UsuarioPendente {
@@ -182,7 +183,22 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () {
-                    // Lógica para ver documentos (será implementada depois)
+                    // Define qual a coleção baseada no tipo que você salvou na classe UsuarioPendente
+                    String colecao = usuario.tipo == 'Lojista' ? 'lojistas' : 'prestadorServicos';
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TelaDetalhesCadastro(
+                          usuarioId: usuario.id,
+                          colecao: colecao,
+                          nomeUsuario: usuario.nome,
+                        ),
+                      ),
+                    ).then((_) {
+                      // Quando voltar da tela de detalhes, recarrega a lista para sumir o pendente
+                      setState(() {});
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -190,7 +206,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                     side: const BorderSide(color: Colors.grey),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Ver documentos'),
+                  child: const Text('Ver Detalhes e Documentos'),
                 ),
               ],
             )

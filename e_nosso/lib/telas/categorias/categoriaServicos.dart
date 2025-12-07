@@ -44,7 +44,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 onChanged: (v) => setState(() => pesquisa = v.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
-                  hintText: "Pesquisar loja...",
+                  hintText: "Pesquisar Prestador...",
                   border: InputBorder.none,
                 ),
               ),
@@ -54,8 +54,9 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection("lojistas")
-                  .where("cnae", isEqualTo: "Serviços")
+                  .collection("prestadorServicos")
+                  .where("tipo", isEqualTo: "prestador")
+                  .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -80,7 +81,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final nome =
-                    (data["razaoSocial"] ?? data["nomeLojista"]).toString();
+                    (data["nome"] ?? data["nomeprestadorServicos"]).toString();
                     final descricao =
                     (data["descricao"] ?? "Sem descrição").toString();
 

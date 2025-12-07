@@ -58,6 +58,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
                   .where('cnae', isEqualTo: 'Feira Livre')
+                  .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
