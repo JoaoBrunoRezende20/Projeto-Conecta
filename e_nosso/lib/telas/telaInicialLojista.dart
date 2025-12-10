@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'telaTipoUsuario.dart';
-import 'telaControleProdutos.dart';
 import 'telaBotaoNotificacao.dart';
 
-
-// Modelo de dados para organizar a informação de cada produto
 class Produto {
   final String id;
   final String nome;
+  final String descricao;
+  final double preco;
   final int estoque;
-  bool ativo; // 'disponível' ou 'indisponível'
+  bool ativo;
 
   Produto({
     required this.id,
     required this.nome,
+    required this.descricao,
+    required this.preco,
     required this.estoque,
     required this.ativo,
   });
 
-  // Construtor para criar um Produto a partir de um documento do Firestore
   factory Produto.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
     return Produto(
       id: doc.id,
       nome: data['nome'] ?? 'Nome indisponível',
+      descricao: data['descricao'] ?? '',
+      preco: (data['preco'] ?? 0).toDouble(),
       estoque: data['estoque'] ?? 0,
       ativo: data['ativo'] ?? false,
     );
@@ -42,50 +43,43 @@ class TelaInicialLojista extends StatefulWidget {
 class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   final String? lojistaId = FirebaseAuth.instance.currentUser?.uid;
 
-  // Função de Logout
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
   }
 
-  // Função para ATUALIZAR o status do produto no Firestore
-  Future<void> _updateProdutoStatus(String produtoId, bool novoStatus) async {
-    await FirebaseFirestore.instance
-        .collection('produtos')
-        .doc(produtoId)
-        .update({'ativo': novoStatus});
-  }
-
-
-  Future<void> _sincronizarStatusProduto(Produto produto) async {
-    bool novoStatus = produto.estoque > 0;
-    await FirebaseFirestore.instance
-        .collection('produtos')
-        .doc(produto.id)
-        .update({'ativo': novoStatus});
-  }
-
-
   void _abrirDialogAdicionarProduto(BuildContext context) {
-    final TextEditingController nomeController = TextEditingController();
-    final TextEditingController estoqueController = TextEditingController();
+    final nomeController = TextEditingController();
+    final estoqueController = TextEditingController();
+    final precoController = TextEditingController();
+    final descricaoController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Adicionar Produto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nomeController,
-              decoration: const InputDecoration(labelText: 'Nome do Produto'),
-            ),
-            TextField(
-              controller: estoqueController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Quantidade (Unds)'),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: nomeController,
+                decoration: const InputDecoration(labelText: 'Nome do Produto'),
+              ),
+              TextField(
+                controller: descricaoController,
+                decoration: const InputDecoration(labelText: 'Descrição'),
+              ),
+              TextField(
+                controller: precoController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Preço (R\$)'),
+              ),
+              TextField(
+                controller: estoqueController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Estoque'),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -94,13 +88,20 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nomeController.text.isNotEmpty && estoqueController.text.isNotEmpty) {
+              if (nomeController.text.isNotEmpty &&
+                  precoController.text.isNotEmpty &&
+                  estoqueController.text.isNotEmpty) {
+                int estoque = int.tryParse(estoqueController.text) ?? 0;
+
                 await FirebaseFirestore.instance.collection('produtos').add({
                   'lojistaId': lojistaId,
                   'nome': nomeController.text,
-                  'estoque': int.tryParse(estoqueController.text) ?? 0,
-                  'ativo': true,
+                  'descricao': descricaoController.text,
+                  'preco': double.tryParse(precoController.text) ?? 0,
+                  'estoque': estoque,
+                  'ativo': estoque > 0,
                 });
+
                 Navigator.pop(context);
               }
             },
@@ -111,61 +112,12 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text('Controle de Produtos', style: TextStyle(color: Colors.black)),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () { /* TODO: Abrir Drawer */ },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: _signOut,
-          ),
-          BotaoNotificacao(colecaoUsuario: 'lojistas'),
-          const SizedBox(width: 10),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Controle nessa tela os produtos marcando-os como disponíveis ou indisponíveis. Após a seleção, os produtos ficarão marcados de acordo com a respectiva marcação.',
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              _buildProductList(),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _abrirDialogAdicionarProduto(context);
-        },
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
-
-  Future<void> _excluirProduto(String produtoId, String nomeProduto) async {
+  Future<void> _excluirProduto(String id, String nome) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Excluir Produto'),
-        content: Text('Tem certeza que deseja excluir "$nomeProduto" do estoque?'),
+        content: Text('Tem certeza que deseja excluir "$nome"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -181,10 +133,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
 
     if (confirmar == true) {
-      await FirebaseFirestore.instance
-          .collection('produtos')
-          .doc(produtoId)
-          .delete();
+      FirebaseFirestore.instance.collection('produtos').doc(id).delete();
     }
   }
 
@@ -192,50 +141,90 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     int novoEstoque = produto.estoque + delta;
     if (novoEstoque < 0) novoEstoque = 0;
 
-    await FirebaseFirestore.instance
-        .collection('produtos')
-        .doc(produto.id)
-        .update({'estoque': novoEstoque, 'ativo': novoEstoque > 0});
+    await FirebaseFirestore.instance.collection('produtos').doc(produto.id).update({
+      'estoque': novoEstoque,
+      'ativo': novoEstoque > 0,
+    });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Controle de Produtos',
+          style: TextStyle(color: Colors.black),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: _signOut,
+          ),
+          BotaoNotificacao(colecaoUsuario: 'lojistas'),
+          const SizedBox(width: 10),
+        ],
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        onPressed: () => _abrirDialogAdicionarProduto(context),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Gerencie seus produtos: edite estoque, adicione informações e controle disponibilidade automaticamente.",
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            Expanded(child: _buildProductList()),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildProductList() {
     if (lojistaId == null) {
-      return const Center(child: Text("Erro: Lojista não identificado."));
+      return const Center(child: Text("Erro: lojista não identificado"));
     }
 
-    // StreamBuilder "ouve" as mudanças na coleção de produtos em tempo real
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('produtos')
           .where('lojistaId', isEqualTo: lojistaId)
           .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return const Center(child: Text('Erro ao carregar produtos.'));
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('Você ainda não cadastrou nenhum produto.'));
-        }
+      builder: (_, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-        final produtos = snapshot.data!.docs.map((doc) => Produto.fromFirestore(doc)).toList();
+        final produtos =
+        snapshot.data!.docs.map((doc) => Produto.fromFirestore(doc)).toList();
+
+        if (produtos.isEmpty) {
+          return const Center(
+            child: Text(
+              "Nenhum produto cadastrado ainda.",
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
 
         return ListView.builder(
           itemCount: produtos.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (context, index) {
-            return _buildProductTile(produtos[index]);
-          },
+          itemBuilder: (_, i) => _buildProductTile(produtos[i]),
         );
       },
     );
   }
 
-  // Widget que constrói cada item da lista
   Widget _buildProductTile(Produto produto) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -244,9 +233,9 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(16),
       ),
+
       child: Row(
         children: [
-          // Placeholder da imagem
           Container(
             width: 60,
             height: 60,
@@ -256,64 +245,64 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             ),
           ),
           const SizedBox(width: 12),
-          // Nome e Checkboxes
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(produto.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
+                Text(produto.nome,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+                Text(
+                  produto.descricao,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                Text(
+                  "R\$ ${produto.preco.toStringAsFixed(2)}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  produto.estoque > 0 ? "Disponível" : "Indisponível",
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
                     color: produto.estoque > 0 ? Colors.green : Colors.red,
-                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Text(produto.estoque > 0 ? 'Disponível' : 'Indisponível'),
                 ),
               ],
             ),
           ),
-      // Estoque + botão de exclusão
-      Column(
-        children: [
-          const Text('Unds'),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+
+          Column(
             children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-                onPressed: () => _atualizarEstoque(produto, -1),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                    onPressed: () => _atualizarEstoque(produto, -1),
+                  ),
+                  Text(
+                    produto.estoque.toString(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                    onPressed: () => _atualizarEstoque(produto, 1),
+                  ),
+                ],
               ),
-              Text(
-                produto.estoque.toString(),
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: produto.estoque == 0
-                      ? Colors.red
-                      : (produto.estoque <= 3 ? Colors.orange : Colors.green),
-                ),
-              ),
               IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                onPressed: () => _atualizarEstoque(produto, 1),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _excluirProduto(produto.id, produto.nome),
               ),
             ],
           ),
-
-          const SizedBox(height: 8),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            tooltip: 'Excluir produto',
-            onPressed: () {
-              _excluirProduto(produto.id, produto.nome);
-            },
-          ),
-        ],
-      ),
         ],
       ),
     );
   }
-  }
+}
