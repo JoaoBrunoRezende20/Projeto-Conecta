@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Certifique-se que os nomes das classes dentro desses arquivos estão corretos
-import 'telaTodosUsuarios.dart'; // Deve conter a class TelaGerenciarUsuarios
-import 'telaLogs.dart';          // Deve conter a class TelaLogsAdm
+import 'telaTodosUsuarios.dart';
+import 'telaLogs.dart';
 import 'telaDetalhesCadastro.dart';
 
 // Classe modelo para facilitar a manipulação dos dados
 class UsuarioPendente {
   final String id;
   final String nome;
-  final String tipo;
+  final String tipo; // 'Lojista' ou 'Prestador de serviço'
   final Timestamp dataEnvio;
+  final String cpfOuCnpj; // Adicionei para facilitar a busca por doc também
 
   UsuarioPendente({
     required this.id,
     required this.nome,
     required this.tipo,
     required this.dataEnvio,
+    required this.cpfOuCnpj,
   });
 }
 
@@ -29,48 +31,172 @@ class TelaInicialAdministrador extends StatefulWidget {
 }
 
 class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
+  // --- VARIÁVEIS DE ESTADO PARA OS FILTROS ---
+  bool _filtroLojistaAtivo = true;
+  bool _filtroPrestadorAtivo = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _termoBusca = '';
 
-  // Função que busca os usuários pendentes nas duas coleções
+  @override
+  void initState() {
+    super.initState();
+    // Adiciona listener para atualizar a busca em tempo real enquanto digita
+    _searchController.addListener(() {
+      setState(() {
+        _termoBusca = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Função que busca e FILTRA os usuários
   Future<List<UsuarioPendente>> _buscarUsuariosPendentes() async {
     final firestore = FirebaseFirestore.instance;
-
-    final lojistasSnapshot = await firestore
-        .collection('lojistas')
-        .where('statusCadastro', isEqualTo: 'pendente')
-        .get();
-
-    final prestadoresSnapshot = await firestore
-        .collection('prestadorServicos')
-        .where('statusCadastro', isEqualTo: 'pendente')
-        .get();
-
     final List<UsuarioPendente> usuarios = [];
 
-    for (var doc in lojistasSnapshot.docs) {
-      final data = doc.data();
-      usuarios.add(UsuarioPendente(
-        id: doc.id,
-        nome: data['dadosDoResponsavel']?['nome'] ?? 'Nome não encontrado',
-        tipo: 'Lojista',
-        dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
-      ));
+    // 1. Busca Lojistas (SE O FILTRO ESTIVER ATIVO)
+    if (_filtroLojistaAtivo) {
+      final lojistasSnapshot = await firestore
+          .collection('lojistas')
+          .where('statusCadastro', isEqualTo: 'pendente')
+          .get();
+
+      for (var doc in lojistasSnapshot.docs) {
+        final data = doc.data();
+        usuarios.add(UsuarioPendente(
+          id: doc.id,
+          nome: data['dadosDoResponsavel']?['nome'] ?? data['razaoSocial'] ?? 'Sem nome',
+          tipo: 'Lojista',
+          dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
+          cpfOuCnpj: data['cnpj'] ?? '',
+        ));
+      }
     }
 
-    for (var doc in prestadoresSnapshot.docs) {
-      final data = doc.data();
-      usuarios.add(UsuarioPendente(
-        id: doc.id,
-        nome: data['nome'] ?? 'Nome não encontrado',
-        tipo: 'Prestador de serviço',
-        dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
-      ));
+    // 2. Busca Prestadores (SE O FILTRO ESTIVER ATIVO)
+    if (_filtroPrestadorAtivo) {
+      final prestadoresSnapshot = await firestore
+          .collection('prestadorServicos')
+          .where('statusCadastro', isEqualTo: 'pendente')
+          .get();
+
+      for (var doc in prestadoresSnapshot.docs) {
+        final data = doc.data();
+        usuarios.add(UsuarioPendente(
+          id: doc.id,
+          nome: data['nome'] ?? 'Sem nome',
+          tipo: 'Prestador de serviço',
+          dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
+          cpfOuCnpj: data['cpf'] ?? '',
+        ));
+      }
     }
+
+    // 3. Aplica o Filtro de Texto (Barra de Pesquisa)
+    if (_termoBusca.isNotEmpty) {
+      return usuarios.where((u) {
+        final nomeLower = u.nome.toLowerCase();
+        final docLower = u.cpfOuCnpj.toLowerCase();
+        return nomeLower.contains(_termoBusca) || docLower.contains(_termoBusca);
+      }).toList();
+    }
+
+    // Ordena por data (mais antigo primeiro, ou mais recente, como preferir)
+    usuarios.sort((a, b) => b.dataEnvio.compareTo(a.dataEnvio));
 
     return usuarios;
   }
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
+  }
+
+  // --- FUNÇÃO DO POP-UP DE FILTRO ---
+  void _mostrarFiltros() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        // Variáveis temporárias para controlar o estado DENTRO do dialog antes de confirmar
+        bool tempLojista = _filtroLojistaAtivo;
+        bool tempPrestador = _filtroPrestadorAtivo;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Center(
+                child: Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text('Tipos de usuário', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Checkbox Lojista
+                  CheckboxListTile(
+                    title: const Text('Lojista'),
+                    value: tempLojista,
+                    activeColor: Colors.black87,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (val) {
+                      setStateDialog(() => tempLojista = val ?? true);
+                    },
+                  ),
+
+                  // Checkbox Prestador
+                  CheckboxListTile(
+                    title: const Text('Prestador'),
+                    value: tempPrestador,
+                    activeColor: Colors.black87,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (val) {
+                      setStateDialog(() => tempPrestador = val ?? true);
+                    },
+                  ),
+                ],
+              ),
+              actionsAlignment: MainAxisAlignment.spaceEvenly,
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: const Text('Voltar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Atualiza o estado da TELA PRINCIPAL com as escolhas
+                    setState(() {
+                      _filtroLojistaAtivo = tempLojista;
+                      _filtroPrestadorAtivo = tempPrestador;
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[600], // Cor mais escura igual imagem
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -97,10 +223,14 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+
+            // --- BARRA DE PESQUISA COM FILTRO ---
             _buildSearchBar(),
+
             const SizedBox(height: 16),
             Expanded(
               child: FutureBuilder<List<UsuarioPendente>>(
+                // Agora chama a função que respeita os filtros
                 future: _buscarUsuariosPendentes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -109,8 +239,19 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                   if (snapshot.hasError) {
                     return const Center(child: Text('Erro ao carregar usuários.'));
                   }
+
+                  // Se a lista estiver vazia (seja por não ter dados ou pelos filtros)
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('Nenhum cadastro pendente.'));
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.filter_list_off, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 8),
+                          const Text('Nenhum cadastro encontrado com esses filtros.'),
+                        ],
+                      ),
+                    );
                   }
 
                   final usuarios = snapshot.data!;
@@ -127,19 +268,24 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
           ],
         ),
       ),
-      // Chamada atualizada para os botões inferiores
       bottomNavigationBar: _buildBottomButtons(context),
     );
   }
 
   Widget _buildSearchBar() {
     return TextField(
+      controller: _searchController,
       decoration: InputDecoration(
-        hintText: 'Pesquise por CPF, CNPJ, email ou código',
+        hintText: 'Pesquise por nome',
         prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        suffixIcon: const Icon(Icons.tune, color: Colors.grey),
+        // ÍCONE DE FILTRO FUNCIONAL
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.tune, color: Colors.black87), // Ícone de "ajustes"
+          onPressed: _mostrarFiltros,
+        ),
         filled: true,
         fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
           borderSide: BorderSide.none,
@@ -155,58 +301,63 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Nome: ${usuario.nome}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('Tipo de usuário: ${usuario.tipo}'),
-                Row(
-                  children: [
-                    const Text('Status: '),
-                    Text(
-                      'PENDENTE',
-                      style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ],
+            Expanded( // Expanded evita overflow de texto longo
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nome: ${usuario.nome}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Tipo: ${usuario.tipo}'),
+                  Row(
+                    children: [
+                      const Text('Status: ', style: TextStyle(fontSize: 12)),
+                      Text(
+                        'PENDENTE',
+                        style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Envio: $dataFormatada'),
+                Text('Envio: $dataFormatada', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    // Define qual a coleção baseada no tipo que você salvou na classe UsuarioPendente
-                    String colecao = usuario.tipo == 'Lojista' ? 'lojistas' : 'prestadorServicos';
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TelaDetalhesCadastro(
-                          usuarioId: usuario.id,
-                          colecao: colecao,
-                          nomeUsuario: usuario.nome,
+                SizedBox(
+                  height: 35, // Botão mais compacto
+                  child: ElevatedButton(
+                    onPressed: () {
+                      String colecao = usuario.tipo == 'Lojista' ? 'lojistas' : 'prestadorServicos';
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TelaDetalhesCadastro(
+                            usuarioId: usuario.id,
+                            colecao: colecao,
+                            nomeUsuario: usuario.nome,
+                          ),
                         ),
-                      ),
-                    ).then((_) {
-                      // Quando voltar da tela de detalhes, recarrega a lista para sumir o pendente
-                      setState(() {});
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    side: const BorderSide(color: Colors.grey),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ).then((_) {
+                        setState(() {});
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      elevation: 0,
+                    ),
+                    child: const Text('Ver documentos', style: TextStyle(fontSize: 12)),
                   ),
-                  child: const Text('Ver Detalhes e Documentos'),
                 ),
               ],
             )
@@ -216,12 +367,10 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
     );
   }
 
-  // --- FUNÇÃO CORRIGIDA SEM OS SÍMBOLOS DE CONFLITO ---
   Widget _buildBottomButtons(BuildContext context) {
-    // Estilo padrão para os botões escuros
     final ButtonStyle darkButtonStyle = ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF424242), // Cinza escuro
-      foregroundColor: Colors.white, // Texto branco
+      backgroundColor: const Color(0xFF424242),
+      foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       padding: const EdgeInsets.symmetric(vertical: 12),
       elevation: 3,
@@ -229,65 +378,40 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
 
     return Container(
       padding: const EdgeInsets.all(16.0),
-      color: Colors.transparent, // Fundo transparente
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // BOTÃO 1: VER TODOS USUARIOS
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                // Navega para a tela de Gerenciar Usuários
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TelaGerenciarUsuarios()),
                 );
               },
               style: darkButtonStyle,
-              child: const Text(
-                'Ver todos usuarios',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11), // Fonte levemente menor para caber
-              ),
+              child: const Text('Ver todos usuarios', textAlign: TextAlign.center, style: TextStyle(fontSize: 11)),
             ),
           ),
-          
-          const SizedBox(width: 8), // Espaçamento entre botões
-
-          // BOTÃO 2: CADASTRAR (Placeholder)
+          const SizedBox(width: 8),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                // Lógica de cadastro (se houver)
-                print("Botão Cadastrar clicado");
-              },
+              onPressed: () { print("Botão Cadastrar clicado"); },
               style: darkButtonStyle,
-              child: const Text(
-                'Cadastrar',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12),
-              ),
+              child: const Text('Cadastrar', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
             ),
           ),
-
-          const SizedBox(width: 8), // Espaçamento entre botões
-
-          // BOTÃO 3: VER HISTÓRICO
+          const SizedBox(width: 8),
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                // Navega para a tela de Logs
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TelaLogsAdm()),
                 );
               },
               style: darkButtonStyle,
-              child: const Text(
-                'Ver Historico',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12),
-              ),
+              child: const Text('Ver Historico', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
             ),
           ),
         ],
