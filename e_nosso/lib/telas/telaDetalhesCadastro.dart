@@ -1,12 +1,15 @@
-import 'dart:convert'; // Para decodificar as imagens Base64
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart'; // Certifique-se que adicionou 'gal' no pubspec.yaml
+import 'package:permission_handler/permission_handler.dart';
 
 class TelaDetalhesCadastro extends StatefulWidget {
   final String usuarioId;
   final String colecao; // 'lojistas' ou 'prestadorServicos'
-  final String nomeUsuario; // Apenas para o título da AppBar
+  final String nomeUsuario;
 
   const TelaDetalhesCadastro({
     super.key,
@@ -22,116 +25,218 @@ class TelaDetalhesCadastro extends StatefulWidget {
 class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   bool _isLoading = false;
   final _currentUser = FirebaseAuth.instance.currentUser;
-  // --- FUNÇÃO PARA ENVIAR NOTIFICAÇÃO ---
+
+  // --- LÓGICA DE NOTIFICAÇÃO ---
   Future<void> _enviarNotificacaoUsuario({
     required String titulo,
     required String mensagem,
-    required String tipo, // 'aprovado' ou 'rejeitado'
+    required String tipo,
   }) async {
-    // Escreve na sub-coleção 'notificacoes' dentro do documento do usuário
     await FirebaseFirestore.instance
-        .collection(widget.colecao) // 'lojistas' ou 'prestadorServicos'
+        .collection(widget.colecao)
         .doc(widget.usuarioId)
         .collection('notificacoes')
         .add({
       'titulo': titulo,
       'mensagem': mensagem,
       'tipo': tipo,
-      'lida': false, // Começa não lida para ativar o badge
+      'lida': false,
       'data': FieldValue.serverTimestamp(),
     });
   }
-  // --- LÓGICA DE APROVAÇÃO ---
-  Future<void> _aprovarCadastro() async {
-    setState(() => _isLoading = true);
+
+  // --- LÓGICA DE SALVAR NA GALERIA (CORRIGIDA COM GAL) ---
+  Future<void> _baixarImagem(String base64String) async {
     try {
-      // 1. Atualiza o status do usuário
-      await FirebaseFirestore.instance.collection(widget.colecao).doc(widget.usuarioId).update({
-        'statusCadastro': 'aprovado',
-        'status': true, // Ativa o usuário no app
-        'motivosRejeicao': FieldValue.delete(), // Limpa rejeições anteriores se houver
-      });
-      // Envia notificação
-      await _enviarNotificacaoUsuario(
-        titulo: 'Cadastro Aprovado! 🚀',
-        mensagem: 'Parabéns! Seu cadastro foi validado. Você já pode acessar todas as funções.',
-        tipo: 'aprovado',
-      );
-      // 2. Gera Log
-      await _gerarLog(true, "Cadastro validado e aprovado.");
+      // Limpeza da string Base64 se houver cabeçalho
+      String limpa = base64String.contains(',') ? base64String.split(',').last : base64String;
+      Uint8List bytes = base64Decode(limpa);
+
+      // Salva usando a biblioteca 'gal'
+      await Gal.putImageBytes(bytes);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadastro APROVADO com sucesso!'), backgroundColor: Colors.green));
-        Navigator.pop(context); // Volta para a lista
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Imagem salva na Galeria!'), backgroundColor: Colors.green)
+        );
+      }
+    } on GalException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro de permissão ou acesso: ${e.type.message}'), backgroundColor: Colors.red)
+        );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red)
+        );
+      }
     }
   }
 
-  // --- LÓGICA DE REJEIÇÃO (COM DIALOG) ---
-  void _mostrarDialogoRejeicao() {
+  // --- LÓGICA DE APAGAR UMA IMAGEM ESPECÍFICA ---
+  Future<void> _apagarImagemEspecifica(String campo, String base64String) async {
+    bool confirmar = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Apagar Imagem?'),
+        content: const Text('Essa imagem será removida permanentemente do banco de dados para liberar espaço. Certifique-se de ter baixado antes.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Apagar')),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirmar) return;
+
+    try {
+      await FirebaseFirestore.instance.collection(widget.colecao).doc(widget.usuarioId).update({
+        campo: FieldValue.arrayRemove([base64String])
+      });
+      if (mounted) {
+        Navigator.pop(context); // Fecha o dialog da imagem
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Imagem removida do banco.')));
+      }
+    } catch (e) {
+      debugPrint('Erro ao apagar imagem: $e');
+    }
+  }
+
+  // --- VISUALIZADOR TELA CHEIA ---
+  void _verImagemTelaCheia(String base64String, String campoOrigem) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                child: Image.memory(
+                  base64Decode(base64String.contains(',') ? base64String.split(',').last : base64String),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              left: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Positioned(
+              bottom: 40,
+              right: 20,
+              left: 20,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _baixarImagem(base64String),
+                    icon: const Icon(Icons.download),
+                    label: const Text('Baixar'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _apagarImagemEspecifica(campoOrigem, base64String),
+                    icon: const Icon(Icons.delete_forever),
+                    label: const Text('Apagar do Banco'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- APROVAÇÃO E REJEIÇÃO ---
+  void _mostrarConfirmacaoDecisao(bool aprovar) {
     final justificativaController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rejeitar Cadastro'),
+        title: Text(aprovar ? 'Aprovar Cadastro?' : 'Rejeitar Cadastro?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Por favor, informe o motivo da rejeição para o usuário corrigir:'),
-            const SizedBox(height: 10),
-            TextField(
-              controller: justificativaController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ex: Documento ilegível, CNPJ inválido...',
-              ),
+            const Text(
+              '⚠️ ATENÇÃO: Ao confirmar, todas as imagens anexadas (Documentos e Portfólio) serão APAGADAS do banco para economizar espaço.',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red),
             ),
+            const SizedBox(height: 10),
+            if (!aprovar)
+              TextField(
+                controller: justificativaController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Motivo da rejeição (Obrigatório)', border: OutlineInputBorder()),
+              ),
+            if (aprovar)
+              const Text('O usuário receberá acesso imediato.'),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: aprovar ? Colors.green : Colors.red),
             onPressed: () {
-              if (justificativaController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A justificativa é obrigatória.')));
+              if (!aprovar && justificativaController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Justificativa necessária.')));
                 return;
               }
               Navigator.pop(ctx);
-              _rejeitarCadastro(justificativaController.text.trim());
+              _processarDecisao(aprovar, justificativaController.text);
             },
-            child: const Text('Confirmar Rejeição'),
+            child: Text(aprovar ? 'Confirmar Aprovação' : 'Confirmar Rejeição'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _rejeitarCadastro(String motivo) async {
+  Future<void> _processarDecisao(bool aprovar, String motivo) async {
     setState(() => _isLoading = true);
     try {
-      // 1. Atualiza status para rejeitado e salva o motivo
       await FirebaseFirestore.instance.collection(widget.colecao).doc(widget.usuarioId).update({
-        'statusCadastro': 'rejeitado',
-        'status': false,
-        'motivosRejeicao': motivo,
+        'statusCadastro': aprovar ? 'aprovado' : 'rejeitado',
+        'status': aprovar ? true : false,
+        'motivosRejeicao': aprovar ? FieldValue.delete() : motivo,
+        'documentosUrl': [],
       });
-      // Envia notificaçao
+
+      await FirebaseFirestore.instance.collection('logsAdministrativos').add({
+        'dataHora': FieldValue.serverTimestamp(),
+        'administradorUid': _currentUser?.uid,
+        'administradorNome': 'Admin',
+        'usuarioAfetadoUid': widget.usuarioId,
+        'usuarioAfetadoNome': widget.nomeUsuario,
+        'acao': aprovar,
+        'justificativa': aprovar ? 'Cadastro validado. Docs removidos p/ otimização.' : motivo,
+        'tipoUsuario': widget.colecao,
+      });
+
       await _enviarNotificacaoUsuario(
-        titulo: 'Atenção: Cadastro Rejeitado',
-        mensagem: 'Houve uma pendência: $motivo. Por favor, corrija e envie novamente.',
-        tipo: 'rejeitado',
+        titulo: aprovar ? 'Cadastro Aprovado! 🚀' : 'Cadastro Rejeitado',
+        mensagem: aprovar
+            ? 'Seu cadastro foi validado. Bem-vindo!'
+            : 'Houve um problema: $motivo',
+        tipo: aprovar ? 'aprovado' : 'rejeitado',
       );
-      // 2. Gera Log
-      await _gerarLog(false, motivo);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadastro REJEITADO.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(aprovar ? 'Aprovado e limpo com sucesso!' : 'Rejeitado.'),
+            backgroundColor: aprovar ? Colors.green : Colors.red
+        ));
         Navigator.pop(context);
       }
     } catch (e) {
@@ -141,62 +246,30 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
     }
   }
 
-  Future<void> _gerarLog(bool aprovado, String justificativa) async {
-    await FirebaseFirestore.instance.collection('logsAdministrativos').add({
-      'dataHora': FieldValue.serverTimestamp(),
-      'administradorUid': _currentUser?.uid,
-      'administradorNome': 'Admin', // Idealmente buscar o nome do admin
-      'usuarioAfetadoUid': widget.usuarioId,
-      'usuarioAfetadoNome': widget.nomeUsuario,
-      'acao': aprovado,
-      'justificativa': justificativa,
-      'tipoUsuario': widget.colecao,
-    });
-  }
-
-  // --- WIDGETS DE VISUALIZAÇÃO ---
-
-  // Decodifica Base64 e mostra imagem
-  Widget _buildImagemBase64(String base64String) {
+  // --- WIDGETS ---
+  Widget _buildImagemBase64(String base64String, String campoOrigem) {
     try {
-      // Remove o cabeçalho se existir (ex: "data:image/jpeg;base64,")
-      String limpa = base64String;
-      if (base64String.contains(',')) {
-        limpa = base64String.split(',').last;
-      }
-      return Container(
-        margin: const EdgeInsets.only(right: 8),
-        width: 120,
-        height: 150,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.memory(
-            base64Decode(limpa),
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+      String limpa = base64String.contains(',') ? base64String.split(',').last : base64String;
+      return GestureDetector(
+        onTap: () => _verImagemTelaCheia(base64String, campoOrigem),
+        child: Container(
+          margin: const EdgeInsets.only(right: 8),
+          width: 120,
+          height: 150,
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(
+              base64Decode(limpa),
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
+            ),
           ),
         ),
       );
     } catch (e) {
-      return const SizedBox(width: 100, child: Center(child: Text('Erro na imagem')));
+      return const SizedBox(width: 100, child: Center(child: Text('Erro img')));
     }
-  }
-
-  Widget _buildSecaoTitulo(String titulo) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
-          const Divider(),
-        ],
-      ),
-    );
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -207,6 +280,19 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
         children: [
           Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecaoTitulo(String titulo) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
+          const Divider(),
         ],
       ),
     );
@@ -224,13 +310,13 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
         future: FirebaseFirestore.instance.collection(widget.colecao).doc(widget.usuarioId).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return const Center(child: Text('Erro ao carregar dados'));
-          if (!snapshot.hasData || !snapshot.data!.exists) return const Center(child: Text('Usuário não encontrado'));
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Usuário não encontrado'));
+          }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final isLojista = widget.colecao == 'lojistas';
 
-          // Extração segura de listas de imagens
           List<dynamic> docsImagens = data['documentosUrl'] ?? [];
           List<dynamic> portfolioImagens = data['portfolio'] ?? [];
 
@@ -239,57 +325,32 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- DADOS PESSOAIS / EMPRESA ---
                 _buildSecaoTitulo('Dados Principais'),
                 if (isLojista) ...[
                   _buildInfoRow('Razão Social', data['razaoSocial'] ?? '-'),
                   _buildInfoRow('CNPJ', data['cnpj'] ?? '-'),
-                  _buildInfoRow('Categoria', data['categoria'] ?? '-'),
-                  _buildInfoRow('Responsável', '${data['dadosDoResponsavel']?['nome']} ${data['dadosDoResponsavel']?['sobrenome']}'),
-                  _buildInfoRow('CPF Responsável', data['dadosDoResponsavel']?['cpf'] ?? '-'),
+                  _buildInfoRow('Responsável', '${data['dadosDoResponsavel']?['nome']}'),
                 ] else ...[
-                  // Prestador
-                  _buildInfoRow('Nome Completo', '${data['nome']} ${data['sobrenome']}'),
+                  _buildInfoRow('Nome', '${data['nome']} ${data['sobrenome']}'),
                   _buildInfoRow('CPF', data['cpf'] ?? '-'),
                   _buildInfoRow('Profissão', data['areaAtuacao'] ?? '-'),
-                  _buildInfoRow('Preço Médio', 'R\$ ${data['faixaPrecos']}'),
-                  _buildInfoRow('Descrição', data['descricaoServicos'] ?? '-'),
                 ],
-                _buildInfoRow(
-                    'Email',
-                    isLojista
-                        ? (data['dadosDoResponsavel']?['email'] ?? '-')
-                        : (data['email'] ?? '-')
-                ),
+                _buildInfoRow('Email', isLojista ? (data['dadosDoResponsavel']?['email'] ?? '-') : (data['email'] ?? '-')),
                 _buildInfoRow('Telefone', isLojista ? data['telefoneComercial'] : data['telefone']),
 
-                // --- ENDEREÇO ---
-                _buildSecaoTitulo('Localização'),
-                if (isLojista && data['endereco'] != null) ...[
-                  _buildInfoRow('Endereço', '${data['endereco']['rua']}, ${data['endereco']['numero']} - ${data['endereco']['bairro']}'),
-                  _buildInfoRow('Cidade/UF', '${data['endereco']['bairro']} - ${data['endereco']['estado']}'), // Ajuste conforme seu modelo
-                ] else if (!isLojista) ...[
-                  // Prestador (Área de atendimento é lista ou string)
-                  _buildInfoRow('Atende em', (data['areaAtendimento'] is List)
-                      ? (data['areaAtendimento'] as List).join(', ')
-                      : data['areaAtendimento'].toString()),
-                ],
-
-                // --- DOCUMENTOS ---
                 _buildSecaoTitulo('Documentos Anexados'),
                 if (docsImagens.isEmpty)
-                  const Text('Nenhum documento enviado.', style: TextStyle(color: Colors.red)),
+                  const Text('Nenhum documento (ou já foram apagados).', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
 
                 SizedBox(
                   height: 160,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: docsImagens.length,
-                    itemBuilder: (ctx, i) => _buildImagemBase64(docsImagens[i]),
+                    itemBuilder: (ctx, i) => _buildImagemBase64(docsImagens[i], 'documentosUrl'),
                   ),
                 ),
 
-                // --- PORTFÓLIO (Só prestador tem geralmente, mas se lojista tiver, mostra) ---
                 if (portfolioImagens.isNotEmpty) ...[
                   _buildSecaoTitulo('Portfólio / Fotos'),
                   SizedBox(
@@ -297,12 +358,11 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: portfolioImagens.length,
-                      itemBuilder: (ctx, i) => _buildImagemBase64(portfolioImagens[i]),
+                      itemBuilder: (ctx, i) => _buildImagemBase64(portfolioImagens[i], 'portfolio'),
                     ),
                   ),
                 ],
-
-                const SizedBox(height: 100), // Espaço para os botões flutuantes não tamparem o fim
+                const SizedBox(height: 100),
               ],
             ),
           );
@@ -318,7 +378,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _mostrarDialogoRejeicao,
+                onPressed: _isLoading ? null : () => _mostrarConfirmacaoDecisao(false),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -330,7 +390,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _aprovarCadastro,
+                onPressed: _isLoading ? null : () => _mostrarConfirmacaoDecisao(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
