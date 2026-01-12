@@ -267,6 +267,17 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Widget _buildLoginForm() {
+    // Definimos um estilo de borda padrão para reutilizar
+    final bordaPadrao = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.grey, width: 1.0), // Cor da borda
+    );
+
+    final bordaFoco = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.black, width: 2.0), // Borda mais forte ao clicar
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -277,7 +288,11 @@ class _TelaLoginState extends State<TelaLogin> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            // Alteração aqui: substituímos o BorderSide.none por bordas visíveis
+            enabledBorder: bordaPadrao,
+            focusedBorder: bordaFoco,
+            border: bordaPadrao,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           keyboardType: TextInputType.emailAddress,
         ),
@@ -290,7 +305,11 @@ class _TelaLoginState extends State<TelaLogin> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            // Aplicando o mesmo estilo ao campo de senha
+            enabledBorder: bordaPadrao,
+            focusedBorder: bordaFoco,
+            border: bordaPadrao,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             suffixIcon: IconButton(
               icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
               onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -298,6 +317,7 @@ class _TelaLoginState extends State<TelaLogin> {
           ),
         ),
         const SizedBox(height: 10),
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
