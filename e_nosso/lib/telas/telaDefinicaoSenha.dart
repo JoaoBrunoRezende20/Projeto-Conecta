@@ -44,7 +44,6 @@ class _TelaDefinicaoSenhaState extends State<TelaDefinicaoSenha> {
       // 5. Pelo menos um caractere especial (!@#$%&*)
       _temEspecial = senha.contains(RegExp(r'[!@#\$%&*]'));
 
-      // Verifica se as senhas batem (caso já tenha digitado a confirmação)
       _checarSenhasIguais();
     });
   }
@@ -56,7 +55,6 @@ class _TelaDefinicaoSenhaState extends State<TelaDefinicaoSenha> {
     });
   }
 
-  // Verifica se TUDO está válido para habilitar o botão
   bool _isFormularioValido() {
     return _temMinimoCaracteres &&
         _temMaiuscula &&

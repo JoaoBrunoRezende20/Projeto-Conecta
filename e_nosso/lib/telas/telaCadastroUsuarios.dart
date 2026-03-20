@@ -599,7 +599,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(controller: _descricaoServicosController, decoration: const InputDecoration(labelText: 'Descrição dos Serviços'), maxLines: 3, validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
         const SizedBox(height: 16),
 
-        // CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS (InkWell)
+        // CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS
         InkWell(
           onTap: _mostrarSelecaoBairros,
           child: InputDecorator(
@@ -744,7 +744,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   onChanged: _validarSenha,
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
-                // FIM DO CAMPO SENHA
 
                 const SizedBox(height: 8),
                 // Requisitos de Senha
