@@ -16,5 +16,7 @@
 
 ## 📊 Gestão
 - [Google Docs - Cronograma Projeto Conecta](https://docs.google.com/document/d/1IlOhbAKMJ1uaTE5qZ3fVXvMFH5mI9scr2MoxQAkzajw/edit?usp=sharing)
+- [https://1drv.ms/x/c/8f9aba338b7d11a3/IQD7mOmh5GvUQK_VV92gvWSSAXXCpcuiCjTGIvotQFMC4D0?e=x4rm79](...)
+- [https://1drv.ms/x/c/8f9aba338b7d11a3/IQDYidowJVjEQY0VSmFZphoJAYsaarZs8BPVkjjNu0y94ys?e=d2F4aI](...)
 
 
