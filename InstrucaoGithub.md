@@ -1,154 +1,128 @@
-🚀 GUIA DE PARA EVITAR CONFLITOS  GITHUB - PARA O TIME
+# 🚀 GUIA DEFINITIVO: FLUXO DE TRABALHO GITHUB
+*Manual prático para o time programar em paz e evitar dores de cabeça com conflitos.*
 
-📋 REGRAS DE OURO (LEIAM ANTES!)
+## 📋 1. AS REGRAS DE OURO
+Leia antes de escrever sua primeira linha de código!
 
-🚨 NUNCA FAÇAM:
+### 🚨 O QUE NUNCA FAZER:
+* ❌ **Commitar direto na `main`:** A `main` é sagrada. Use sempre branches.
+* ❌ **Trabalhar com o repositório desatualizado:** O risco de conflito aumenta 100%.
+* ❌ **Fazer push de código quebrado:** Teste antes de enviar.
+* ❌ **Commitar lixo:** Arquivos `.env`, pastas `node_modules`, `__pycache__` ou binários não sobem (use o `.gitignore`).
+* ❌ **Fazer commits gigantes:** "Fiz o backend inteiro" é um pesadelo para revisar.
 
-❌ Commitar direto na main
+### ✅ O QUE SEMPRE FAZER:
+* ✅ **Pull antes de tudo:** Começou o dia? Atualize sua máquina.
+* ✅ **Uma branch = Uma funcionalidade/correção:** Mantenha o escopo isolado.
+* ✅ **Commits pequenos e com propósito:** Salve o progresso a cada etapa lógica concluída.
+* ✅ **Mensagens descritivas:** Explique *o que* foi feito de forma clara.
 
-❌ Trabalhar sem atualizar o repositório primeiro
+---
 
-❌ Fazer push sem testar o código
+## 🔄 2. O FLUXO DE TRABALHO DIÁRIO (Passo a Passo)
 
-❌ Commitar arquivos desnecessários (.env, node_modules, etc.)
-
-❌ Esquecer de dar git pull antes de começar
-
-✅ SEMPRE FAÇAM:
-✅ Commits pequenos e frequentes
-
-✅ Mensagens claras nos commits
-
-✅ Uma funcionalidade por branch
-
-✅ Pull antes de push
-
-✅ Commitar apenas código que funciona
-
-🛠️ COMANDOS BÁSICOS (COPY/PASTE)
-1. 🏁 COMEÇANDO NO PROJETO (Primeira Vez)
-
-# Copia o projeto do GitHub para seu PC
+### Passo 0: A Primeira Vez (Setup)
+Se você acabou de entrar no projeto, baixe o código para sua máquina:
+```bash
 git clone https://github.com/seu-usuario/nosso-projeto.git
-
-# Entra na pasta do projeto
 cd nosso-projeto
+code . # Abre no VS Code
+```
 
-# Abre no VSCode (opcional)
-code .
-
-2. 🔄 ATUALIZAR (TODO DIA - ANTES DE TRABALHAR)
-
-# SEMPRE comece com isso - pega as últimas mudanças
-git pull origin main
-
-3. 🌱 CRIAR NOVA FUNCIONALIDADE
-
-# Cria uma branch nova para sua tarefa
-git checkout -b minha-nova-funcionalidade
-
-# Exemplos de nomes bons:
-git checkout -b feature/tela-login
-git checkout -b fix/corrige-bug-botao
-git checkout -b docs/adiciona-manual
-
-4. 💾 SALVAR SEU TRABALHO
-
-# Verifica o que você modificou
-git status
-
-# Prepara os arquivos para commit
-git add .
-
-# OU adiciona arquivos específicos
-git add arquivo1.js arquivo2.css
-
-# Salva no histórico local com mensagem clara
-git commit -m "feat: adiciona tela de login"
-
-5. ☁️ ENVIAR PARA O GITHUB
-
-# Envia sua branch para o GitHub
-git push origin minha-nova-funcionalidade
-
-6. 🎯 FINALIZAR NO GITHUB
-Vai no repositório no GitHub
-
-Clica em "Pull Request"
-
-Seleciona sua branch → main
-
-Marca alguém para review
-
-Clica em Merge
-
-📝 MENSAGENS DE COMMIT (USE SEMPRE)
-Padrão Recomendado:
-
-git commit -m "feat: adiciona funcionalidade X"
-git commit -m "fix: corrige bug no botão Y"
-git commit -m "docs: atualiza documentação"
-git commit -m "style: formata código"
-git commit -m "refactor: melhora estrutura do código"
-
-Para Mudanças Pequenas:
-
-git commit -m "fix: typo"
-git commit -m "chore: ajuste mínimo"
-git commit -m "style: formatação"
-
-🚨 RESOLVENDO PROBLEMAS COMUNS
-Se esqueceu de dar pull:
-
-# Se der conflito, não entre em pânico!
-git pull origin main
-
-# Edite os arquivos com <<<<<<< HEAD
-# Depois:
-git add .
-git commit -m "resolve conflitos"
-Se committou algo errado:
-
-# Desfaz o último commit (mas mantém as mudanças)
-git reset --soft HEAD~1
-
-# OU desfaz completamente
-git reset --hard HEAD~1
-Se fez commit na branch errada:
-
-# Cria nova branch com seus commits
-git checkout -b branch-correta
+### Passo 1: Atualizar (Sempre que for começar a trabalhar)
+Garanta que você tem o código mais recente da equipe:
+```bash
 git checkout main
 git pull origin main
-📋 FLUXO DIÁRIO RESUMIDO
+```
 
-Começar a trabalhar:
+### Passo 2: Isolar sua Tarefa (Criar Branch)
+Nunca trabalhe na `main`. Crie um ambiente seguro para sua tarefa:
+```bash
+git checkout -b tipo/nome-da-tarefa
 
-git pull origin main
-git checkout -b minha-tarefa-de-hoje
+# Exemplos práticos:
+git checkout -b feature/tela-login
+git checkout -b fix/bug-botao-enviar
+git checkout -b docs/readme-setup
+```
 
-Trabalhando:
+### Passo 3: Trabalhar e Salvar (Commits Frequentes)
+Codificou uma parte que funciona? Salve!
+```bash
+git status # Veja o que foi modificado
+git add .  # Prepara todos os arquivos modificados (cuidado para não enviar lixo)
+# OU
+git add arquivo1.js arquivo2.css # Prepara arquivos específicos
 
-# A cada 1-2 horas, ou quando terminar uma parte:
+git commit -m "feat: cria estrutura inicial do formulário de login"
+```
+
+### Passo 4: Enviar para a Nuvem
+Terminou a tarefa? Envie sua branch para o GitHub:
+```bash
+git push origin nome-da-sua-branch
+```
+
+### Passo 5: Integrar (Pull Request - PR)
+1. Vá até a página do repositório no GitHub.
+2. Clique no botão verde **Compare & pull request**.
+3. Confirme se a base é a `main` e a comparação é a sua branch.
+4. Adicione um título claro e marque um colega do time como *Reviewer*.
+5. Após a aprovação, clique em **Merge pull request**.
+
+---
+
+## 📝 3. PADRÃO DE MENSAGENS DE COMMIT
+Usamos o padrão *Conventional Commits* para manter o histórico organizado. Comece sempre com uma destas tags:
+
+* **`feat:`** Adiciona uma nova funcionalidade (ex: *feat: adiciona botão de exportar PDF*)
+* **`fix:`** Corrige um bug (ex: *fix: resolve erro de cálculo na tabela*)
+* **`docs:`** Mudanças apenas na documentação (ex: *docs: atualiza guia de instalação*)
+* **`style:`** Formatação, pontuação, espaços (não altera a lógica) (ex: *style: ajusta indentação*)
+* **`refactor:`** Refatoração de código (melhora a estrutura sem mudar o que faz)
+* **`chore:`** Atualização de dependências, configurações (ex: *chore: atualiza versão do React*)
+
+---
+
+## 🆘 4. RESOLVENDO PROBLEMAS (S.O.S)
+
+### ⚠️ "Deu Conflito na hora de fazer Pull ou Merge!"
+Calma, o Git só não sabe qual versão do código manter.
+1. No terminal, na sua branch, puxe as atualizações: `git pull origin main`
+2. Abra os arquivos no VS Code. Eles estarão marcados com `<<<<<<< HEAD` e `>>>>>>> origin/main`.
+3. O VS Code mostrará opções como *Accept Current Change* (manter o seu) ou *Accept Incoming Change* (manter o que veio da main). Escolha a correta (ou edite manualmente).
+4. Salve o arquivo e finalize:
+```bash
 git add .
-git commit -m "feat: parte 1 da funcionalidade"
+git commit -m "fix: resolve conflitos de merge com a main"
+```
 
-Enviar trabalho:
+### ↩️ "Fiz um commit errado na branch certa"
+Desfaz o último commit, mas **mantém** seus arquivos do jeito que estão para você arrumar:
+```bash
+git reset --soft HEAD~1
+```
 
-git push origin minha-tarefa-de-hoje
+### 🛑 "Fiz uma bagunça gigantesca e quero apagar tudo que fiz hoje"
+**Cuidado!** Isso apaga todas as alterações não commitadas e volta ao estado do último commit:
+```bash
+git reset --hard HEAD~1
+```
 
-# → Vai no GitHub e abre Pull Request
+### 🔀 "Comecei a codar na `main` por engano! E agora?"
+Se você ainda **não** fez o commit:
+```bash
+git checkout -b minha-nova-branch # Cria a branch levando suas alterações não salvas junto
+```
 
-🎯 DICAS EXTRAS
+---
 
-Ver histórico:
-git log --oneline
+## 🛠️ 5. COMANDOS ÚTEIS PARA O DIA A DIA
+* `git log --oneline` → Vê o histórico de commits de forma resumida.
+* `git branch` → Lista as branches locais (a que tem um `*` é a que você está).
+* `git diff` → Mostra linha por linha o que você alterou antes de commitar.
 
-Ver diferenças:
-git diff
+---
 
-Ver status:
-git status
-
-Listar branches:
-git branch
+Como este guia foi pensado para evitar atritos na equipe, você gostaria que eu incluísse também um template de descrição padrão para abrir os **Pull Requests** (PRs) no GitHub? Isso ajuda bastante na hora da revisão do código!
