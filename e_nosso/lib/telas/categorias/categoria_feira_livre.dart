@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../telaProdutosDisponiveis.dart';
+import '../cliente/tela_produtos_disponiveis.dart';
 
-
-class CategoriaQuitandas extends StatefulWidget {
-  const CategoriaQuitandas({super.key});
+class CategoriaFeiraLivre extends StatefulWidget {
+  const CategoriaFeiraLivre({super.key});
 
   @override
-  State<CategoriaQuitandas> createState() => _CategoriaQuitandasState();
+  State<CategoriaFeiraLivre> createState() => _CategoriaFeiraLivreState();
 }
 
-class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
+class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
   String pesquisa = "";
 
   @override
@@ -25,10 +24,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "Quitandas",
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text("Feira Livre", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
@@ -57,7 +53,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Quitandas')
+                  .where('cnae', isEqualTo: 'Feira Livre')
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -67,34 +63,33 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial'] ??
-                      data['nomeLojista'] ??
-                      '')
-                      .toString()
-                      .toLowerCase();
+                  final nome =
+                      (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
+                          .toString()
+                          .toLowerCase();
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhuma loja encontrada."));
+                  return const Center(
+                    child: Text("Nenhuma loja cadastrada nesta categoria."),
+                  );
                 }
 
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome = (data['razaoSocial'] ??
-                        data['nomeLojista'] ??
-                        'Loja sem nome')
+                    final nome = (data['razaoSocial'] ?? data['nomeLojista'])
                         .toString();
-                    final descricao =
-                    (data['descricao'] ?? 'Sem descrição').toString();
+                    final descricao = (data['descricao'] ?? 'Sem descrição')
+                        .toString();
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Quitandas",
+                      categoriaTexto: "Feira Livre",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
@@ -159,8 +154,11 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                       fontSize: 16,
                     ),
                   ),
+
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
+
                   Text("50–60 min  •  R\$ 5,00"),
+
                   Text(
                     descricaoExtra,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),

@@ -37,7 +37,9 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Center(child: Text('Filtrar Histórico')),
               content: SingleChildScrollView(
                 child: Column(
@@ -46,36 +48,44 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                     CheckboxListTile(
                       title: const Text('Lojistas'),
                       value: tempLojista,
-                      onChanged: (v) => setStateDialog(() => tempLojista = v ?? true),
+                      onChanged: (v) =>
+                          setStateDialog(() => tempLojista = v ?? true),
                     ),
                     CheckboxListTile(
                       title: const Text('Prestadores'),
                       value: tempPrestador,
-                      onChanged: (v) => setStateDialog(() => tempPrestador = v ?? true),
+                      onChanged: (v) =>
+                          setStateDialog(() => tempPrestador = v ?? true),
                     ),
                     CheckboxListTile(
                       title: const Text('Admin / Sistema'),
                       value: tempOutros,
-                      onChanged: (v) => setStateDialog(() => tempOutros = v ?? true),
+                      onChanged: (v) =>
+                          setStateDialog(() => tempOutros = v ?? true),
                     ),
                     const Divider(),
                     CheckboxListTile(
                       title: const Text('Ações Positivas (Aprov/Promo)'),
                       value: tempAprovado,
                       activeColor: Colors.green,
-                      onChanged: (v) => setStateDialog(() => tempAprovado = v ?? true),
+                      onChanged: (v) =>
+                          setStateDialog(() => tempAprovado = v ?? true),
                     ),
                     CheckboxListTile(
                       title: const Text('Ações Negativas (Rej/Ban)'),
                       value: tempRejeitado,
                       activeColor: Colors.red,
-                      onChanged: (v) => setStateDialog(() => tempRejeitado = v ?? true),
+                      onChanged: (v) =>
+                          setStateDialog(() => tempRejeitado = v ?? true),
                     ),
                   ],
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Voltar')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Voltar'),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -105,10 +115,7 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
         backgroundColor: const Color(0xFF424242),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: _mostrarFiltros,
-          )
+          IconButton(icon: const Icon(Icons.tune), onPressed: _mostrarFiltros),
         ],
       ),
       backgroundColor: const Color(0xFFF5F5F5),
@@ -118,7 +125,8 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
             .orderBy('dataHora', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
 
           final todosLogs = snapshot.data!.docs;
 
@@ -126,7 +134,9 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
           final logsFiltrados = todosLogs.where((doc) {
             final dados = doc.data() as Map<String, dynamic>;
             final bool acao = dados['acao'] ?? false;
-            final String tipo = dados['tipoUsuario'] ?? 'outros'; // lojistas, prestadorServicos ou outros
+            final String tipo =
+                dados['tipoUsuario'] ??
+                'outros'; // lojistas, prestadorServicos ou outros
 
             // Filtro de Status
             if (acao == true && !_filtroAprovado) return false;
@@ -135,7 +145,10 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
             // Filtro de Tipo
             if (tipo == 'lojistas' && !_filtroLojista) return false;
             if (tipo == 'prestadorServicos' && !_filtroPrestador) return false;
-            if (tipo != 'lojistas' && tipo != 'prestadorServicos' && !_filtroOutros) return false;
+            if (tipo != 'lojistas' &&
+                tipo != 'prestadorServicos' &&
+                !_filtroOutros)
+              return false;
 
             return true;
           }).toList();
@@ -152,7 +165,8 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
 
               final bool acaoPositiva = dados['acao'] ?? false;
               final String adminNome = dados['administradorNome'] ?? 'Admin';
-              final String afetadoNome = dados['usuarioAfetadoNome'] ?? 'Usuário';
+              final String afetadoNome =
+                  dados['usuarioAfetadoNome'] ?? 'Usuário';
               final String justificativa = dados['justificativa'] ?? '';
               final Timestamp? dataHora = dados['dataHora'];
 
@@ -177,7 +191,8 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                 corTexto = Colors.orange.shade900;
                 icone = Icons.remove_moderator;
                 textoStatus = 'REBAIXADO';
-              } else if (tipoAcao == 'EXCLUSAO' || tipoAcao == 'EXCLUSAO_CONTA') {
+              } else if (tipoAcao == 'EXCLUSAO' ||
+                  tipoAcao == 'EXCLUSAO_CONTA') {
                 // Caso: Banido / Excluído
                 corFundo = Colors.red.shade100;
                 corTexto = Colors.red.shade900;
@@ -201,7 +216,9 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
               return Card(
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
@@ -213,18 +230,35 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
                               const SizedBox(width: 4),
-                              Text(_formatarData(dataHora), style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text(
+                                _formatarData(dataHora),
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           // BADGE PERSONALIZADO
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: corFundo,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: corTexto.withOpacity(0.5), width: 0.5),
+                              border: Border.all(
+                                color: corTexto.withOpacity(0.5),
+                                width: 0.5,
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -232,7 +266,11 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                                 const SizedBox(width: 4),
                                 Text(
                                   textoStatus,
-                                  style: TextStyle(color: corTexto, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: corTexto,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -242,12 +280,21 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                       const Divider(),
                       RichText(
                         text: TextSpan(
-                          style: const TextStyle(color: Colors.black87, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                          ),
                           children: [
-                            const TextSpan(text: 'Admin: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const TextSpan(
+                              text: 'Admin: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             TextSpan(text: '$adminNome\n'),
-                            const TextSpan(text: 'Alvo: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                            TextSpan(text: '$afetadoNome'),
+                            const TextSpan(
+                              text: 'Alvo: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: afetadoNome),
                           ],
                         ),
                       ),
@@ -264,8 +311,21 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Detalhes:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                              Text(justificativa, style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic)),
+                              const Text(
+                                'Detalhes:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                justificativa,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                             ],
                           ),
                         ),

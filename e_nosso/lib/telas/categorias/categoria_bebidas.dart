@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../telaProdutosDisponiveis.dart';
+import '../cliente/tela_produtos_disponiveis.dart';
 
-
-class CategoriaServicos extends StatefulWidget {
-  const CategoriaServicos({super.key});
+class CategoriaBebidas extends StatefulWidget {
+  const CategoriaBebidas({super.key});
 
   @override
-  State<CategoriaServicos> createState() => _CategoriaServicosState();
+  State<CategoriaBebidas> createState() => _CategoriaBebidasState();
 }
 
-class _CategoriaServicosState extends State<CategoriaServicos> {
+class _CategoriaBebidasState extends State<CategoriaBebidas> {
   String pesquisa = "";
 
   @override
@@ -25,13 +24,11 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "Serviços",
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text("Bebidas", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
+          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -41,39 +38,47 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (v) => setState(() => pesquisa = v.trim()),
+                onChanged: (value) => setState(() => pesquisa = value.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
-                  hintText: "Pesquisar Prestador...",
+                  hintText: "Pesquisar loja...",
                   border: InputBorder.none,
                 ),
               ),
             ),
           ),
 
+          // Lista de lojas
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection("prestadorServicos")
-                  .where("tipo", isEqualTo: "prestador")
+                  .collection('lojistas')
+                  .where('cnae', isEqualTo: 'Bebidas')
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text("Nenhuma loja de bebidas cadastrada."),
+                  );
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final nome =
-                  (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
-                      .toString()
-                      .toLowerCase();
+                      (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
+                          .toString()
+                          .toLowerCase();
+
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhum serviço encontrado."));
+                  return const Center(child: Text("Nenhuma loja encontrada."));
                 }
 
                 return ListView.builder(
@@ -81,15 +86,19 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final nome =
-                    (data["nome"] ?? data["nomeprestadorServicos"]).toString();
-                    final descricao =
-                    (data["descricao"] ?? "Sem descrição").toString();
+                        (data['razaoSocial'] ??
+                                data['nomeLojista'] ??
+                                'Loja sem nome')
+                            .toString();
+
+                    final descricao = (data['descricao'] ?? 'Sem descrição')
+                        .toString();
 
                     return _buildLojaCard(
                       context: context,
-                      lojaId: docs[index].id,
+                      lojaId: docs[index].id, // ID real da loja no Firestore
                       nome: nome,
-                      categoriaTexto: "Serviços",
+                      categoriaTexto: "Bebidas",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
@@ -97,7 +106,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );
@@ -130,6 +139,13 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
         decoration: BoxDecoration(
           color: const Color(0xFFF3EEEE),
           borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -147,19 +163,27 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(nome,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    nome,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
+
                   Text("50–60 min  •  R\$ 5,00"),
-                  Text(descricaoExtra,
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.black54)),
+
+                  Text(
+                    descricaoExtra,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
                 ],
               ),
             ),
 
-            const Icon(Icons.arrow_forward_ios, size: 18),
+            const Icon(Icons.star_border),
           ],
         ),
       ),

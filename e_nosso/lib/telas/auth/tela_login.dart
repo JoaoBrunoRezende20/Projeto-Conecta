@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'telaCadastroUsuarios.dart';
-import 'telaTipoUsuario.dart'; // Importe a tela para onde vamos voltar
+import 'tela_cadastro_usuarios.dart';
+import 'tela_tipo_usuario.dart'; // Importe a tela para onde vamos voltar
 
 class TelaLogin extends StatefulWidget {
   final String tipoUsuario;
@@ -50,9 +50,9 @@ class _TelaLoginState extends State<TelaLogin> {
         } else {
           mensagemErro = 'Erro no login: ${e.message}';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensagemErro)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(mensagemErro)));
       }
     } finally {
       if (mounted) {
@@ -76,7 +76,9 @@ class _TelaLoginState extends State<TelaLogin> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Digite seu email para receber o link de redefinição.'),
+              const Text(
+                'Digite seu email para receber o link de redefinição.',
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: emailControllerRecuperacao,
@@ -106,11 +108,14 @@ class _TelaLoginState extends State<TelaLogin> {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (loadingContext) => const Center(child: CircularProgressIndicator()),
+                  builder: (loadingContext) =>
+                      const Center(child: CircularProgressIndicator()),
                 );
 
                 try {
-                  await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                  await FirebaseAuth.instance.sendPasswordResetEmail(
+                    email: email,
+                  );
                   if (mounted) Navigator.of(context).pop();
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -119,13 +124,19 @@ class _TelaLoginState extends State<TelaLogin> {
                           children: [
                             Icon(Icons.check_circle, color: Colors.white),
                             SizedBox(width: 8),
-                            Expanded(child: Text('Se este email estiver cadastrado, você receberá um link de redefinição em instantes.')),
+                            Expanded(
+                              child: Text(
+                                'Se este email estiver cadastrado, você receberá um link de redefinição em instantes.',
+                              ),
+                            ),
                           ],
                         ),
                         backgroundColor: Colors.green,
                         duration: const Duration(seconds: 5),
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     );
                   }
@@ -151,10 +162,14 @@ class _TelaLoginState extends State<TelaLogin> {
 
   String _getTituloBoasVindas() {
     switch (widget.tipoUsuario) {
-      case 'lojista': return 'Bem-vindo, Lojista!';
-      case 'prestador': return 'Acesse seu painel, Prestador!';
-      case 'comum': return 'Olá! Que bom te ver de novo.';
-      default: return 'Login';
+      case 'lojista':
+        return 'Bem-vindo, Lojista!';
+      case 'prestador':
+        return 'Acesse seu painel, Prestador!';
+      case 'comum':
+        return 'Olá! Que bom te ver de novo.';
+      default:
+        return 'Login';
     }
   }
 
@@ -168,7 +183,7 @@ class _TelaLoginState extends State<TelaLogin> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
-            (route) => false, // Remove tudo para trás
+        (route) => false, // Remove tudo para trás
       );
     }
   }
@@ -229,10 +244,17 @@ class _TelaLoginState extends State<TelaLogin> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => TelaCadastro(tipoUsuario: widget.tipoUsuario)),
+                              MaterialPageRoute(
+                                builder: (_) => TelaCadastro(
+                                  tipoUsuario: widget.tipoUsuario,
+                                ),
+                              ),
                             );
                           },
-                          child: const Text('Cadastre-se', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Cadastre-se',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
@@ -250,12 +272,17 @@ class _TelaLoginState extends State<TelaLogin> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: InkWell( // Use InkWell ou GestureDetector
+                child: InkWell(
+                  // Use InkWell ou GestureDetector
                   onTap: _voltarParaEscolha,
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
                     radius: 24,
-                    child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.black,
+                      size: 24,
+                    ),
                   ),
                 ),
               ),
@@ -270,18 +297,27 @@ class _TelaLoginState extends State<TelaLogin> {
     // Definimos um estilo de borda padrão para reutilizar
     final bordaPadrao = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.grey, width: 1.0), // Cor da borda
+      borderSide: const BorderSide(
+        color: Colors.grey,
+        width: 1.0,
+      ), // Cor da borda
     );
 
     final bordaFoco = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.black, width: 2.0), // Borda mais forte ao clicar
+      borderSide: const BorderSide(
+        color: Colors.black,
+        width: 2.0,
+      ), // Borda mais forte ao clicar
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Digite seu email:', style: TextStyle(color: Colors.black54)),
+        const Text(
+          'Digite seu email:',
+          style: TextStyle(color: Colors.black54),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _emailController,
@@ -292,7 +328,10 @@ class _TelaLoginState extends State<TelaLogin> {
             enabledBorder: bordaPadrao,
             focusedBorder: bordaFoco,
             border: bordaPadrao,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
           keyboardType: TextInputType.emailAddress,
         ),
@@ -309,10 +348,17 @@ class _TelaLoginState extends State<TelaLogin> {
             enabledBorder: bordaPadrao,
             focusedBorder: bordaFoco,
             border: bordaPadrao,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             suffixIcon: IconButton(
-              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: Colors.grey,
+              ),
+              onPressed: () =>
+                  setState(() => _isPasswordVisible = !_isPasswordVisible),
             ),
           ),
         ),
@@ -342,14 +388,19 @@ class _TelaLoginState extends State<TelaLogin> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : ElevatedButton(
-            onPressed: _login,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: Colors.grey[700],
-            ),
-            child: const Text('ENTRAR', style: TextStyle(color: Colors.white)),
-          ),
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Colors.grey[700],
+                  ),
+                  child: const Text(
+                    'ENTRAR',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
         ),
       ],
     );
@@ -361,12 +412,23 @@ class WaveClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     var path = Path();
     path.lineTo(0, size.height * 0.8);
-    path.quadraticBezierTo(size.width / 4, size.height, size.width / 2, size.height * 0.8);
-    path.quadraticBezierTo(size.width * 3 / 4, size.height * 0.6, size.width, size.height * 0.8);
+    path.quadraticBezierTo(
+      size.width / 4,
+      size.height,
+      size.width / 2,
+      size.height * 0.8,
+    );
+    path.quadraticBezierTo(
+      size.width * 3 / 4,
+      size.height * 0.6,
+      size.width,
+      size.height * 0.8,
+    );
     path.lineTo(size.width, 0);
     path.close();
     return path;
   }
+
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

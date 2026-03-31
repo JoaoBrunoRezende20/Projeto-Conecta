@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../telaProdutosDisponiveis.dart';
+import '../cliente/tela_produtos_disponiveis.dart';
 
-
-class CategoriaFeiraLivre extends StatefulWidget {
-  const CategoriaFeiraLivre({super.key});
+class CategoriaOutros extends StatefulWidget {
+  const CategoriaOutros({super.key});
 
   @override
-  State<CategoriaFeiraLivre> createState() => _CategoriaFeiraLivreState();
+  State<CategoriaOutros> createState() => _CategoriaOutrosState();
 }
 
-class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
+class _CategoriaOutrosState extends State<CategoriaOutros> {
   String pesquisa = "";
 
   @override
@@ -25,14 +24,10 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "Feira Livre",
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text("Outros", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
-          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -42,7 +37,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (value) => setState(() => pesquisa = value.trim()),
+                onChanged: (v) => setState(() => pesquisa = v.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
                   hintText: "Pesquisar loja...",
@@ -52,12 +47,11 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
             ),
           ),
 
-          // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Feira Livre')
+                  .collection("lojistas")
+                  .where("cnae", isEqualTo: "Outros")
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -67,33 +61,33 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial'] ??
-                      data['nomeLojista'] ??
-                      '')
-                      .toString()
-                      .toLowerCase();
+                  final nome =
+                      (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
+                          .toString()
+                          .toLowerCase();
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
                   return const Center(
-                      child: Text("Nenhuma loja cadastrada nesta categoria."));
+                    child: Text("Nenhum estabelecimento encontrado."),
+                  );
                 }
 
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome =
-                    (data['razaoSocial'] ?? data['nomeLojista']).toString();
-                    final descricao =
-                    (data['descricao'] ?? 'Sem descrição').toString();
+                    final nome = (data["razaoSocial"] ?? data["nomeLojista"])
+                        .toString();
+                    final descricao = (data["descricao"] ?? "Sem descrição")
+                        .toString();
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Feira Livre",
+                      categoriaTexto: "Outros",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
@@ -158,11 +152,8 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                       fontSize: 16,
                     ),
                   ),
-
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
-
                   Text("50–60 min  •  R\$ 5,00"),
-
                   Text(
                     descricaoExtra,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),

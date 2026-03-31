@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 // Importe as telas das categorias que você já criou
 // Se ainda não criou alguma, comente o import correspondente
-import 'categorias/categoriaBebidas.dart';
-import 'categorias/categoriaQuitandas.dart';
-import 'categorias/categoriaFeiraLivre.dart';
-import 'categorias/categoriaServicos.dart';
-import 'categorias/categoriaOutros.dart';
+import '../categorias/categoria_bebidas.dart';
+import '../categorias/categoria_quitandas.dart';
+import '../categorias/categoria_feira_livre.dart';
+import '../categorias/categoria_servicos.dart';
+import '../categorias/categoria_outros.dart';
 
 class TelaDivisaoCategoria extends StatelessWidget {
   const TelaDivisaoCategoria({super.key});
@@ -40,10 +40,7 @@ class TelaDivisaoCategoria extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -75,9 +72,7 @@ class TelaDivisaoCategoria extends StatelessWidget {
         title: const Text(
           "Categorias",
 
-
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -102,7 +97,8 @@ class TelaDivisaoCategoria extends StatelessWidget {
               context: context,
               icon: Icons.local_grocery_store, // Ícone de carrinho/mercado
               label: "Quitandas",
-              destino: const CategoriaQuitandas(), // Manda para a tela de Quitandas
+              destino:
+                  const CategoriaQuitandas(), // Manda para a tela de Quitandas
             ),
 
             // Card Bebidas
@@ -118,7 +114,8 @@ class TelaDivisaoCategoria extends StatelessWidget {
               context: context,
               icon: Icons.build, // Ícone de ferramenta
               label: "Serviços",
-              destino: const CategoriaServicos(), // Manda para a tela de Serviços
+              destino:
+                  const CategoriaServicos(), // Manda para a tela de Serviços
             ),
 
             // Card Feira Livre
@@ -126,7 +123,8 @@ class TelaDivisaoCategoria extends StatelessWidget {
               context: context,
               icon: Icons.shopping_basket, // Ícone de cesta
               label: "Feira Livre",
-              destino: const CategoriaFeiraLivre(), // Manda para a tela de Feira Livre
+              destino:
+                  const CategoriaFeiraLivre(), // Manda para a tela de Feira Livre
             ),
 
             // Card Outros

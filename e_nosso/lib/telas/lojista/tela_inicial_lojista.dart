@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'telaBotaoNotificacao.dart';
+import '/widgets/botao_notificacao.dart';
 
 class Produto {
   final String id;
@@ -141,10 +141,10 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     int novoEstoque = produto.estoque + delta;
     if (novoEstoque < 0) novoEstoque = 0;
 
-    await FirebaseFirestore.instance.collection('produtos').doc(produto.id).update({
-      'estoque': novoEstoque,
-      'ativo': novoEstoque > 0,
-    });
+    await FirebaseFirestore.instance
+        .collection('produtos')
+        .doc(produto.id)
+        .update({'estoque': novoEstoque, 'ativo': novoEstoque > 0});
   }
 
   @override
@@ -203,10 +203,13 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           .where('lojistaId', isEqualTo: lojistaId)
           .snapshots(),
       builder: (_, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        final produtos =
-        snapshot.data!.docs.map((doc) => Produto.fromFirestore(doc)).toList();
+        final produtos = snapshot.data!.docs
+            .map((doc) => Produto.fromFirestore(doc))
+            .toList();
 
         if (produtos.isEmpty) {
           return const Center(
@@ -250,11 +253,13 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(produto.nome,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    )),
+                Text(
+                  produto.nome,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 Text(
                   produto.descricao,
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
@@ -279,7 +284,10 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: Colors.red,
+                    ),
                     onPressed: () => _atualizarEstoque(produto, -1),
                   ),
                   Text(
@@ -290,7 +298,10 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.green,
+                    ),
                     onPressed: () => _atualizarEstoque(produto, 1),
                   ),
                 ],

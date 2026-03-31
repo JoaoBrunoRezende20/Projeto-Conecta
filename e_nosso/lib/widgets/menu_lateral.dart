@@ -1,15 +1,11 @@
-import 'package:e_nosso/telas/telaPerfil.dart';
+import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:flutter/material.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
   final String? urlFotoPerfil;
 
-  const MenuLateral({
-    super.key,
-    required this.nomeUsuario,
-    this.urlFotoPerfil,
-  });
+  const MenuLateral({super.key, required this.nomeUsuario, this.urlFotoPerfil});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +15,6 @@ class MenuLateral extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // -----------------------------------------
             // CABEÇALHO DO MENU
             // -----------------------------------------
@@ -68,7 +63,6 @@ class MenuLateral extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-
                   ListTile(
                     leading: const Icon(Icons.edit),
                     title: const Text("Editar perfil"),
@@ -149,7 +143,6 @@ class MenuLateral extends StatelessWidget {
                       Navigator.pushNamed(context, "/ajuda");
                     },
                   ),
-
                 ],
               ),
             ),

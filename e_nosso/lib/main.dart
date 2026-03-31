@@ -3,26 +3,24 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 // telas
-import 'telas/telaTipoUsuario.dart';
-import 'telas/telaInicialComum.dart';
-import 'telas/telaInicialLojista.dart';
-import 'telas/telaInicialPrestadorServico.dart';
-import 'telas/telaInicialAdministrador.dart';
-import 'telas/telaDivisaoCategoria.dart';
-import 'telas/categorias/categoriaBebidas.dart';
-import 'telas/categorias/categoriaFeiraLivre.dart';
-import 'telas/categorias/categoriaOutros.dart';
-import 'telas/categorias/categoriaQuitandas.dart';
-import 'telas/categorias/categoriaServicos.dart';
+import 'telas/auth/tela_tipo_usuario.dart';
+import 'telas/cliente/tela_inicial_comum.dart';
+import 'telas/lojista/tela_inicial_lojista.dart';
+import 'telas/prestador/tela_inicial_prestador_servico.dart';
+import 'telas/admin/tela_inicial_administrador.dart';
+import 'telas/cliente/tela_divisao_categoria.dart';
+import 'telas/categorias/categoria_bebidas.dart';
+import 'telas/categorias/categoria_feira_livre.dart';
+import 'telas/categorias/categoria_outros.dart';
+import 'telas/categorias/categoria_quitandas.dart';
+import 'telas/categorias/categoria_servicos.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -55,13 +53,22 @@ class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   Future<String> _getUserType(String uid) async {
-    var doc = await FirebaseFirestore.instance.collection('administrador').doc(uid).get();
+    var doc = await FirebaseFirestore.instance
+        .collection('administrador')
+        .doc(uid)
+        .get();
     if (doc.exists) return 'administrador';
 
-    doc = await FirebaseFirestore.instance.collection('lojistas').doc(uid).get();
+    doc = await FirebaseFirestore.instance
+        .collection('lojistas')
+        .doc(uid)
+        .get();
     if (doc.exists) return 'lojista';
 
-    doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(uid).get();
+    doc = await FirebaseFirestore.instance
+        .collection('prestadorServicos')
+        .doc(uid)
+        .get();
     if (doc.exists) return 'prestador';
 
     return 'comum';
@@ -87,7 +94,9 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasData) {
@@ -95,7 +104,9 @@ class AuthWrapper extends StatelessWidget {
             future: _getUserType(snapshot.data!.uid),
             builder: (context, typeSnapshot) {
               if (typeSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
               }
               final tipo = typeSnapshot.data ?? 'comum';
               return _getHomeScreen(tipo);

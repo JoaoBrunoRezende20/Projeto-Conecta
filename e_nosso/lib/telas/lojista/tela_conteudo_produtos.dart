@@ -165,7 +165,6 @@ class _ControleProdutosState extends State<ControleProdutos> {
   }
 }
 */
-
 import 'package:flutter/material.dart';
 
 class Produto {
@@ -180,7 +179,8 @@ class ControleProdutosLojista extends StatefulWidget {
   const ControleProdutosLojista({super.key});
 
   @override
-  State<ControleProdutosLojista> createState() => _ControleProdutosLojistaState();
+  State<ControleProdutosLojista> createState() =>
+      _ControleProdutosLojistaState();
 }
 
 class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
@@ -197,7 +197,8 @@ class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
   final TextEditingController quantidadeController = TextEditingController();
 
   void adicionarProduto() {
-    if (nomeController.text.isNotEmpty && quantidadeController.text.isNotEmpty) {
+    if (nomeController.text.isNotEmpty &&
+        quantidadeController.text.isNotEmpty) {
       setState(() {
         produtos.add(
           Produto(
@@ -264,10 +265,7 @@ class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
       appBar: AppBar(
         title: const Text('Controle de Produtos'),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-        ),
+        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
         actions: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -292,134 +290,150 @@ class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
             Expanded(
               child: produtos.isEmpty
                   ? const Center(
-                child: Text(
-                  'Você ainda não cadastrou nenhum produto.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
+                      child: Text(
+                        'Você ainda não cadastrou nenhum produto.',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
                   : ListView.builder(
-                itemCount: produtos.length,
-                itemBuilder: (context, index) {
-                  final produto = produtos[index];
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: Colors.grey[200],
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                      itemCount: produtos.length,
+                      itemBuilder: (context, index) {
+                        final produto = produtos[index];
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          color: Colors.grey[200],
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
                               children: [
-                                Text(
-                                  produto.nome,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Row(
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        produto.nome,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Row(
                                         children: [
-                                          Checkbox(
-                                            value: produto.disponivel,
-                                            onChanged: (value) {
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Checkbox(
+                                                  value: produto.disponivel,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      produto.disponivel =
+                                                          value!;
+                                                    });
+                                                  },
+                                                ),
+                                                const Text('Disponível'),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Checkbox(
+                                                  value: !produto.disponivel,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      produto.disponivel =
+                                                          !value!;
+                                                    });
+                                                  },
+                                                ),
+                                                const Text('Indisponível'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'Estoque: ',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            onPressed: () {
                                               setState(() {
-                                                produto.disponivel = value!;
+                                                if (produto.quantidade > 0) {
+                                                  produto.quantidade--;
+                                                }
                                               });
                                             },
                                           ),
-                                          const Text('Disponível'),
-                                        ],
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Checkbox(
-                                            value: !produto.disponivel,
-                                            onChanged: (value) {
+                                          Text(
+                                            '${produto.quantidade}',
+                                            style: TextStyle(
+                                              color: getQuantidadeColor(
+                                                produto.quantidade,
+                                              ),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                            onPressed: () {
                                               setState(() {
-                                                produto.disponivel = !value!;
+                                                produto.quantidade++;
                                               });
                                             },
                                           ),
-                                          const Text('Indisponível'),
                                         ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                                Row(
+                                Column(
                                   children: [
-                                    const Text(
-                                      'Estoque: ',
-                                      style: TextStyle(fontWeight: FontWeight.w600),
-                                    ),
                                     IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline),
-                                      onPressed: () {
-                                        setState(() {
-                                          if (produto.quantidade > 0) {
-                                            produto.quantidade--;
-                                          }
-                                        });
-                                      },
-                                    ),
-                                    Text(
-                                      '${produto.quantidade}',
-                                      style: TextStyle(
-                                        color: getQuantidadeColor(produto.quantidade),
-                                        fontWeight: FontWeight.bold,
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
                                       ),
+                                      onPressed: () => removerProduto(index),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add_circle_outline),
-                                      onPressed: () {
-                                        setState(() {
-                                          produto.quantidade++;
-                                        });
-                                      },
+                                    const Text(
+                                      'Unds',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          Column(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => removerProduto(index),
-                              ),
-                              const Text(
-                                'Unds',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, color: Colors.black),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

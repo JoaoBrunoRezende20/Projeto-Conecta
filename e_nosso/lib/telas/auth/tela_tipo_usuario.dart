@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'telaLogin.dart';
-import 'telaInicialComum.dart';
+import 'tela_login.dart';
+import '../cliente/tela_inicial_comum.dart';
 
 class TelaTipoUsuario extends StatelessWidget {
   const TelaTipoUsuario({super.key});
@@ -18,14 +18,9 @@ class TelaTipoUsuario extends StatelessWidget {
     final ButtonStyle estiloBotao = ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFFE0E0E0), // Cinza claro
       foregroundColor: Colors.black, // Cor do texto e ícone
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-      textStyle: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       // Alinha o conteúdo à esquerda se quiser que o ícone fique fixo,
       // ou no centro (padrão). Vamos manter padrão centralizado.
       alignment: Alignment.center,
@@ -94,12 +89,15 @@ class TelaTipoUsuario extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const TelaInicialComum()),
                   );
                 },
-                icon: const Icon(Icons.visibility, size: 28, color: Colors.black),
+                icon: const Icon(
+                  Icons.visibility,
+                  size: 28,
+                  color: Colors.black,
+                ),
                 label: const Text('Visitante'),
               ),
 
               const Spacer(flex: 2), // Espaço flexível no final
-
               // Rodapé FAQ
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
