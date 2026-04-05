@@ -27,7 +27,10 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Finalizar Pedido", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Finalizar Pedido",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -44,9 +47,18 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
             children: [
               _buildSecaoTitulo(Icons.person, "Seus Dados"),
               const SizedBox(height: 12),
-              _buildTextField("Seu Nome", _nomeController, Icons.person_outline),
+              _buildTextField(
+                "Seu Nome",
+                _nomeController,
+                Icons.person_outline,
+              ),
               const SizedBox(height: 12),
-              _buildTextField("Telefone / WhatsApp", _telefoneController, Icons.phone_android, keyboardType: TextInputType.phone),
+              _buildTextField(
+                "Telefone / WhatsApp",
+                _telefoneController,
+                Icons.phone_android,
+                keyboardType: TextInputType.phone,
+              ),
 
               const SizedBox(height: 30),
               _buildSecaoTitulo(Icons.location_on, "Endereço de Entrega"),
@@ -55,9 +67,15 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(flex: 2, child: _buildTextField("Bairro", _bairroController, null)),
+                  Expanded(
+                    flex: 2,
+                    child: _buildTextField("Bairro", _bairroController, null),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(flex: 1, child: _buildTextField("Nº", _numeroController, null)),
+                  Expanded(
+                    flex: 1,
+                    child: _buildTextField("Nº", _numeroController, null),
+                  ),
                 ],
               ),
 
@@ -83,13 +101,25 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       children: [
         Icon(icon, color: Colors.red, size: 20),
         const SizedBox(width: 8),
-        Text(titulo.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black54)),
+        Text(
+          titulo.toUpperCase(),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.black54,
+          ),
+        ),
       ],
     );
   }
 
   // Campos de texto com o estilo que você gostou (bordas arredondadas)
-  Widget _buildTextField(String label, TextEditingController controller, IconData? icon, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData? icon, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -133,11 +163,16 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         SwitchListTile(
           title: const Text("Precisa de troco?"),
           value: _precisaTroco,
-          activeColor: Colors.red,
+          activeThumbColor: Colors.red,
           onChanged: (val) => setState(() => _precisaTroco = val),
         ),
         if (_precisaTroco)
-          _buildTextField("Troco para quanto?", _trocoController, Icons.attach_money, keyboardType: TextInputType.number),
+          _buildTextField(
+            "Troco para quanto?",
+            _trocoController,
+            Icons.attach_money,
+            keyboardType: TextInputType.number,
+          ),
       ],
     );
   }
@@ -147,7 +182,13 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Column(
@@ -156,8 +197,18 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Total com entrega:", style: TextStyle(fontSize: 16)),
-                Text("R\$ ${widget.valorTotal.toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+                const Text(
+                  "Total com entrega:",
+                  style: TextStyle(fontSize: 16),
+                ),
+                Text(
+                  "R\$ ${widget.valorTotal.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -171,8 +222,20 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                     _finalizarPedido();
                   }
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text("CONFIRMAR PEDIDO", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  "CONFIRMAR PEDIDO",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -188,7 +251,11 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         title: const Text("Sucesso!"),
         content: const Text("Seu pedido foi enviado com sucesso."),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst), child: const Text("OK")),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(context).popUntil((route) => route.isFirst),
+            child: const Text("OK"),
+          ),
         ],
       ),
     );

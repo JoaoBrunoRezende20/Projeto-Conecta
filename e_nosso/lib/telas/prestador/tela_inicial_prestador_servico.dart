@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'telaTipoUsuario.dart';
-import 'package:e_nosso/telas/telaMenuLateral.dart';
-import 'telaBotaoNotificacao.dart';
+import '../auth/tela_tipo_usuario.dart';
+import '/widgets/menu_lateral.dart';
+import '/widgets/botao_notificacao.dart';
 
 // --- Modelos de Dados (para organizar a informação) ---
 
@@ -21,7 +21,11 @@ class ServicoItem {
   final String nome;
   final double preco;
 
-  ServicoItem({required this.imagemUrl, required this.nome, required this.preco});
+  ServicoItem({
+    required this.imagemUrl,
+    required this.nome,
+    required this.preco,
+  });
 }
 
 // --- A Tela ---
@@ -117,13 +121,15 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
         ],
       ),
 
-    //drawer: const MenuLateral(), //**********
-    drawer: MenuLateral(nomeUsuario: _prestador?.nome ?? "Usuário"),
-    body: _isLoading
+      //drawer: const MenuLateral(), //**********
+      drawer: MenuLateral(nomeUsuario: _prestador?.nome ?? "Usuário"),
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildProfileContent(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () { /* TODO: Adicionar ação principal */ },
+        onPressed: () {
+          /* TODO: Adicionar ação principal */
+        },
         backgroundColor: Colors.red,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -216,7 +222,9 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         ElevatedButton.icon(
-          onPressed: () { /* TODO */ },
+          onPressed: () {
+            /* TODO */
+          },
           icon: const Icon(Icons.edit, size: 16),
           label: const Text('Editar Itens'),
           style: ElevatedButton.styleFrom(
@@ -225,20 +233,24 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           ),
         ),
         ElevatedButton(
-          onPressed: () { /* TODO */ },
-          child: const Text('Serviços Agendados'),
+          onPressed: () {
+            /* TODO */
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,
           ),
+          child: const Text('Serviços Agendados'),
         ),
         ElevatedButton(
-          onPressed: () { /* TODO */ },
-          child: const Text('Serviços Pendentes'),
+          onPressed: () {
+            /* TODO */
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,
           ),
+          child: const Text('Serviços Pendentes'),
         ),
       ],
     );

@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../telaProdutosDisponiveis.dart';
+import '../cliente/tela_produtos_disponiveis.dart';
 
-
-class CategoriaOutros extends StatefulWidget {
-  const CategoriaOutros({super.key});
+class CategoriaQuitandas extends StatefulWidget {
+  const CategoriaQuitandas({super.key});
 
   @override
-  State<CategoriaOutros> createState() => _CategoriaOutrosState();
+  State<CategoriaQuitandas> createState() => _CategoriaQuitandasState();
 }
 
-class _CategoriaOutrosState extends State<CategoriaOutros> {
+class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
   String pesquisa = "";
 
   @override
@@ -25,13 +24,11 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "Outros",
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text("Quitandas", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
+          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -41,7 +38,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (v) => setState(() => pesquisa = v.trim()),
+                onChanged: (value) => setState(() => pesquisa = value.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
                   hintText: "Pesquisar loja...",
@@ -51,11 +48,12 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
             ),
           ),
 
+          // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection("lojistas")
-                  .where("cnae", isEqualTo: "Outros")
+                  .collection('lojistas')
+                  .where('cnae', isEqualTo: 'Quitandas')
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -66,15 +64,14 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final nome =
-                  (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
-                      .toString()
-                      .toLowerCase();
+                      (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
+                          .toString()
+                          .toLowerCase();
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(
-                      child: Text("Nenhum estabelecimento encontrado."));
+                  return const Center(child: Text("Nenhuma loja encontrada."));
                 }
 
                 return ListView.builder(
@@ -82,15 +79,18 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final nome =
-                    (data["razaoSocial"] ?? data["nomeLojista"]).toString();
-                    final descricao =
-                    (data["descricao"] ?? "Sem descrição").toString();
+                        (data['razaoSocial'] ??
+                                data['nomeLojista'] ??
+                                'Loja sem nome')
+                            .toString();
+                    final descricao = (data['descricao'] ?? 'Sem descrição')
+                        .toString();
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Outros",
+                      categoriaTexto: "Quitandas",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
@@ -98,7 +98,7 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );
@@ -148,14 +148,19 @@ class _CategoriaOutrosState extends State<CategoriaOutros> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(nome,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    nome,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
                   Text("50–60 min  •  R\$ 5,00"),
-                  Text(descricaoExtra,
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.black54)),
+                  Text(
+                    descricaoExtra,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
                 ],
               ),
             ),

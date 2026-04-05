@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../telaProdutosDisponiveis.dart';
+import '../cliente/tela_produtos_disponiveis.dart';
 
-class CategoriaBebidas extends StatefulWidget {
-  const CategoriaBebidas({super.key});
+class CategoriaServicos extends StatefulWidget {
+  const CategoriaServicos({super.key});
 
   @override
-  State<CategoriaBebidas> createState() => _CategoriaBebidasState();
+  State<CategoriaServicos> createState() => _CategoriaServicosState();
 }
 
-class _CategoriaBebidasState extends State<CategoriaBebidas> {
+class _CategoriaServicosState extends State<CategoriaServicos> {
   String pesquisa = "";
 
   @override
@@ -24,14 +24,10 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "Bebidas",
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text("Serviços", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
-          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -41,65 +37,57 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (value) => setState(() => pesquisa = value.trim()),
+                onChanged: (v) => setState(() => pesquisa = v.trim()),
                 decoration: const InputDecoration(
                   icon: Icon(Icons.search),
-                  hintText: "Pesquisar loja...",
+                  hintText: "Pesquisar Prestador...",
                   border: InputBorder.none,
                 ),
               ),
             ),
           ),
 
-          // Lista de lojas
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Bebidas')
+                  .collection("prestadorServicos")
+                  .where("tipo", isEqualTo: "prestador")
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("Nenhuma loja de bebidas cadastrada."),
-                  );
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
-                      .toString()
-                      .toLowerCase();
-
+                  final nome =
+                      (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
+                          .toString()
+                          .toLowerCase();
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhuma loja encontrada."));
+                  return const Center(
+                    child: Text("Nenhum serviço encontrado."),
+                  );
                 }
 
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome = (data['razaoSocial'] ??
-                        data['nomeLojista'] ??
-                        'Loja sem nome')
+                    final nome = (data["nome"] ?? data["nomeprestadorServicos"])
                         .toString();
-
-                    final descricao =
-                    (data['descricao'] ?? 'Sem descrição').toString();
+                    final descricao = (data["descricao"] ?? "Sem descrição")
+                        .toString();
 
                     return _buildLojaCard(
                       context: context,
-                      lojaId: docs[index].id, // ID real da loja no Firestore
+                      lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Bebidas",
+                      categoriaTexto: "Serviços",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
@@ -140,13 +128,6 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
         decoration: BoxDecoration(
           color: const Color(0xFFF3EEEE),
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -171,11 +152,8 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                       fontSize: 16,
                     ),
                   ),
-
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
-
                   Text("50–60 min  •  R\$ 5,00"),
-
                   Text(
                     descricaoExtra,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
@@ -184,7 +162,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
               ),
             ),
 
-            const Icon(Icons.star_border),
+            const Icon(Icons.arrow_forward_ios, size: 18),
           ],
         ),
       ),

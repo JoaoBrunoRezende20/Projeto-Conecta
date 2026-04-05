@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
-import 'telaCarrinho.dart';
+import 'tela_carrinho.dart';
 
 // --- TELA DE PRODUTOS DISPONÍVEIS ---
 class TelaProdutosDisponiveis extends StatefulWidget {
@@ -50,17 +50,20 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             Text(
               widget.storeName,
               style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 16),
                 const SizedBox(width: 4),
-                Text(widget.rating.toStringAsFixed(1),
-                    style: const TextStyle(color: Colors.black, fontSize: 14)),
+                Text(
+                  widget.rating.toStringAsFixed(1),
+                  style: const TextStyle(color: Colors.black, fontSize: 14),
+                ),
               ],
             ),
           ],
@@ -87,8 +90,12 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         }
 
         return ListView.builder(
-          padding:
-          const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 100),
+          padding: const EdgeInsets.only(
+            left: 12,
+            right: 12,
+            top: 12,
+            bottom: 100,
+          ),
           itemCount: docs.length,
           itemBuilder: (context, i) {
             final doc = docs[i];
@@ -113,7 +120,10 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -122,8 +132,9 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8)),
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
           ),
           const SizedBox(width: 12),
@@ -131,9 +142,13 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(produto["nome"] ?? "Produto",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  produto["nome"] ?? "Produto",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 Text(
                   estoqueDisponivel > 0
                       ? "$estoqueDisponivel unidades disponíveis"
@@ -147,11 +162,14 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text("R\$ ${(produto["preco"] ?? 0).toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
+                Text(
+                  "R\$ ${(produto["preco"] ?? 0).toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ],
             ),
           ),
@@ -159,8 +177,10 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline,
-                      color: Colors.black),
+                  icon: const Icon(
+                    Icons.remove_circle_outline,
+                    color: Colors.black,
+                  ),
                   onPressed: () => setState(() {
                     if (quantidadeNoCarrinho > 1) {
                       _carrinho[id]!['quantidade']--;
@@ -169,11 +189,15 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                     }
                   }),
                 ),
-                Text("$quantidadeNoCarrinho",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  "$quantidadeNoCarrinho",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 IconButton(
-                  icon:
-                  const Icon(Icons.add_circle_outline, color: Colors.green),
+                  icon: const Icon(
+                    Icons.add_circle_outline,
+                    color: Colors.green,
+                  ),
                   onPressed: quantidadeNoCarrinho < estoqueDisponivel
                       ? () => setState(() => _carrinho[id]!['quantidade']++)
                       : null,
@@ -184,19 +208,21 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             ElevatedButton(
               onPressed: estoqueDisponivel > 0
                   ? () => setState(() {
-                _carrinho[id] = {
-                  'nome': produto['nome'],
-                  'preco': produto['preco'],
-                  'quantidade': 1
-                };
-              })
+                      _carrinho[id] = {
+                        'nome': produto['nome'],
+                        'preco': produto['preco'],
+                        'quantidade': 1,
+                      };
+                    })
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                estoqueDisponivel > 0 ? Colors.red : Colors.grey,
+                backgroundColor: estoqueDisponivel > 0
+                    ? Colors.red
+                    : Colors.grey,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text("Adicionar"),
             ),
@@ -221,14 +247,17 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Total estimado",
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text(
+                  "Total estimado",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 Text(
                   "R\$ ${_totalCarrinho.toStringAsFixed(2)}",
                   style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ],
             ),
@@ -236,10 +265,13 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () {
                 // Navegando para a TelaRevisaoCarrinho que está no outro arquivo
@@ -253,8 +285,10 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   ),
                 );
               },
-              child: const Text("Ver Carrinho",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Ver Carrinho",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

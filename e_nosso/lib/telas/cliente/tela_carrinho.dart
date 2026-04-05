@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Certifique-se de que o nome do arquivo abaixo é exatamente o nome do arquivo que contém a TelaDadosEntrega
-import 'telaFinalizacaoCompra.dart';
+import 'tela_finalizacao_compra.dart';
 
 class TelaRevisaoCarrinho extends StatelessWidget {
   final Map<String, Map<String, dynamic>> itens;
@@ -28,8 +28,13 @@ class TelaRevisaoCarrinho extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(lojaName,
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          lojaName,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -44,13 +49,13 @@ class TelaRevisaoCarrinho extends StatelessWidget {
             child: itens.isEmpty
                 ? const Center(child: Text("Seu carrinho está vazio"))
                 : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: itens.length,
-              itemBuilder: (context, index) {
-                final item = itens.values.elementAt(index);
-                return _cardItemCarrinho(item);
-              },
-            ),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: itens.length,
+                    itemBuilder: (context, index) {
+                      final item = itens.values.elementAt(index);
+                      return _cardItemCarrinho(item);
+                    },
+                  ),
           ),
           _buildResumoValores(),
         ],
@@ -69,20 +74,29 @@ class TelaRevisaoCarrinho extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
         ],
       ),
       child: Row(
         children: [
-          Text("${item['quantidade']}x",
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+          Text(
+            "${item['quantidade']}x",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(item['nome'] ?? "Produto",
-                style: const TextStyle(fontSize: 16)),
+            child: Text(
+              item['nome'] ?? "Produto",
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
-          Text("R\$ ${precoTotal.toStringAsFixed(2)}",
-              style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            "R\$ ${precoTotal.toStringAsFixed(2)}",
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
@@ -93,15 +107,28 @@ class TelaRevisaoCarrinho extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))]
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: Column(
         children: [
           _linhaResumo("Subtotal", "R\$ ${_total.toStringAsFixed(2)}"),
-          _linhaResumo("Taxa de Entrega", "R\$ ${taxaEntrega.toStringAsFixed(2)}"),
+          _linhaResumo(
+            "Taxa de Entrega",
+            "R\$ ${taxaEntrega.toStringAsFixed(2)}",
+          ),
           const Divider(height: 24),
-          _linhaResumo("Total", "R\$ ${(_total + taxaEntrega).toStringAsFixed(2)}", isTotal: true),
+          _linhaResumo(
+            "Total",
+            "R\$ ${(_total + taxaEntrega).toStringAsFixed(2)}",
+            isTotal: true,
+          ),
         ],
       ),
     );
@@ -113,17 +140,21 @@ class TelaRevisaoCarrinho extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                  fontSize: isTotal ? 18 : 14
-              )),
-          Text(valor,
-              style: TextStyle(
-                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                  fontSize: isTotal ? 18 : 14,
-                  color: isTotal ? Colors.black : Colors.black
-              )),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isTotal ? 18 : 14,
+            ),
+          ),
+          Text(
+            valor,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isTotal ? 18 : 14,
+              color: isTotal ? Colors.black : Colors.black,
+            ),
+          ),
         ],
       ),
     );
@@ -143,7 +174,10 @@ class TelaRevisaoCarrinho extends StatelessWidget {
                   side: const BorderSide(color: Colors.grey),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: const Text("VOLTAR", style: TextStyle(color: Colors.black)),
+                child: const Text(
+                  "VOLTAR",
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -153,18 +187,28 @@ class TelaRevisaoCarrinho extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-                onPressed: itens.isEmpty ? null : () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
-                    ),
-                  );
-                },
-                child: const Text("PRÓXIMO PASSO",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onPressed: itens.isEmpty
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TelaDadosEntrega(valorTotal: _total + 5),
+                          ),
+                        );
+                      },
+                child: const Text(
+                  "PRÓXIMO PASSO",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],

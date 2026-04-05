@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'telaNotificacoes.dart';
+import '../telas/perfil/tela_notificacoes.dart';
 
 class BotaoNotificacao extends StatelessWidget {
   final String colecaoUsuario; // 'lojistas' ou 'prestadorServicos'
@@ -32,7 +32,8 @@ class BotaoNotificacao extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
+                builder: (context) =>
+                    TelaNotificacoes(colecaoUsuario: colecaoUsuario),
               ),
             );
           },
@@ -40,7 +41,10 @@ class BotaoNotificacao extends StatelessWidget {
             isLabelVisible: count > 0,
             label: Text('$count'),
             backgroundColor: Colors.red,
-            child: const Icon(Icons.notifications_outlined, color: Colors.black),
+            child: const Icon(
+              Icons.notifications_outlined,
+              color: Colors.black,
+            ),
           ),
         );
       },

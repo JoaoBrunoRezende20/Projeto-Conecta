@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'telaTipoUsuario.dart';
+import '../auth/tela_tipo_usuario.dart';
 
 // <<< IMPORTANTE: Importe as telas de categoria que você já criou >>>
 // Verifique se os nomes dos arquivos e pastas estão exatos
-import 'categorias/categoriaQuitandas.dart';
-import 'categorias/categoriaBebidas.dart';
-import 'categorias/categoriaFeiraLivre.dart';
-import 'categorias/categoriaServicos.dart';
-import 'categorias/categoriaOutros.dart';
+import '../categorias/categoria_quitandas.dart';
+import '../categorias/categoria_bebidas.dart';
+import '../categorias/categoria_feira_livre.dart';
+import '../categorias/categoria_servicos.dart';
+import '../categorias/categoria_outros.dart';
 
 class TelaInicialComum extends StatefulWidget {
   const TelaInicialComum({super.key});
@@ -18,7 +18,6 @@ class TelaInicialComum extends StatefulWidget {
 }
 
 class _TelaInicialComumState extends State<TelaInicialComum> {
-
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
   }
@@ -26,16 +25,13 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
   void _exitVisitorMode() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const TelaTipoUsuario()),
-          (route) => false,
+      (route) => false,
     );
   }
 
   // Função auxiliar para navegar
   void _navegarPara(Widget pagina) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => pagina),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => pagina));
   }
 
   @override
@@ -120,7 +116,11 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 
-  Widget _buildCategoryCard({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildCategoryCard({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap, // Agora o onTap recebe a função de navegar!
       borderRadius: BorderRadius.circular(20),

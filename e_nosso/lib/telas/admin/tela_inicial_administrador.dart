@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Certifique-se que os nomes das classes dentro desses arquivos estão corretos
-import 'telaTodosUsuarios.dart';
-import 'telaLogs.dart';
-import 'telaDetalhesCadastro.dart';
+import 'tela_todos_usuarios.dart';
+import 'tela_logs.dart';
+import '../auth/tela_detalhes_cadastro.dart';
 
 // Classe modelo para facilitar a manipulação dos dados
 class UsuarioPendente {
@@ -27,7 +27,8 @@ class TelaInicialAdministrador extends StatefulWidget {
   const TelaInicialAdministrador({super.key});
 
   @override
-  State<TelaInicialAdministrador> createState() => _TelaInicialAdministradorState();
+  State<TelaInicialAdministrador> createState() =>
+      _TelaInicialAdministradorState();
 }
 
 class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
@@ -68,13 +69,18 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
 
       for (var doc in lojistasSnapshot.docs) {
         final data = doc.data();
-        usuarios.add(UsuarioPendente(
-          id: doc.id,
-          nome: data['dadosDoResponsavel']?['nome'] ?? data['razaoSocial'] ?? 'Sem nome',
-          tipo: 'Lojista',
-          dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
-          cpfOuCnpj: data['cnpj'] ?? '',
-        ));
+        usuarios.add(
+          UsuarioPendente(
+            id: doc.id,
+            nome:
+                data['dadosDoResponsavel']?['nome'] ??
+                data['razaoSocial'] ??
+                'Sem nome',
+            tipo: 'Lojista',
+            dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
+            cpfOuCnpj: data['cnpj'] ?? '',
+          ),
+        );
       }
     }
 
@@ -87,13 +93,15 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
 
       for (var doc in prestadoresSnapshot.docs) {
         final data = doc.data();
-        usuarios.add(UsuarioPendente(
-          id: doc.id,
-          nome: data['nome'] ?? 'Sem nome',
-          tipo: 'Prestador de serviço',
-          dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
-          cpfOuCnpj: data['cpf'] ?? '',
-        ));
+        usuarios.add(
+          UsuarioPendente(
+            id: doc.id,
+            nome: data['nome'] ?? 'Sem nome',
+            tipo: 'Prestador de serviço',
+            dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
+            cpfOuCnpj: data['cpf'] ?? '',
+          ),
+        );
       }
     }
 
@@ -102,7 +110,8 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
       return usuarios.where((u) {
         final nomeLower = u.nome.toLowerCase();
         final docLower = u.cpfOuCnpj.toLowerCase();
-        return nomeLower.contains(_termoBusca) || docLower.contains(_termoBusca);
+        return nomeLower.contains(_termoBusca) ||
+            docLower.contains(_termoBusca);
       }).toList();
     }
 
@@ -128,16 +137,27 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Center(
-                child: Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Filtros',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Center(
-                    child: Text('Tipos de usuário', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: Text(
+                      'Tipos de usuário',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -171,7 +191,9 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[400],
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: const Text('Voltar'),
                 ),
@@ -185,9 +207,12 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600], // Cor mais escura igual imagem
+                    backgroundColor:
+                        Colors.grey[600], // Cor mais escura igual imagem
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: const Text('Confirmar'),
                 ),
@@ -205,7 +230,10 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFF424242),
-        title: const Text('Cadastros pendentes', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Cadastros pendentes',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
@@ -237,7 +265,9 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text('Erro ao carregar usuários.'));
+                    return const Center(
+                      child: Text('Erro ao carregar usuários.'),
+                    );
                   }
 
                   // Se a lista estiver vazia (seja por não ter dados ou pelos filtros)
@@ -246,9 +276,15 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.filter_list_off, size: 48, color: Colors.grey[400]),
+                          Icon(
+                            Icons.filter_list_off,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 8),
-                          const Text('Nenhum cadastro encontrado com esses filtros.'),
+                          const Text(
+                            'Nenhum cadastro encontrado com esses filtros.',
+                          ),
                         ],
                       ),
                     );
@@ -280,7 +316,10 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
         prefixIcon: const Icon(Icons.search, color: Colors.grey),
         // ÍCONE DE FILTRO FUNCIONAL
         suffixIcon: IconButton(
-          icon: const Icon(Icons.tune, color: Colors.black87), // Ícone de "ajustes"
+          icon: const Icon(
+            Icons.tune,
+            color: Colors.black87,
+          ), // Ícone de "ajustes"
           onPressed: _mostrarFiltros,
         ),
         filled: true,
@@ -295,7 +334,8 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
   }
 
   Widget _buildUserCard(UsuarioPendente usuario) {
-    final dataFormatada = '${usuario.dataEnvio.toDate().day}/${usuario.dataEnvio.toDate().month}/${usuario.dataEnvio.toDate().year}';
+    final dataFormatada =
+        '${usuario.dataEnvio.toDate().day}/${usuario.dataEnvio.toDate().month}/${usuario.dataEnvio.toDate().year}';
 
     return Card(
       color: Colors.white,
@@ -307,18 +347,26 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded( // Expanded evita overflow de texto longo
+            Expanded(
+              // Expanded evita overflow de texto longo
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nome: ${usuario.nome}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Nome: ${usuario.nome}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text('Tipo: ${usuario.tipo}'),
                   Row(
                     children: [
                       const Text('Status: ', style: TextStyle(fontSize: 12)),
                       Text(
                         'PENDENTE',
-                        style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -328,13 +376,18 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Envio: $dataFormatada', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  'Envio: $dataFormatada',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 35, // Botão mais compacto
                   child: ElevatedButton(
                     onPressed: () {
-                      String colecao = usuario.tipo == 'Lojista' ? 'lojistas' : 'prestadorServicos';
+                      String colecao = usuario.tipo == 'Lojista'
+                          ? 'lojistas'
+                          : 'prestadorServicos';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -352,15 +405,20 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                       side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       elevation: 0,
                     ),
-                    child: const Text('Ver documentos', style: TextStyle(fontSize: 12)),
+                    child: const Text(
+                      'Ver documentos',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -386,19 +444,31 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const TelaGerenciarUsuarios()),
+                  MaterialPageRoute(
+                    builder: (context) => const TelaGerenciarUsuarios(),
+                  ),
                 );
               },
               style: darkButtonStyle,
-              child: const Text('Ver todos usuarios', textAlign: TextAlign.center, style: TextStyle(fontSize: 11)),
+              child: const Text(
+                'Ver todos usuarios',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11),
+              ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: ElevatedButton(
-              onPressed: () { print("Botão Cadastrar clicado"); },
+              onPressed: () {
+                print("Botão Cadastrar clicado");
+              },
               style: darkButtonStyle,
-              child: const Text('Cadastrar', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              child: const Text(
+                'Cadastrar',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -411,7 +481,11 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
                 );
               },
               style: darkButtonStyle,
-              child: const Text('Ver Historico', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              child: const Text(
+                'Ver Historico',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12),
+              ),
             ),
           ),
         ],
