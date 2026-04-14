@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
 
+// --- VARIÁVEIS GLOBAIS DE CARRINHO ---
+// Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
+final Map<String, Map<String, dynamic>> carrinhoGlobal = {};
+String? lojaIdDoCarrinho;
+
 // --- TELA DE PRODUTOS DISPONÍVEIS ---
 class TelaProdutosDisponiveis extends StatefulWidget {
   final String lojaId;
@@ -22,12 +27,19 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 }
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
-  // Armazena ID do produto e os dados (quantidade, preço, nome)
-  final Map<String, Map<String, dynamic>> _carrinho = {};
+  @override
+  void initState() {
+    super.initState();
+    // Se o utilizador entrar numa loja diferente, limpamos o carrinho antigo
+    if (lojaIdDoCarrinho != null && lojaIdDoCarrinho != widget.lojaId) {
+      carrinhoGlobal.clear();
+    }
+    lojaIdDoCarrinho = widget.lojaId;
+  }
 
   double get _totalCarrinho {
     double total = 0.0;
-    _carrinho.forEach((id, dados) {
+    carrinhoGlobal.forEach((id, dados) {
       total += (dados['preco'] ?? 0) * dados['quantidade'];
     });
     return total;
@@ -70,7 +82,9 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         ),
       ),
       body: _buildListaProdutos(),
-      bottomNavigationBar: _carrinho.isNotEmpty ? _buildBarraCarrinho() : null,
+      bottomNavigationBar: carrinhoGlobal.isNotEmpty
+          ? _buildBarraCarrinho()
+          : null,
     );
   }
 
@@ -110,7 +124,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
 
   Widget _produtoCard(Map<String, dynamic> produto, String id) {
     final int estoqueDisponivel = produto["estoque"] ?? 0;
-    final int quantidadeNoCarrinho = _carrinho[id]?['quantidade'] ?? 0;
+    final int quantidadeNoCarrinho = carrinhoGlobal[id]?['quantidade'] ?? 0;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -118,12 +132,8 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -183,9 +193,9 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   ),
                   onPressed: () => setState(() {
                     if (quantidadeNoCarrinho > 1) {
-                      _carrinho[id]!['quantidade']--;
+                      carrinhoGlobal[id]!['quantidade']--;
                     } else {
-                      _carrinho.remove(id);
+                      carrinhoGlobal.remove(id);
                     }
                   }),
                 ),
@@ -199,7 +209,8 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                     color: Colors.green,
                   ),
                   onPressed: quantidadeNoCarrinho < estoqueDisponivel
-                      ? () => setState(() => _carrinho[id]!['quantidade']++)
+                      ? () =>
+                            setState(() => carrinhoGlobal[id]!['quantidade']++)
                       : null,
                 ),
               ],
@@ -208,7 +219,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             ElevatedButton(
               onPressed: estoqueDisponivel > 0
                   ? () => setState(() {
-                      _carrinho[id] = {
+                      carrinhoGlobal[id] = {
                         'nome': produto['nome'],
                         'preco': produto['preco'],
                         'quantidade': 1,
@@ -274,16 +285,18 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 ),
               ),
               onPressed: () {
-                // Navegando para a TelaRevisaoCarrinho que está no outro arquivo
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => TelaRevisaoCarrinho(
-                      itens: _carrinho,
+                      itens: carrinhoGlobal, // Passamos o carrinho global
                       lojaName: widget.storeName,
                     ),
                   ),
-                );
+                ).then((_) {
+                  // Atualiza a tela quando o utilizador volta do carrinho
+                  setState(() {});
+                });
               },
               child: const Text(
                 "Ver Carrinho",
@@ -296,72 +309,3 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
     );
   }
 }
-/*
-// --- TELA DE REVISÃO DO CARRINHO ---
-class TelaRevisaoCarrinho extends StatelessWidget {
-  final Map<String, Map<String, dynamic>> itens;
-  final String lojaName;
-
-  const TelaRevisaoCarrinho(
-      {super.key, required this.itens, required this.lojaName});
-
-  @override
-  Widget build(BuildContext context) {
-    double total = 0;
-    itens.forEach(
-            (key, value) => total += (value['preco'] * value['quantidade']));
-
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Text("Carrinho: $lojaName"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ...itens.entries.map((e) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text(e.value['nome'],
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(
-                  "${e.value['quantidade']}x R\$ ${e.value['preco'].toStringAsFixed(2)}"),
-              trailing: Text(
-                  "R\$ ${(e.value['quantidade'] * e.value['preco']).toStringAsFixed(2)}",
-                  style: const TextStyle(
-                      color: Colors.black, // Alterado de vermelho para preto
-                      fontWeight: FontWeight.bold)),
-            ),
-          )),
-          const Divider(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Total do Pedido",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text("R\$ ${total.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black)), // Alterado de vermelho para preto
-            ],
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 50),
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Voltar para a Loja"),
-          )
-        ],
-      ),
-    );
-  }
-}
-*/

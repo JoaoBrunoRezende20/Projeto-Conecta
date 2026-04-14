@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // NOVO: Para salvar no banco
+import 'package:firebase_auth/firebase_auth.dart'; // NOVO: Para pegar o ID do cliente
+import 'tela_produtos_disponiveis.dart'; // NOVO: Para acessar a variável carrinhoGlobal
 
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -180,7 +183,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   Widget _buildResumoEBotaoEnvio() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
@@ -218,7 +221,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               child: ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Aqui entrará a lógica para salvar no Firebase ou enviar WhatsApp
                     _finalizarPedido();
                   }
                 },
@@ -244,20 +246,90 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     );
   }
 
-  void _finalizarPedido() {
+  // --- NOVA LÓGICA DE SALVAR NO FIREBASE ---
+  Future<void> _finalizarPedido() async {
+    // Mostra um círculo de carregamento enquanto salva no banco
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Sucesso!"),
-        content: const Text("Seu pedido foi enviado com sucesso."),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      // 1. Pega o ID do usuário que está comprando
+      final clienteId =
+          FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
+
+      // 2. Monta o pacote de dados do pedido
+      final pedidoData = {
+        'clienteId': clienteId,
+        'lojistaId': lojaIdDoCarrinho, // Vem da tela anterior
+        'itens': carrinhoGlobal, // Vem da tela anterior
+        'valorTotal': widget.valorTotal,
+        'status': 'pendente', // pendente, aceito, cancelado, etc.
+        'dataCriacao': FieldValue.serverTimestamp(),
+        'dadosCliente': {
+          'nome': _nomeController.text.trim(),
+          'telefone': _telefoneController.text.trim(),
+        },
+        'dadosEntrega': {
+          'endereco': _enderecoController.text.trim(),
+          'bairro': _bairroController.text.trim(),
+          'numero': _numeroController.text.trim(),
+        },
+        'pagamento': {
+          'metodo': _metodoPagamento,
+          'precisaTroco': _precisaTroco,
+          'trocoPara': _trocoController.text.trim(),
+        },
+      };
+
+      // 3. Salva no banco de dados na coleção "pedidos"
+      await FirebaseFirestore.instance.collection('pedidos').add(pedidoData);
+
+      // 4. Limpa o carrinho global agora que a compra foi feita
+      carrinhoGlobal.clear();
+      lojaIdDoCarrinho = null;
+
+      // Fecha a bolinha de carregamento
+      if (mounted) Navigator.pop(context);
+
+      // 5. Mostra o aviso de Sucesso
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Usuário tem que clicar no OK para sair
+          builder: (context) => AlertDialog(
+            title: const Text("Sucesso!"),
+            content: const Text(
+              "Seu pedido foi enviado com sucesso para o lojista.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // Volta para o início do aplicativo (Tela inicial do cliente)
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                child: const Text(
+                  "OK",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Se der erro, fecha o carregamento e avisa
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao salvar o pedido: $e")));
+      }
+    }
   }
 }

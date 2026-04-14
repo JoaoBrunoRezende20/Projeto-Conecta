@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // NOVO: Import do Storage
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -31,9 +32,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // Lista para múltipla seleção de bairros
   List<String> _bairrosSelecionados = [];
 
-  // --- LISTAS DE IMAGENS (BASE64) ---
-  final List<String> _imagensPortfolioBase64 = [];
-  final List<String> _imagensDocumentosBase64 = [];
+  // --- LISTAS DE IMAGENS (BYTES - CORRIGIDO PARA NÃO USAR BASE64) ---
+  final List<Uint8List> _imagensPortfolioBytes = [];
+  final List<Uint8List> _imagensDocumentosBytes = [];
 
   // --- VALIDAÇÃO DE SENHA ---
   bool _temMinimoCaracteres = false;
@@ -235,41 +236,70 @@ class _TelaCadastroState extends State<TelaCadastro> {
         _temEspecial;
   }
 
-  // --- FUNÇÕES DE IMAGEM ---
+  // --- FUNÇÕES DE IMAGEM CORRIGIDAS (SEM BASE64) ---
   Future<void> _selecionarImagem(bool isPortfolio) async {
     try {
       final List<XFile> imagensSelecionadas = await _picker.pickMultiImage(
         imageQuality: 50,
       );
-      if (imagensSelecionadas == null) return;
+      if (imagensSelecionadas.isEmpty) return;
+
       for (var imagem in imagensSelecionadas) {
         final bytes = await imagem.readAsBytes();
-        final String base64String = base64Encode(bytes);
-        final String header = "data:image/jpeg;base64,$base64String";
         setState(() {
           if (isPortfolio) {
-            _imagensPortfolioBase64.add(header);
+            _imagensPortfolioBytes.add(bytes);
           } else {
-            _imagensDocumentosBase64.add(header);
+            _imagensDocumentosBytes.add(bytes);
           }
         });
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
     }
   }
 
   void _removerImagem(int index, bool isPortfolio) {
     setState(() {
       if (isPortfolio) {
-        _imagensPortfolioBase64.removeAt(index);
+        _imagensPortfolioBytes.removeAt(index);
       } else {
-        _imagensDocumentosBase64.removeAt(index);
+        _imagensDocumentosBytes.removeAt(index);
       }
     });
+  }
+
+  // NOVO: Função para enviar imagens para o Firebase Storage
+  Future<List<String>> _uploadImagensFirebase(
+    List<Uint8List> imagens,
+    String pasta,
+    String uid,
+  ) async {
+    List<String> urls = [];
+    for (int i = 0; i < imagens.length; i++) {
+      // Cria um caminho único para cada imagem no Storage
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('usuarios')
+          .child(uid)
+          .child(pasta)
+          .child('img_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+
+      // Faz o upload dos bytes
+      final uploadTask = await ref.putData(
+        imagens[i],
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      // Obtém o link público para salvar no Firestore
+      final url = await uploadTask.ref.getDownloadURL();
+      urls.add(url);
+    }
+    return urls;
   }
 
   // --- HORÁRIOS ---
@@ -328,7 +358,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     return _mapaRegistroProfissional[_categoriaPrestadorSelecionada];
   }
 
-  // --- NOVA FUNÇÃO: DIÁLOGO DE MÚLTIPLA SELEÇÃO DE BAIRROS ---
+  // --- DIÁLOGO DE MÚLTIPLA SELEÇÃO DE BAIRROS ---
   Future<void> _mostrarSelecaoBairros() async {
     List<String> selecaoTemporaria = List.from(_bairrosSelecionados);
 
@@ -388,18 +418,19 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // --- CADASTRO ---
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Por favor, verifique os campos obrigatórios.'),
           ),
         );
+      }
       return;
     }
 
     // senha forte
     if (!_isSenhaValida()) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -408,48 +439,51 @@ class _TelaCadastroState extends State<TelaCadastro> {
             backgroundColor: Colors.red,
           ),
         );
+      }
       return;
     }
 
     if (widget.tipoUsuario == 'prestador') {
       if (_categoriaPrestadorSelecionada == null) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Selecione sua área de atuação.')),
           );
+        }
         return;
       }
 
-      // Validação de Bairros (Lista)
       if (_bairrosSelecionados.isEmpty) {
-        // CORREÇÃO: Usando a lista
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Selecione pelo menos um bairro.')),
           );
+        }
         return;
       }
 
       if (_categoriaPrestadorSelecionada == 'Outros' &&
           _outraAreaAtuacaoController.text.trim().isEmpty) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Especifique sua área de atuação.')),
           );
+        }
         return;
       }
       if (_horariosSemanais.isEmpty) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Adicione pelo menos um dia de disponibilidade.'),
             ),
           );
+        }
         return;
       }
       String? labelRegistro = _getLabelRegistroProfissional();
-      if (labelRegistro != null && _imagensDocumentosBase64.isEmpty) {
-        if (mounted)
+      if (labelRegistro != null && _imagensDocumentosBytes.isEmpty) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -457,29 +491,54 @@ class _TelaCadastroState extends State<TelaCadastro> {
               ),
             ),
           );
+        }
         return;
       }
     }
 
-    // lojista precisa selecionar categoria
     if (widget.tipoUsuario == 'lojista' && _categoriaSelecionadaCnae == null) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Selecione a categoria da loja.')),
         );
+      }
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      // 1. Cria a conta de autenticação primeiro
       final credencial = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _senhaController.text.trim(),
           );
 
-      await _salvarDadosNoFirestore(credencial.user!.uid);
+      final String uid = credencial.user!.uid;
+
+      // 2. Faz o upload das imagens para o Storage
+      List<String> urlsDocumentos = [];
+      List<String> urlsPortfolio = [];
+
+      if (_imagensDocumentosBytes.isNotEmpty) {
+        urlsDocumentos = await _uploadImagensFirebase(
+          _imagensDocumentosBytes,
+          'documentos',
+          uid,
+        );
+      }
+
+      if (_imagensPortfolioBytes.isNotEmpty) {
+        urlsPortfolio = await _uploadImagensFirebase(
+          _imagensPortfolioBytes,
+          'portfolio',
+          uid,
+        );
+      }
+
+      // 3. Salva todos os dados e as URLs no Firestore
+      await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -491,21 +550,28 @@ class _TelaCadastroState extends State<TelaCadastro> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro no cadastro: ${e.message}')),
         );
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _salvarDadosNoFirestore(String uid) {
+  // Função atualizada para receber as URLs do Storage
+  Future<void> _salvarDadosNoFirestore(
+    String uid,
+    List<String> documentosUrls,
+    List<String> portfolioUrls,
+  ) {
     switch (widget.tipoUsuario) {
       case 'lojista':
         return FirebaseFirestore.instance.collection('lojistas').doc(uid).set({
@@ -530,7 +596,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             'email': _emailController.text.trim(),
             'telefone': _telefoneController.text.trim(),
           },
-          'documentosUrl': _imagensDocumentosBase64,
+          'documentosUrl': documentosUrls, // Salva as URLs
           'dataCriacao': FieldValue.serverTimestamp(),
           'status': false,
           'statusCadastro': 'pendente',
@@ -559,18 +625,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
               'email': _emailController.text.trim(),
               'areaAtuacao': areaFinal,
               'descricaoServicos': _descricaoServicosController.text.trim(),
-
-              // SALVANDO A LISTA DE BAIRROS
               'areaAtendimento': _bairrosSelecionados,
-
               'disponibilidadeAtendimento': disponibilidadeFinal,
               'faixaPrecos': preco,
               'qualificacoes': _qualificacoesController.text.trim(),
               'cnpj': _cnpjPrestadorController.text.trim(),
               'registroProfissional': _registroProfissionalController.text
                   .trim(),
-              'portfolio': _imagensPortfolioBase64,
-              'documentosUrl': _imagensDocumentosBase64,
+              'portfolio': portfolioUrls, // Salva as URLs
+              'documentosUrl': documentosUrls, // Salva as URLs
               'status': false,
               'statusCadastro': 'pendente',
               'motivosRejeicao': '',
@@ -597,16 +660,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   // --- WIDGETS VISUAIS ---
-  Widget _buildImagePreview(List<String> imagensBase64, bool isPortfolio) {
-    if (imagensBase64.isEmpty) return const SizedBox.shrink();
+  Widget _buildImagePreview(List<Uint8List> imagensBytes, bool isPortfolio) {
+    if (imagensBytes.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: imagensBase64.length,
+        itemCount: imagensBytes.length,
         itemBuilder: (context, index) {
-          final String base64Data = imagensBase64[index].split(',').last;
-          final Uint8List bytes = base64Decode(base64Data);
+          final Uint8List bytes = imagensBytes[index];
           return Stack(
             children: [
               Container(
@@ -699,8 +761,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
           validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
-
-        // Dropdown de categoria padronizada (CNAE simplificado)
         DropdownButtonFormField<String>(
           initialValue: _categoriaSelecionadaCnae,
           decoration: const InputDecoration(
@@ -719,7 +779,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
           onChanged: (v) => setState(() => _categoriaSelecionadaCnae = v),
           validator: (v) => v == null ? 'Selecione uma categoria.' : null,
         ),
-
         const SizedBox(height: 24),
         const Text(
           'Endereço',
@@ -750,7 +809,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           decoration: const InputDecoration(labelText: 'Bairro da Loja'),
           hint: const Text('Selecione o Bairro'),
           isExpanded: true,
-          menuMaxHeight: 300, // Limita altura para não ocupar a tela toda
+          menuMaxHeight: 300,
           items: _listaBairros.map((String bairro) {
             return DropdownMenuItem(value: bairro, child: Text(bairro));
           }).toList(),
@@ -801,7 +860,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           ),
         ),
         const SizedBox(height: 8),
-        _buildImagePreview(_imagensDocumentosBase64, false),
+        _buildImagePreview(_imagensDocumentosBytes, false),
       ];
     } else if (widget.tipoUsuario == 'prestador') {
       String? labelRegistro = _getLabelRegistroProfissional();
@@ -852,8 +911,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
           validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
-
-        // CAMPO DE MÚLTIPLA SELEÇÃO DE BAIRROS
         InkWell(
           onTap: _mostrarSelecaoBairros,
           child: InputDecorator(
@@ -875,7 +932,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
             ),
           ),
         ),
-
         const SizedBox(height: 24),
         const Text(
           'Disponibilidade de Atendimento',
@@ -995,7 +1051,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             foregroundColor: Colors.black,
           ),
         ),
-        _buildImagePreview(_imagensDocumentosBase64, false),
+        _buildImagePreview(_imagensDocumentosBytes, false),
         const SizedBox(height: 24),
         const Text(
           'Portfólio',
@@ -1015,7 +1071,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             foregroundColor: Colors.black,
           ),
         ),
-        _buildImagePreview(_imagensPortfolioBase64, true),
+        _buildImagePreview(_imagensPortfolioBytes, true),
         const SizedBox(height: 16),
         TextFormField(
           controller: _qualificacoesController,
@@ -1064,13 +1120,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 16),
-
-                // CAMPO SENHA COM TOGGLE DE VISIBILIDADE
                 TextFormField(
                   controller: _senhaController,
                   decoration: InputDecoration(
                     labelText: 'Senha',
-                    // Adiciona o ícone de toggle
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible
@@ -1079,21 +1132,17 @@ class _TelaCadastroState extends State<TelaCadastro> {
                         color: Colors.grey,
                       ),
                       onPressed: () {
-                        // Altera o estado para fazer o toggle
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
                     ),
                   ),
-                  // Usa o estado para ocultar/mostrar o texto
                   obscureText: !_isPasswordVisible,
                   onChanged: _validarSenha,
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
-
                 const SizedBox(height: 8),
-                // Requisitos de Senha
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -1134,7 +1183,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 TextFormField(
                   controller: _cpfController,
                   decoration: const InputDecoration(labelText: 'CPF'),
@@ -1158,7 +1206,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
 
-                // Campos específicos (Lojista ou Prestador)
                 ..._buildSpecificFields(),
 
                 const SizedBox(height: 32),

@@ -1,11 +1,24 @@
 import 'package:e_nosso/telas/perfil/tela_perfil.dart';
+import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Necessário para o logout real
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
   final String? urlFotoPerfil;
 
   const MenuLateral({super.key, required this.nomeUsuario, this.urlFotoPerfil});
+
+  // Função auxiliar para mostrar que a tela ainda não existe
+  void _mostrarAvisoDesenvolvimento(BuildContext context) {
+    Navigator.pop(context); // Fecha o menu lateral
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Esta funcionalidade estará disponível em breve!"),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,27 +93,13 @@ class MenuLateral extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.favorite_border),
                     title: const Text("Favoritos"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, "/favoritos");
-                    },
+                    onTap: () => _mostrarAvisoDesenvolvimento(context),
                   ),
-
-                  ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text("Editar Perfil"),
-                    onTap: () {
-                      // TODO: Ir para tela de edição
-                    },
-                  ), //*******************
 
                   ListTile(
                     leading: const Icon(Icons.history),
                     title: const Text("Histórico de pedidos e compras"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, "/historico");
-                    },
+                    onTap: () => _mostrarAvisoDesenvolvimento(context),
                   ),
 
                   const SizedBox(height: 20),
@@ -120,28 +119,19 @@ class MenuLateral extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.help_outline),
                     title: const Text("Tem dúvidas? Acesse o FAQ"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, "/faq");
-                    },
+                    onTap: () => _mostrarAvisoDesenvolvimento(context),
                   ),
 
                   ListTile(
                     leading: const Icon(Icons.settings),
                     title: const Text("Configurações"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, "/configuracoes");
-                    },
+                    onTap: () => _mostrarAvisoDesenvolvimento(context),
                   ),
 
                   ListTile(
                     leading: const Icon(Icons.info_outline),
                     title: const Text("Ajuda"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, "/ajuda");
-                    },
+                    onTap: () => _mostrarAvisoDesenvolvimento(context),
                   ),
                 ],
               ),
@@ -151,11 +141,23 @@ class MenuLateral extends StatelessWidget {
             // BOTÃO SAIR (PARTE INFERIOR)
             // -----------------------------------------
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Sair"),
-              onTap: () {
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text("Sair", style: TextStyle(color: Colors.red)),
+              onTap: () async {
+                // 1. Fecha o menu lateral
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, "/login");
+
+                // 2. Faz o logout real no Firebase
+                await FirebaseAuth.instance.signOut();
+
+                // 3. Limpa todo o histórico de navegação e volta para a escolha de perfil
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
+                    (route) => false,
+                  );
+                }
               },
             ),
 
