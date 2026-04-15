@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../utils/usuario_util.dart';
 import '../lojista/tela_admin_conteudo_lojista.dart'; // Vamos criar abaixo
 import '../prestador/tela_admin_conteudo_prestador.dart'; // Vamos criar abaixo
 
@@ -174,7 +175,7 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
           itemBuilder: (context, index) {
             final dados = usuarios[index].data() as Map<String, dynamic>;
             final uid = usuarios[index].id;
-            final nome = '${dados['nome']} ${dados['sobrenome'] ?? ''}';
+            final nome = UsuarioUtil.getNomeCompleto(dados, colecao: 'usuarioComum');
             final isAdmin = dados['tipo'] == 'admin';
             final isMe = uid == _currentUser?.uid;
 
@@ -223,12 +224,9 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
             // Tratamento para pegar nome (lojista usa dadosDoResponsavel ou razaoSocial)
             String nome = 'Sem nome';
             if (colecao == 'lojistas') {
-              nome =
-                  dados['razaoSocial'] ??
-                  dados['dadosDoResponsavel']?['nome'] ??
-                  'Lojista';
+              nome = UsuarioUtil.getNomeCompleto(dados, colecao: colecao);
             } else {
-              nome = '${dados['nome']} ${dados['sobrenome']}';
+              nome = UsuarioUtil.getNomeCompleto(dados, colecao: colecao);
             }
 
             return ListTile(

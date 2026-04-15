@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../auth/tela_tipo_usuario.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
+import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados (para organizar a informação) ---
 
@@ -53,25 +53,42 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // TODO: Conectar com o Firestore para buscar dados reais
-    // Por enquanto, usaremos dados de exemplo (mock)
-    setState(() {
-      _prestador = PrestadorProfile(
-        nome: "Fulano de Tal",
-        areaAtuacao: "Eletricista",
-      );
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('prestadorServicos')
+          .doc(user.uid)
+          .get();
 
-      _servicos = [
-        ServicoItem(imagemUrl: "", nome: "Serviço 1", preco: 30.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 2", preco: 45.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 3", preco: 70.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 4", preco: 30.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 5", preco: 45.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 6", preco: 70.00),
-      ];
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        
+        final nomeFormatado = UsuarioUtil.getNomeCompleto(
+          data,
+          colecao: 'prestadorServicos',
+        );
 
-      _isLoading = false;
-    });
+        setState(() {
+          _prestador = PrestadorProfile(
+            nome: nomeFormatado,
+            areaAtuacao: data['areaAtuacao'] ?? "Profissão não definida",
+          );
+
+          // TODO: Substituir por consulta real de serviços/portfólio futuramente
+          _servicos = [
+            ServicoItem(imagemUrl: "", nome: "Serviço 1", preco: 30.00),
+            ServicoItem(imagemUrl: "", nome: "Serviço 2", preco: 45.00),
+            ServicoItem(imagemUrl: "", nome: "Serviço 3", preco: 70.00),
+          ];
+
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar dados do prestador: $e");
+      setState(() => _isLoading = false);
+    }
   }
 
   // <<< AQUI ESTÁ A CORREÇÃO >>>
@@ -218,8 +235,10 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
   }
 
   Widget _buildBottomButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12, // espaço horizontal entre os botões
+      runSpacing: 12, // espaço vertical quando quebram a linha
       children: [
         ElevatedButton.icon(
           onPressed: () {
