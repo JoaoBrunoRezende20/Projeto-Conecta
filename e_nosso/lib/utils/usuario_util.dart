@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 class UsuarioUtil {
 
   /// Recupera o nome completo do usuário de forma consistente
@@ -89,5 +92,26 @@ class UsuarioUtil {
   }) {
     String nome = getNomeCompleto(dados, tipo: tipo, colecao: colecao);
     return nome.isNotEmpty && nome != 'Usuário' && nome != 'Lojista' && nome != 'Prestador';
+  }
+
+  /// Decodifica com segurança uma string Base64 (limpando cabeçalho, espaços e ajustando padding)
+  static Uint8List decodificarBase64(String base64String) {
+    try {
+      String limpa = base64String.contains(',')
+          ? base64String.split(',').last
+          : base64String;
+      
+      // Remove espaços, quebras de linha e caracteres não-base64 seguros
+      limpa = limpa.replaceAll(RegExp(r'[^A-Za-z0-9+/=]'), '');
+      
+      // Ajusta o padding se necessário
+      int padding = limpa.length % 4;
+      if (padding != 0) {
+        limpa += '=' * (4 - padding);
+      }
+      return base64Decode(limpa);
+    } catch (e) {
+      throw Exception('Erro ao decodificar Base64: $e');
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../utils/usuario_util.dart';
 
 class TelaAdminConteudoPrestador extends StatefulWidget {
   final String uidPrestador;
@@ -28,8 +29,7 @@ class _TelaAdminConteudoPrestadorState extends State<TelaAdminConteudoPrestador>
 
   Widget _buildImagemBase64(String base64String) {
     try {
-      String limpa = base64String.contains(',') ? base64String.split(',').last : base64String;
-      return Image.memory(base64Decode(limpa), fit: BoxFit.cover);
+      return Image.memory(UsuarioUtil.decodificarBase64(base64String), fit: BoxFit.cover);
     } catch (e) {
       return const Center(child: Icon(Icons.error));
     }
