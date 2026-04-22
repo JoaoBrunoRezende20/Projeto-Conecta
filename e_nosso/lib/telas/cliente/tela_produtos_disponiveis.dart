@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
 
@@ -95,6 +96,14 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           .where('lojistaId', isEqualTo: widget.lojaId)
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              "Erro ao carregar produtos.",
+              style: TextStyle(color: Colors.red[800]),
+            ),
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -218,13 +227,33 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           else
             ElevatedButton(
               onPressed: estoqueDisponivel > 0
-                  ? () => setState(() {
-                      carrinhoGlobal[id] = {
-                        'nome': produto['nome'],
-                        'preco': produto['preco'],
-                        'quantidade': 1,
-                      };
-                    })
+                  ? () {
+                      final user = FirebaseAuth.instance.currentUser;
+                      final isVisitor = user == null || user.isAnonymous;
+                      if (isVisitor) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Autenticação necessária"),
+                            content: const Text("Por favor, faça login ou crie uma conta para adicionar produtos ao carrinho."),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
+                      setState(() {
+                        carrinhoGlobal[id] = {
+                          'nome': produto['nome'],
+                          'preco': produto['preco'],
+                          'quantidade': 1,
+                        };
+                      });
+                    }
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: estoqueDisponivel > 0

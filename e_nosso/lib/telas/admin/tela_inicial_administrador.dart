@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../utils/usuario_util.dart';
+import '../../utils/usuario_util.dart';
 // Certifique-se que os nomes das classes dentro desses arquivos estão corretos
 import 'tela_todos_usuarios.dart';
 import 'tela_logs.dart';
