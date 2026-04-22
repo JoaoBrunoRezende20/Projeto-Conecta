@@ -1,22 +1,98 @@
 import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Necessário para o logout real
+import 'package:firebase_auth/firebase_auth.dart';
+import '../telas/suporte/tela_faq.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
   final String? urlFotoPerfil;
+  final bool isVisitante;
 
-  const MenuLateral({super.key, required this.nomeUsuario, this.urlFotoPerfil});
+  const MenuLateral({
+    super.key,
+    required this.nomeUsuario,
+    this.urlFotoPerfil,
+    this.isVisitante = false,
+  });
 
-  // Função auxiliar para mostrar que a tela ainda não existe
   void _mostrarAvisoDesenvolvimento(BuildContext context) {
-    Navigator.pop(context); // Fecha o menu lateral
+    Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Esta funcionalidade estará disponível em breve!"),
         duration: Duration(seconds: 2),
       ),
+    );
+  }
+
+  void _confirmarSaida(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Deseja sair da conta?",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TelaTipoUsuario(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      child: const Text(
+                        "SAIR",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "CANCELAR",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -26,40 +102,31 @@ class MenuLateral extends StatelessWidget {
       width: 280,
       child: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // -----------------------------------------
-            // CABEÇALHO DO MENU
-            // -----------------------------------------
+            // 1. CABEÇALHO (FIXO NO TOPO)
             Container(
+              padding: const EdgeInsets.all(16),
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               color: Colors.grey.shade300,
               child: Row(
                 children: [
-                  // Foto do usuário
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.grey.shade500,
-                    backgroundImage: urlFotoPerfil != null
+                    backgroundImage: (!isVisitante && urlFotoPerfil != null)
                         ? NetworkImage(urlFotoPerfil!)
                         : null,
+                    child: isVisitante ? const Icon(Icons.person) : null,
                   ),
                   const SizedBox(width: 10),
-
-                  // Nome
                   Expanded(
                     child: Text(
-                      nomeUsuario,
+                      isVisitante ? "Visitante" : nomeUsuario,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-
-                  // Botão fechar (voltar)
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -68,100 +135,105 @@ class MenuLateral extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1),
-
-            // -----------------------------------------
-            // OPÇÕES DO MENU
-            // -----------------------------------------
+            // 2. CONTEÚDO SCROLLABLE (SÓ OPÇÕES DE PERFIL)
             Expanded(
               child: ListView(
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.edit),
-                    title: const Text("Editar perfil"),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditarPerfilPage(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  ListTile(
-                    leading: const Icon(Icons.favorite_border),
-                    title: const Text("Favoritos"),
-                    onTap: () => _mostrarAvisoDesenvolvimento(context),
-                  ),
-
-                  ListTile(
-                    leading: const Icon(Icons.history),
-                    title: const Text("Histórico de pedidos e compras"),
-                    onTap: () => _mostrarAvisoDesenvolvimento(context),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Text(
-                      "Ajuda",
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
+                  if (!isVisitante) ...[
+                    ListTile(
+                      leading: const Icon(Icons.edit),
+                      title: const Text("Editar perfil"),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditarPerfilPage(),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-
-                  ListTile(
-                    leading: const Icon(Icons.help_outline),
-                    title: const Text("Tem dúvidas? Acesse o FAQ"),
-                    onTap: () => _mostrarAvisoDesenvolvimento(context),
-                  ),
-
-                  ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: const Text("Configurações"),
-                    onTap: () => _mostrarAvisoDesenvolvimento(context),
-                  ),
-
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text("Ajuda"),
-                    onTap: () => _mostrarAvisoDesenvolvimento(context),
-                  ),
+                    ListTile(
+                      leading: const Icon(Icons.favorite_border),
+                      title: const Text("Favoritos"),
+                      onTap: () => _mostrarAvisoDesenvolvimento(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.history),
+                      title: const Text("Histórico de pedidos"),
+                      onTap: () => _mostrarAvisoDesenvolvimento(context),
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            // -----------------------------------------
-            // BOTÃO SAIR (PARTE INFERIOR)
-            // -----------------------------------------
+            // 3. SEÇÃO DE AJUDA (FIXA NA PARTE DE BAIXO)
+            const Divider(height: 1),
+            const Padding(
+              padding: EdgeInsets.only(left: 16, top: 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Ajuda",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+           ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text("Tem dúvidas? Acesse o FAQ"),
+              onTap: () {
+                Navigator.pop(context); // Fecha o menu lateral primeiro
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaFaq()),
+                );
+              },
+            ),
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text("Sair", style: TextStyle(color: Colors.red)),
-              onTap: () async {
-                // 1. Fecha o menu lateral
+              leading: const Icon(Icons.settings),
+              title: const Text("Configurações"),
+              onTap: () => _mostrarAvisoDesenvolvimento(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text("Ajuda"),
+              onTap: () => _mostrarAvisoDesenvolvimento(context),
+            ),
+
+            // 4. BOTÃO DE SAIR/ENTRAR (RODAPÉ)
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                isVisitante ? Icons.login : Icons.logout,
+                color: isVisitante ? Colors.blue : Colors.red,
+              ),
+              title: Text(
+                isVisitante ? "Entrar / Cadastrar" : "Sair",
+                style: TextStyle(
+                  color: isVisitante ? Colors.blue : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () {
                 Navigator.pop(context);
-
-                // 2. Faz o logout real no Firebase
-                await FirebaseAuth.instance.signOut();
-
-                // 3. Limpa todo o histórico de navegação e volta para a escolha de perfil
-                if (context.mounted) {
+                if (isVisitante) {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
                     (route) => false,
                   );
+                } else {
+                  _confirmarSaida(context);
                 }
               },
             ),
-
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
           ],
         ),
       ),

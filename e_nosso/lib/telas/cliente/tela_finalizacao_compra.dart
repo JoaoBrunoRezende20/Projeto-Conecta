@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // NOVO: Para salvar no banco
 import 'package:firebase_auth/firebase_auth.dart'; // NOVO: Para pegar o ID do cliente
 import 'tela_produtos_disponiveis.dart'; // NOVO: Para acessar a variável carrinhoGlobal
+import '../../utils/carrinho_util.dart';
 
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -260,36 +261,42 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       final clienteId =
           FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
 
-      // 2. Monta o pacote de dados do pedido
-      final pedidoData = {
+      // 2. Monta o pacote de dados do pedido com CÓPIA do carrinho para evitar erro de referência
+      final itensCopia = <String, dynamic>{};
+      carrinhoGlobal.forEach((key, value) {
+        itensCopia[key] = Map<String, dynamic>.from(value);
+      });
+
+      final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
-        'lojistaId': lojaIdDoCarrinho, // Vem da tela anterior
-        'itens': carrinhoGlobal, // Vem da tela anterior
+        'lojistaId': lojaIdDoCarrinho ?? 'desconhecido', // Vem da tela anterior
+        'itens': itensCopia, // Cópia segura
         'valorTotal': widget.valorTotal,
         'status': 'pendente', // pendente, aceito, cancelado, etc.
         'dataCriacao': FieldValue.serverTimestamp(),
-        'dadosCliente': {
+        'dadosCliente': <String, dynamic>{
           'nome': _nomeController.text.trim(),
           'telefone': _telefoneController.text.trim(),
         },
-        'dadosEntrega': {
+        'dadosEntrega': <String, dynamic>{
           'endereco': _enderecoController.text.trim(),
           'bairro': _bairroController.text.trim(),
           'numero': _numeroController.text.trim(),
         },
-        'pagamento': {
+        'pagamento': <String, dynamic>{
           'metodo': _metodoPagamento,
           'precisaTroco': _precisaTroco,
-          'trocoPara': _trocoController.text.trim(),
+          'trocoPara': _precisaTroco ? _trocoController.text.trim() : '',
         },
       };
 
       // 3. Salva no banco de dados na coleção "pedidos"
       await FirebaseFirestore.instance.collection('pedidos').add(pedidoData);
 
-      // 4. Limpa o carrinho global agora que a compra foi feita
+      // 4. Limpa o carrinho global e a memória local agora que a compra foi feita
       carrinhoGlobal.clear();
       lojaIdDoCarrinho = null;
+      await CarrinhoUtil.limparCarrinho();
 
       // Fecha a bolinha de carregamento
       if (mounted) Navigator.pop(context);

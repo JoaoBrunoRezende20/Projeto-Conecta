@@ -30,21 +30,19 @@ lib/
 │   │   ├── tela_tipo_usuario.dart     — Seleção de tipo antes do login
 │   │   ├── tela_login.dart            — Login com email/senha
 │   │   ├── tela_cadastro_usuarios.dart— Cadastro completo (lojista, prestador, comum)
-│   │   ├── tela_definicao_senha.dart  — [INCOMPLETA] Definição de senha
-│   │   └── tela_detalhes_cadastro.dart— Admin revisa cadastro com docs
+│   │   ├── tela_detalhes_cadastro.dart— Admin revisa cadastro com docs
 │   ├── cliente/
 │   │   ├── tela_inicial_comum.dart    — Grid de categorias
 │   │   ├── tela_divisao_categoria.dart — Navegação por categorias
 │   │   ├── tela_produtos_disponiveis.dart — Lista produtos + carrinho
 │   │   ├── tela_carrinho.dart          — Revisão do carrinho
 │   │   ├── tela_finalizacao_compra.dart— Dados entrega + pagamento
-│   │   └── tela_servicos.dart          — [VAZIA]
 │   ├── lojista/
 │   │   ├── tela_inicial_lojista.dart   — Gerência de produtos (Firebase)
 │   │   ├── tela_conteudo_produtos.dart — Gerência local (não usa Firebase)
 │   │   └── tela_admin_conteudo_lojista.dart — Admin vê/exclui produtos
 │   ├── prestador/
-│   │   ├── tela_inicial_prestador_servico.dart — Perfil (dados mock, não Firebase)
+│   │   ├── tela_inicial_prestador_servico.dart — Perfil (Integrado ao Firebase)
 │   │   └── tela_admin_conteudo_prestador.dart  — Admin vê portfólio
 │   ├── admin/
 │   │   ├── tela_inicial_administrador.dart  — Cadastros pendentes
@@ -57,11 +55,11 @@ lib/
 │   │   ├── categoria_quitandas.dart
 │   │   └── categoria_servicos.dart
 │   └── perfil/
-│       ├── tela_perfil.dart           — [SKELETON] Editar perfil
+│       ├── tela_perfil.dart           — Editar perfil (Funcional)
 │       └── tela_notificacoes.dart     — Notificações (subcolleção)
 └── widgets/
     ├── botao_notificacao.dart         — Badge de notificações não lidas
-    └── menu_lateral.dart              — Drawer lateral (rotas quebradas)
+    └── menu_lateral.dart              — Drawer lateral (Rotas corrigidas)
 ```
 
 ---
@@ -82,7 +80,7 @@ Imagens do portfólio e documentos são lidas como bytes, convertidas para base6
 
 **Impacto:** Se um prestador enviar 5 fotos de 3MB cada, o documento terá ~20MB — impossível de salvar no Firestore.
 
-### 3.2. Tela de Checkout não salva pedido no banco
+### 3.2. Tela de Checkout não salva pedido no banco **[CONCLUÍDO]**
 
 **Local:** `tela_finalizacao_compra.dart:247-262`
 
@@ -101,7 +99,7 @@ void _finalizarPedido() {
 
 O pedido **nunca é persistido**. A coleção `pedidos` existe no JSON de modelagem (`bdConectaV1.0.json`) mas nunca é usada no código.
 
-### 3.3. Carrinho é volátil — perdido ao sair da tela
+### 3.3. Carrinho é volátil — perdido ao sair da tela **[CONCLUÍDO]**
 
 **Local:** `tela_produtos_disponiveis.dart:26`
 
@@ -111,7 +109,7 @@ final Map<String, Map<String, dynamic>> _carrinho = {};
 
 O carrinho é um `Map` em memória do `StatefulWidget`. Se o usuário sair da tela, trocar de app ou o Flutter reconstruir o widget, **todos os itens são perdidos**.
 
-### 3.4. Promoção de admin não funciona
+### 3.4. Promoção de admin não funciona **[CONCLUÍDO]**
 
 **Local:** `tela_todos_usuarios.dart:117-127` + `main.dart:55-60`
 
@@ -132,7 +130,7 @@ if (doc.exists) return 'administrador';
 
 Como nenhum documento é criado em `administrador`, **o usuário nunca será reconhecido como admin ao logar**, mesmo após a promoção.
 
-### 3.5. Rotas inexistentes no MaterialApp — app vai quebrar
+### 3.5. Rotas inexistentes no MaterialApp — app vai quebrar **[CONCLUÍDO]**
 
 **Local:** `menu_lateral.dart`
 
@@ -196,14 +194,14 @@ No cadastro do lojista, não existe campo para descrição da loja. As telas de 
 
 | Arquivo | Problema |
 |---|---|
-| `tela_definicao_senha.dart` | Tela completa nunca é acessada pelo fluxo de navegação |
-| `tela_conteudo_produtos.dart:1-167` | Bloco inteiro de código antigo comentado — não removido |
-| `tela_produtos_disponiveis.dart:299-367` | `TelaRevisaoCarrinho` duplicada e comentada |
-| `menu_lateral.dart:68-95` | "Editar perfil" aparece **duas vezes** (uma funcional, outra com TODO) |
-| `tela_divisao_categoria.dart:67` | `print(">>> A TELA REAL FOI CARREGADA <<<")` — debug em produção |
-| `tela_inicial_prestador_servico.dart:56-72` | Dados **mock** hardcoded ("Fulano de Tal", "Eletricista") em vez de dados reais do Firestore |
-| `tela_servicos.dart` | Arquivo vazio |
-| `tela_perfil.dart` | Tela skeleton — sem controllers, sem validação, sem Firebase |
+| `tela_definicao_senha.dart` | **DELETADO** — Arquivo morto removido |
+| `tela_conteudo_produtos.dart` | **LIMPO** — Bloco de código comentado removido |
+| `tela_produtos_disponiveis.dart` | **LIMPO** — Código duplicado removido |
+| `menu_lateral.dart` | **CORRIGIDO** — "Editar perfil" duplicado removido |
+| `tela_divisao_categoria.dart` | **CORRIGIDO** — Print debug removido |
+| `tela_inicial_prestador_servico.dart` | **CONCLUÍDO** — Integrado ao Firestore (dados reais) |
+| `tela_servicos.dart` | **DELETADO** — Arquivo vazio removido |
+| `tela_perfil.dart` | **CONCLUÍDO** — Tela funcional integrada ao Firebase |
 
 ---
 
@@ -395,19 +393,13 @@ Se o app for escalar, considere migrar quando:
 - A lógica do Firestore ("firestone") para busca, autenticação e utilitários já se encontra 100% livre de erros pelo compilador Dart neste escopo.
 *(Nota: A lista visual de serviços inferiores e os botões "Editar Itens" ainda aguardam implementações isoladas de UI/Design futuras).*
 
-### 11.11. Tela "Editar Perfil" não implementada corretamente
+### 11.11. Tela "Editar Perfil" não implementada corretamente **[CONCLUÍDO]**
 
-**Local:** `tela_perfil.dart:1-35` — `EditarPerfilPage`
-**Causa:** Os `TextField()` não têm `controller`, não carregam dados atuais do usuário, e o botão "Salvar" tem `onPressed: () {}` vazio. Não há conexão com Firestore.
-**Impacto:** Tela exibe campos em branco que não fazem nada ao salvar.
-**Correção futura:** Buscar dados do usuário do Firestore, popular controllers, enviar update ao salvar.
+**Status:** **CONCLUÍDO.** A tela foi convertida em `StatefulWidget`, identifica automaticamente o tipo de usuário, carrega os dados do Firestore e permite o salvamento persistente.
 
-### 11.12. Menu lateral do Prestador — só "Editar Perfil" funciona
+### 11.12. Menu lateral do Prestador — só "Editar Perfil" funciona **[CONCLUÍDO]**
 
-**Local:** `menu_lateral.dart:59-146`
-**Causa:** As opções "Favoritos" (`/favoritos`), "Histórico" (`/historico`), "Configurações" (`/configuracoes`), "Ajuda" (`/ajuda`) e "FAQ" (`/faq`) usam `Navigator.pushNamed` com rotas que não existem em `main.dart`. O app crasha ao clicar.
-**Também:** "Editar Perfil" aparece **duas vezes** — uma funcional (linha 66-78) e uma com TODO (linha 89-95).
-**Correção futura:** Criar as telas faltantes ou temporariamente mostrar `SnackBar("Em breve")`. Remover item duplicado.
+**Status:** **CONCLUÍDO.** As rotas inexistentes agora exibem um aviso de "Em breve" via SnackBar, evitando o crash do app. O item duplicado "Editar Perfil" foi removido.
 
 ### 11.13. Não existe tela de descrição de produto para Cliente
 
@@ -487,22 +479,22 @@ Se o app for escalar, considere migrar quando:
 | 1 | Menu lateral não funciona (cliente) | `tela_inicial_comum.dart` | Bug funcional |
 | 2 | Menu lateral não funciona (lojista) | `tela_inicial_lojista.dart` | Funcionalidade faltante |
 | 3 | Loading infinito (visitante) | `main.dart` | Bug |
-| 4 | Rotas inexistentes (/faq, /favoritos, /historico, /ajuda, /configuracoes, /login) | `main.dart`, `menu_lateral.dart` | Crash garantido |
+| 4 | Rotas inexistentes (/faq, /favoritos, etc) | `menu_lateral.dart` | **[CONCLUÍDO]** |
 | 5 | Tela prestador não funciona (dados mock) | `tela_inicial_prestador_servico.dart` | **[CONCLUÍDO]** |
-| 6 | Pedido não é salvo no banco | `tela_finalizacao_compra.dart` | Bug crítico |
-| 7 | Carrinho é volátil (perdido ao sair) | `tela_produtos_disponiveis.dart` | Bug funcional |
-| 8 | Imagens base64 estouram limite do Firestore | `tela_cadastro_usuarios.dart` | Risco de quebra |
+| 6 | Pedido não é salvo no banco | `tela_finalizacao_compra.dart` | **[CONCLUÍDO]** |
+| 7 | Carrinho é volátil (perdido ao sair) | `tela_produtos_disponiveis.dart` | **[CONCLUÍDO]** |
+| 8 | Imagens base64 (Correção de decoding) | `usuario_util.dart` | **[PARCIAL]** |
 
 ### Importantes (funcionalidade parcial ou ausente)
 
 | # | Problema | Arquivo(s) | Tipo |
 |---|----------|-----------|------|
-| 9 | Editar perfil não implementada | `tela_perfil.dart` | Tela incompleta |
+| 9 | Editar perfil não implementada | `tela_perfil.dart` | **[CONCLUÍDO]** |
 | 10 | CPF/CNPJ/Telefone/CEP sem máscara | `tela_cadastro_usuarios.dart` | Validação |
 | 11 | Sair sem confirmação | Todas as telas iniciais | UX |
 | 12 | Alvará não obrigatório (lojista) | `tela_cadastro_usuarios.dart` | Regra de negócio |
 | 13 | Lojista acessa prestador | `main.dart` | Segurança |
-| 14 | Promoção de admin não funciona | `main.dart`, `tela_todos_usuarios.dart` | Bug |
+| 14 | Promoção de admin não funciona | `main.dart` | **[CONCLUÍDO]** |
 | 15 | Sem tela de descrição de produto | N/A | Funcionalidade faltante |
 | 16 | Sem tela de cancelamento de pedido | N/A | Funcionalidade faltante |
 | 17 | FAQ não funciona | `tela_tipo_usuario.dart` | Funcionalidade faltante |
@@ -519,13 +511,13 @@ Se o app for escalar, considere migrar quando:
 
 | # | Problema | Arquivo(s) | Tipo |
 |---|----------|-----------|------|
-| 26 | "Editar Perfil" duplicado no menu | `menu_lateral.dart` | Código morto |
+| 26 | "Editar Perfil" duplicado no menu | `menu_lateral.dart` | **[CONCLUÍDO]** |
 | 27 | Notificação marcada como lida no `build` (ciclo) | `tela_notificacoes.dart` | Bug potencial |
 | 28 | `firebase_storage` instalado mas nunca usado | `pubspec.yaml` | Dependência órfã |
 | 29 | Admin não exibe resumo ao confirmar perfil | `tela_detalhes_cadastro.dart` | Melhoria UX |
-| 30 | Código morto (blocos comentados, prints) | Vários | Limpeza |
-| 31 | `tela_servicos.dart` vazio | `tela_servicos.dart` | Arquivo morto |
-| 32 | `tela_definicao_senha.dart` inacessível | `tela_definicao_senha.dart` | Funcionalidade inacessível |
+| 30 | Código morto (blocos comentados, prints) | Vários | **[CONCLUÍDO]** |
+| 31 | `tela_servicos.dart` vazio | `tela_servicos.dart` | **[DELETADO]** |
+| 32 | `tela_definicao_senha.dart` inacessível | `tela_definicao_senha.dart` | **[DELETADO]** |
 | 33 | 5 telas de categoria quase idênticas | `categorias/` | Refatoração |
 | 34 | `AuthWrapper` faz 4 queries sequenciais | `main.dart` | Performance |
 
