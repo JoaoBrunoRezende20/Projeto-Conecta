@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../widgets/botao_notificacao.dart';
+import '/widgets/botao_notificacao.dart';
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -44,7 +44,7 @@ class TelaInicialLojista extends StatefulWidget {
 class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   final String? lojistaId = FirebaseAuth.instance.currentUser?.uid;
   
-  // Agora temos 3 abas: 0 (Produtos), 1 (Pedidos), 2 (Serviços)
+  // Controle de Abas: 0 (Produtos), 1 (Pedidos), 2 (Serviços)
   int _indiceAbaAtual = 0; 
 
   Future<void> _signOut() async {
@@ -145,7 +145,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         if (statusCadastro == 'pendente') {
           return _buildTelaBloqueio(
             titulo: "Cadastro em Análise",
-            mensagem: "Sua conta e seus documentos (Alvará/CNPJ) estão sendo analisados pela nossa equipe.\n\nVocê receberá uma notificação assim que seu acesso for liberado para começar a vender.",
+            mensagem: "Sua conta e seus documentos estão sendo analisados pela nossa equipe.\n\nVocê receberá uma notificação assim que seu acesso for liberado para começar a vender e visualizar serviços.",
             icone: Icons.hourglass_top,
             cor: Colors.orange,
           );
@@ -154,12 +154,13 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         if (statusCadastro == 'rejeitado') {
           return _buildTelaBloqueio(
             titulo: "Cadastro Não Aprovado",
-            mensagem: "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte para corrigir seus dados.",
+            mensagem: "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte.",
             icone: Icons.error_outline,
             cor: Colors.red,
           );
         }
 
+        // Se Aprovado, mostra o App Completo
         return _buildTelaAprovada();
       },
     );
@@ -186,7 +187,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  // --- O PAINEL DE TRABALHO COMPLETO ---
+  // --- O PAINEL DE TRABALHO COMPLETO (COM 3 ABAS) ---
   Widget _buildTelaAprovada() {
     String tituloApp = 'Meus Produtos';
     if (_indiceAbaAtual == 1) tituloApp = 'Pedidos Recebidos';
@@ -213,16 +214,16 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             )
           : null,
       
-      // Lógica de alternância das 3 Abas
+      // Alternância de Abas
       body: _indiceAbaAtual == 0 
           ? _buildAbaProdutos() 
           : _indiceAbaAtual == 1 
               ? _buildAbaPedidos() 
               : _buildAbaServicos(),
 
-      // Barra de Navegação Atualizada
+      // Barra Inferior
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Impede que os ícones fiquem "dançando" ao adicionar um terceiro
+        type: BottomNavigationBarType.fixed,
         currentIndex: _indiceAbaAtual,
         onTap: (index) => setState(() => _indiceAbaAtual = index),
         selectedItemColor: Colors.green,
@@ -230,7 +231,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Produtos'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Pedidos'),
-          BottomNavigationBarItem(icon: Icon(Icons.handyman), label: 'Serviços'), // NOVO BOTÃO
+          BottomNavigationBarItem(icon: Icon(Icons.handyman), label: 'Serviços'),
         ],
       ),
     );
@@ -403,7 +404,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            // Consulta APENAS os prestadores que foram APROVADOS pelo administrador (status == true)
+            // Consulta APENAS os prestadores que foram APROVADOS (status == true)
             stream: FirebaseFirestore.instance
                 .collection('prestadorServicos')
                 .where('status', isEqualTo: true) 
@@ -462,7 +463,6 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  // Dialog para mostrar os detalhes do prestador quando o lojista clica
   void _mostrarDetalhesPrestador(Map<String, dynamic> prestador) {
     showDialog(
       context: context,
