@@ -2,6 +2,7 @@ import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../telas/suporte/tela_faq.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
@@ -183,10 +184,16 @@ class MenuLateral extends StatelessWidget {
                 ),
               ),
             ),
-            ListTile(
+           ListTile(
               leading: const Icon(Icons.help_outline),
               title: const Text("Tem dúvidas? Acesse o FAQ"),
-              onTap: () => _mostrarAvisoDesenvolvimento(context),
+              onTap: () {
+                Navigator.pop(context); // Fecha o menu lateral primeiro
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaFaq()),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
