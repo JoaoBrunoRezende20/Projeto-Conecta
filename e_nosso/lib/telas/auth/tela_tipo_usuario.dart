@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'tela_login.dart';
 import '../cliente/tela_inicial_comum.dart';
+import '../suporte/tela_faq.dart';
 
 class TelaTipoUsuario extends StatelessWidget {
   const TelaTipoUsuario({super.key});
@@ -98,25 +99,33 @@ class TelaTipoUsuario extends StatelessWidget {
               ),
 
               const Spacer(flex: 2), // Espaço flexível no final
-              // Rodapé FAQ
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Dúvidas no cadastro? Acesse o '),
-                  InkWell(
-                    onTap: () {
-                      // TODO: Implementar navegação para a tela de FAQ
-                    },
-                    child: const Text(
-                      'FAQ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Botão de FAQ no final da tela
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TelaFaq()),
+    );
+  },
+  child: Container(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    color: Colors.grey.shade200,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.help_outline, color: Colors.blue.shade700),
+        const SizedBox(width: 8),
+        Text(
+          "Tem dúvidas? Acesse o FAQ",
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
               const SizedBox(height: 20),
             ],
           ),
