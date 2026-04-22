@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../utils/usuario_util.dart';
+import '../../utils/usuario_util.dart';
 import '../lojista/tela_admin_conteudo_lojista.dart'; // Vamos criar abaixo
 import '../prestador/tela_admin_conteudo_prestador.dart'; // Vamos criar abaixo
 
