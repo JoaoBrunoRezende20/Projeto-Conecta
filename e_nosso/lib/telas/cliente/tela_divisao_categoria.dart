@@ -64,7 +64,6 @@ class TelaDivisaoCategoria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(">>> A TELA REAL FOI CARREGADA <<<");
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
