@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../utils/usuario_util.dart';
 // Certifique-se que os nomes das classes dentro desses arquivos estão corretos
 import 'tela_todos_usuarios.dart';
 import 'tela_logs.dart';
@@ -73,9 +74,11 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
           UsuarioPendente(
             id: doc.id,
             nome:
-                data['dadosDoResponsavel']?['nome'] ??
-                data['razaoSocial'] ??
-                'Sem nome',
+                UsuarioUtil.getNomeCompleto(
+                  data,
+                  tipo: 'Lojista',
+                  colecao: 'lojistas',
+                ),
             tipo: 'Lojista',
             dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
             cpfOuCnpj: data['cnpj'] ?? '',
@@ -96,7 +99,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
         usuarios.add(
           UsuarioPendente(
             id: doc.id,
-            nome: data['nome'] ?? 'Sem nome',
+            nome: UsuarioUtil.getNomeCompleto(data, tipo: 'Prestador de serviço', colecao: 'prestadorServicos'),
             tipo: 'Prestador de serviço',
             dataEnvio: data['dataCriacao'] ?? Timestamp.now(),
             cpfOuCnpj: data['cpf'] ?? '',

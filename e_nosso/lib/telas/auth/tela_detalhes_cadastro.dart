@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart'; // Certifique-se que adicionou 'gal' no pubspec.yaml
+import '../../utils/usuario_util.dart';
 
 class TelaDetalhesCadastro extends StatefulWidget {
   final String usuarioId;
@@ -47,11 +48,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   // --- LÓGICA DE SALVAR NA GALERIA (CORRIGIDA COM GAL) ---
   Future<void> _baixarImagem(String base64String) async {
     try {
-      // Limpeza da string Base64 se houver cabeçalho
-      String limpa = base64String.contains(',')
-          ? base64String.split(',').last
-          : base64String;
-      Uint8List bytes = base64Decode(limpa);
+      Uint8List bytes = UsuarioUtil.decodificarBase64(base64String);
 
       // Salva usando a biblioteca 'gal'
       await Gal.putImageBytes(bytes);
@@ -145,11 +142,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
             Positioned.fill(
               child: InteractiveViewer(
                 child: Image.memory(
-                  base64Decode(
-                    base64String.contains(',')
-                        ? base64String.split(',').last
-                        : base64String,
-                  ),
+                  UsuarioUtil.decodificarBase64(base64String),
                   fit: BoxFit.contain,
                 ),
               ),
@@ -314,9 +307,6 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   // --- WIDGETS ---
   Widget _buildImagemBase64(String base64String, String campoOrigem) {
     try {
-      String limpa = base64String.contains(',')
-          ? base64String.split(',').last
-          : base64String;
       return GestureDetector(
         onTap: () => _verImagemTelaCheia(base64String, campoOrigem),
         child: Container(
@@ -330,7 +320,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.memory(
-              base64Decode(limpa),
+              UsuarioUtil.decodificarBase64(base64String),
               fit: BoxFit.cover,
               errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
             ),

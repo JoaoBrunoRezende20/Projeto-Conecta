@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../auth/tela_tipo_usuario.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
+import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados (para organizar a informação) ---
 
@@ -13,19 +13,6 @@ class PrestadorProfile {
   final String areaAtuacao;
 
   PrestadorProfile({required this.nome, required this.areaAtuacao});
-}
-
-// Guarda os dados de um serviço específico
-class ServicoItem {
-  final String imagemUrl;
-  final String nome;
-  final double preco;
-
-  ServicoItem({
-    required this.imagemUrl,
-    required this.nome,
-    required this.preco,
-  });
 }
 
 // --- A Tela ---
@@ -39,7 +26,6 @@ class TelaInicialPrestador extends StatefulWidget {
 
 class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
   PrestadorProfile? _prestador;
-  List<ServicoItem> _servicos = [];
   bool _isLoading = true;
 
   @override
@@ -53,25 +39,36 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // TODO: Conectar com o Firestore para buscar dados reais
-    // Por enquanto, usaremos dados de exemplo (mock)
-    setState(() {
-      _prestador = PrestadorProfile(
-        nome: "Fulano de Tal",
-        areaAtuacao: "Eletricista",
-      );
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('prestadorServicos')
+          .doc(user.uid)
+          .get();
 
-      _servicos = [
-        ServicoItem(imagemUrl: "", nome: "Serviço 1", preco: 30.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 2", preco: 45.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 3", preco: 70.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 4", preco: 30.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 5", preco: 45.00),
-        ServicoItem(imagemUrl: "", nome: "Serviço 6", preco: 70.00),
-      ];
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        
+        final nomeFormatado = UsuarioUtil.getNomeCompleto(
+          data,
+          colecao: 'prestadorServicos',
+        );
 
-      _isLoading = false;
-    });
+        setState(() {
+          _prestador = PrestadorProfile(
+            nome: nomeFormatado,
+            areaAtuacao: data['areaAtuacao'] ?? "Profissão não definida",
+          );
+
+          // Removemos o carregamento de mocks aqui. Agora usamos um StreamBuilder no build.
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar dados do prestador: $e");
+      setState(() => _isLoading = false);
+    }
   }
 
   // <<< AQUI ESTÁ A CORREÇÃO >>>
@@ -154,18 +151,42 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.7,
-              ),
-              itemCount: _servicos.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                return _buildServiceCard(_servicos[index]);
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('servicos')
+                  .where('prestadorId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Nenhum serviço cadastrado.'),
+                    ),
+                  );
+                }
+
+                final servicosDocs = snapshot.data!.docs;
+
+                return GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: servicosDocs.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final data = servicosDocs[index].data() as Map<String, dynamic>;
+                    return _buildServiceCard(data);
+                  },
+                );
               },
             ),
             const SizedBox(height: 24),
@@ -176,7 +197,11 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
     );
   }
 
-  Widget _buildServiceCard(ServicoItem servico) {
+  Widget _buildServiceCard(Map<String, dynamic> servico) {
+    final nome = servico['nome'] ?? 'Sem nome';
+    final preco = servico['preco'] ?? 0.0;
+    final imagemBase64 = servico['imagemBase64'] as String?;
+
     return Card(
       elevation: 0,
       color: const Color(0xFFF5F5F5),
@@ -191,23 +216,34 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
                 color: Colors.grey[400],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: Text(
-                  '*Imagens do serviço*',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: imagemBase64 != null && imagemBase64.isNotEmpty
+                    ? Image.memory(
+                        UsuarioUtil.decodificarBase64(imagemBase64),
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => const Center(
+                          child: Icon(Icons.image_not_supported, color: Colors.white70),
+                        ),
+                      )
+                    : const Center(
+                        child: Text(
+                          '*Sem imagem*',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ),
               ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(servico.nome, textAlign: TextAlign.center),
+            child: Text(nome, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              'R\$${servico.preco.toStringAsFixed(2)}',
+              'R\$${preco.toStringAsFixed(2)}',
               textAlign: TextAlign.center,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -218,8 +254,10 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
   }
 
   Widget _buildBottomButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12, // espaço horizontal entre os botões
+      runSpacing: 12, // espaço vertical quando quebram a linha
       children: [
         ElevatedButton.icon(
           onPressed: () {

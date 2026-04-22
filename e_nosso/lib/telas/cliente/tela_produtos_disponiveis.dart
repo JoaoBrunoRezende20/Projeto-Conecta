@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
+import '../../utils/carrinho_util.dart';
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
 // Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
@@ -30,11 +31,30 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   @override
   void initState() {
     super.initState();
-    // Se o utilizador entrar numa loja diferente, limpamos o carrinho antigo
-    if (lojaIdDoCarrinho != null && lojaIdDoCarrinho != widget.lojaId) {
+    _carregarCarrinhoSalvo();
+  }
+
+  Future<void> _carregarCarrinhoSalvo() async {
+    final dadosSalvos = await CarrinhoUtil.carregarCarrinho();
+    
+    final lojaSalva = dadosSalvos['lojaId'] as String?;
+    final carrinhoSalvo = dadosSalvos['carrinho'] as Map<String, Map<String, dynamic>>?;
+
+    // Se o usuário entrar numa loja diferente da que estava salva
+    if (lojaSalva != null && lojaSalva != widget.lojaId) {
       carrinhoGlobal.clear();
+      lojaIdDoCarrinho = widget.lojaId;
+      await CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+    } else {
+      // Se for a mesma loja ou vazio, recuperamos os dados salvos
+      lojaIdDoCarrinho = widget.lojaId;
+      if (carrinhoSalvo != null && carrinhoSalvo.isNotEmpty) {
+        carrinhoGlobal.clear();
+        carrinhoGlobal.addAll(carrinhoSalvo);
+      }
     }
-    lojaIdDoCarrinho = widget.lojaId;
+    // Atualiza a tela se necessário
+    if (mounted) setState(() {});
   }
 
   double get _totalCarrinho {
@@ -197,6 +217,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                     } else {
                       carrinhoGlobal.remove(id);
                     }
+                    CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
                   }),
                 ),
                 Text(
@@ -209,8 +230,10 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                     color: Colors.green,
                   ),
                   onPressed: quantidadeNoCarrinho < estoqueDisponivel
-                      ? () =>
-                            setState(() => carrinhoGlobal[id]!['quantidade']++)
+                      ? () => setState(() {
+                            carrinhoGlobal[id]!['quantidade']++;
+                            CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                          })
                       : null,
                 ),
               ],
@@ -224,6 +247,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                         'preco': produto['preco'],
                         'quantidade': 1,
                       };
+                      CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
                     })
                   : null,
               style: ElevatedButton.styleFrom(
