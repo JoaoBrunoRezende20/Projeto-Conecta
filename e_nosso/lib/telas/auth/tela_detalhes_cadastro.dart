@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart'; // Certifique-se que adicionou 'gal' no pubspec.yaml
+import '../utils/usuario_util.dart';
 
 class TelaDetalhesCadastro extends StatefulWidget {
   final String usuarioId;
