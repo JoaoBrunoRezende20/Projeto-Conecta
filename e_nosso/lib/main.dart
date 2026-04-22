@@ -71,6 +71,19 @@ class AuthWrapper extends StatelessWidget {
         .get();
     if (doc.exists) return 'prestador';
 
+    // Se não for nenhum dos acima, verifica se é usuário comum promovido a admin
+    doc = await FirebaseFirestore.instance
+        .collection('usuarioComum')
+        .doc(uid)
+        .get();
+    
+    if (doc.exists) {
+      final dados = doc.data();
+      if (dados != null && dados['tipo'] == 'admin') {
+        return 'administrador';
+      }
+    }
+
     return 'comum';
   }
 
