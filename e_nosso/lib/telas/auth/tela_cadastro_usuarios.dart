@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart'; // NOVO: Import do Stor
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../utils/formatadores.dart';
 
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
@@ -742,9 +743,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _cnpjController,
+          inputFormatters: [AppFormatadores.maskCNPJ],
+          validator: AppFormatadores.validarCNPJ,
           decoration: const InputDecoration(labelText: 'CNPJ'),
           keyboardType: TextInputType.number,
-          validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -757,8 +759,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(
           controller: _telefoneComercialController,
           decoration: const InputDecoration(labelText: 'Telefone Comercial'),
+          inputFormatters: [AppFormatadores.maskTelefone],
+          validator: AppFormatadores.validarTelefone,
           keyboardType: TextInputType.phone,
-          validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
@@ -836,8 +839,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(
           controller: _cepController,
           decoration: const InputDecoration(labelText: 'CEP'),
+          inputFormatters: [AppFormatadores.maskCEP],
           keyboardType: TextInputType.number,
-          validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+          validator: AppFormatadores.validarCEP,
         ),
         const SizedBox(height: 24),
         const Text(
@@ -1186,8 +1190,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 TextFormField(
                   controller: _cpfController,
                   decoration: const InputDecoration(labelText: 'CPF'),
+                  inputFormatters: [AppFormatadores.maskCPF],
+                  validator: AppFormatadores.validarCPF,
                   keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -1202,8 +1207,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 TextFormField(
                   controller: _telefoneController,
                   decoration: const InputDecoration(labelText: 'Telefone'),
+                  inputFormatters: [AppFormatadores.maskTelefone],
+                  validator: AppFormatadores.validarTelefone,
                   keyboardType: TextInputType.phone,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
 
                 ..._buildSpecificFields(),

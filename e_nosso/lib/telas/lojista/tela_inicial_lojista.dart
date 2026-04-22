@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/botao_notificacao.dart';
+import 'package:e_nosso/widgets/menu_lateral.dart';
 
 // --- CLASSE PRODUTO (Mantida igual) ---
 class Produto {
@@ -166,10 +167,31 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // --- CONFIGURAÇÃO DO MENU LATERAL ---
+      drawer: MenuLateral(
+        nomeUsuario:
+            FirebaseAuth.instance.currentUser?.displayName ?? 'Lojista',
+        urlFotoPerfil: FirebaseAuth.instance.currentUser?.photoURL,
+      ),
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+
+        // --- BOTÃO DE GATILHO (Hambúrguer) ---
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
+
         title: Text(
           _indiceAbaAtual == 0 ? 'Meus Produtos' : 'Pedidos Recebidos',
           style: const TextStyle(color: Colors.black),
@@ -196,7 +218,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
       // Alterna entre a Tela de Produtos e a Tela de Pedidos
       body: _indiceAbaAtual == 0 ? _buildAbaProdutos() : _buildAbaPedidos(),
 
-      // NOVO: Barra de navegação inferior
+      // Barra de navegação inferior
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _indiceAbaAtual,
         onTap: (index) {
