@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/botao_notificacao.dart';
+import 'package:e_nosso/widgets/menu_lateral.dart';
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -195,11 +196,35 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // --- CONFIGURAÇÃO DO MENU LATERAL ---
+      drawer: MenuLateral(
+        nomeUsuario:
+            FirebaseAuth.instance.currentUser?.displayName ?? 'Lojista',
+        urlFotoPerfil: FirebaseAuth.instance.currentUser?.photoURL,
+      ),
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text(tituloApp, style: const TextStyle(color: Colors.black)),
+
+        // --- BOTÃO DE GATILHO (Hambúrguer) ---
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
+
+        title: Text(
+          _indiceAbaAtual == 0 ? 'Meus Produtos' : 'Pedidos Recebidos',
+          style: const TextStyle(color: Colors.black),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.logout, color: Colors.black), onPressed: _signOut),
           BotaoNotificacao(colecaoUsuario: 'lojistas'),

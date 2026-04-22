@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import está correto
 import '../auth/tela_tipo_usuario.dart';
 
-// <<< IMPORTANTE: Importe as telas de categoria que você já criou >>>
-// Verifique se os nomes dos arquivos e pastas estão exatos
+// Imports das categorias
 import '../categorias/categoria_quitandas.dart';
 import '../categorias/categoria_bebidas.dart';
 import '../categorias/categoria_feira_livre.dart';
@@ -29,18 +29,26 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 
-  // Função auxiliar para navegar
   void _navegarPara(Widget pagina) {
     Navigator.push(context, MaterialPageRoute(builder: (context) => pagina));
   }
 
   @override
   Widget build(BuildContext context) {
+    // Identifica se o usuário é visitante ou logado
     final user = FirebaseAuth.instance.currentUser;
     final bool isVisitor = user?.isAnonymous ?? true;
 
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // --- CONEXÃO COM O MENU LATERAL ---
+      drawer: MenuLateral(
+        nomeUsuario: user?.displayName ?? "Visitante",
+        urlFotoPerfil: user?.photoURL,
+        isVisitante: isVisitor,
+      ),
+
       appBar: AppBar(
         backgroundColor: const Color(0xFFF5F5F5),
         elevation: 0,
@@ -49,17 +57,22 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
           'Categorias',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {
-            // TODO: Menu lateral
-          },
+
+        // --- BOTÃO QUE ABRE O MENU LATERAL ---
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.black),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
         ),
+
         actions: [
           if (isVisitor)
             IconButton(
               icon: const Icon(Icons.exit_to_app, color: Colors.black),
-              tooltip: 'Sair',
+              tooltip: 'Sair do Modo Visitante',
               onPressed: _exitVisitorMode,
             )
           else
@@ -70,6 +83,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
             ),
         ],
       ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -82,7 +96,6 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
-                  // --- AQUI ESTÁ A CORREÇÃO: ADICIONAMOS A NAVEGAÇÃO ---
                   _buildCategoryCard(
                     icon: Icons.cake_outlined,
                     label: 'Quitandas',
@@ -122,7 +135,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap, // Agora o onTap recebe a função de navegar!
+      onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
