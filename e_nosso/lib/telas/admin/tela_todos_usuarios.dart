@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../lojista/tela_admin_conteudo_lojista.dart'; // Vamos criar abaixo
-import '../prestador/tela_admin_conteudo_prestador.dart'; // Vamos criar abaixo
+import '../lojista/tela_admin_conteudo_lojista.dart';
+import '../prestador/tela_admin_conteudo_prestador.dart';
+import '../auth/tela_detalhes_cadastro.dart'; // Import da tela de avaliação
 
 class TelaGerenciarUsuarios extends StatefulWidget {
   const TelaGerenciarUsuarios({super.key});
@@ -22,28 +23,21 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
     _tabController = TabController(length: 3, vsync: this);
   }
 
-  // --- FUNÇÕES DE LOGS (Reutilizando a lógica que criamos) ---
-  Future<void> _gerarLog(
-    String uidAlvo,
-    String nomeAlvo,
-    String acao,
-    String justificativa,
-  ) async {
+  // --- FUNÇÕES DE LOGS ---
+  Future<void> _gerarLog(String uidAlvo, String nomeAlvo, String acao, String justificativa) async {
     await FirebaseFirestore.instance.collection('logsAdministrativos').add({
       'dataHora': FieldValue.serverTimestamp(),
       'administradorUid': _currentUser?.uid,
       'administradorNome': 'Admin',
       'usuarioAfetadoUid': uidAlvo,
       'usuarioAfetadoNome': nomeAlvo,
-      'acao':
-          acao ==
-          'EXCLUSAO', // false para ban/exclusão se seguir o padrão anterior
+      'acao': acao == 'EXCLUSAO',
       'justificativa': justificativa,
       'tipoAcao': acao,
     });
   }
 
-  // --- FUNÇÃO DE EXCLUIR USUÁRIO (GENÉRICA) ---
+  // --- FUNÇÃO DE EXCLUIR USUÁRIO ---
   void _confirmarExclusao(String uid, String nome, String colecao) {
     final justificativaController = TextEditingController();
     showDialog(
@@ -60,70 +54,35 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
             const SizedBox(height: 10),
             TextField(
               controller: justificativaController,
-              decoration: const InputDecoration(
-                labelText: 'Motivo da exclusão',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Motivo da exclusão', border: OutlineInputBorder()),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               if (justificativaController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Justificativa obrigatória.')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Justificativa obrigatória.')));
                 return;
               }
               Navigator.pop(ctx);
-
-              // 1. Deleta o documento do Firestore
-              await FirebaseFirestore.instance
-                  .collection(colecao)
-                  .doc(uid)
-                  .delete();
-
-              // 2. Se for Lojista, idealmente deletaria os produtos também (Cascade Delete).
-              // Faremos isso visualmente na outra tela, mas aqui apaga a conta "pai".
-
-              // 3. Gera Log
-              _gerarLog(
-                uid,
-                nome,
-                'EXCLUSAO_CONTA',
-                justificativaController.text,
-              );
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Usuário excluído.')),
-                );
-              }
+              await FirebaseFirestore.instance.collection(colecao).doc(uid).delete();
+              _gerarLog(uid, nome, 'EXCLUSAO_CONTA', justificativaController.text);
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuário excluído.')));
             },
-            child: const Text('EXCLUIR CONTA'),
+            child: const Text('EXCLUIR CONTA', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  // --- PROMOVER ADMIN (Lógica Antiga) ---
+  // --- PROMOVER ADMIN ---
   Future<void> _toggleAdmin(String uid, String nome, bool virarAdmin) async {
-    await FirebaseFirestore.instance.collection('usuarioComum').doc(uid).update(
-      {'tipo': virarAdmin ? 'admin' : 'comum'},
-    );
-    _gerarLog(
-      uid,
-      nome,
-      virarAdmin ? 'PROMOCAO_ADMIN' : 'REBAIXAMENTO',
-      'Alteração de nível de acesso',
-    );
+    await FirebaseFirestore.instance.collection('usuarioComum').doc(uid).update({'tipo': virarAdmin ? 'admin' : 'comum'});
+    _gerarLog(uid, nome, virarAdmin ? 'PROMOCAO_ADMIN' : 'REBAIXAMENTO', 'Alteração de nível de acesso');
   }
 
   @override
@@ -156,17 +115,12 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
     );
   }
 
-  // ABA 1: USUÁRIOS COMUNS (Promover Admin)
+  // ABA 1: USUÁRIOS COMUNS
   Widget _buildListaComuns() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('usuarioComum')
-          .orderBy('nome')
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('usuarioComum').orderBy('nome').snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final usuarios = snapshot.data!.docs;
 
         return ListView.builder(
@@ -184,10 +138,7 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
               trailing: isMe
                   ? const Chip(label: Text('Você'))
                   : IconButton(
-                      icon: Icon(
-                        isAdmin ? Icons.security : Icons.person_outline,
-                        color: isAdmin ? Colors.blue : Colors.grey,
-                      ),
+                      icon: Icon(isAdmin ? Icons.security : Icons.person_outline, color: isAdmin ? Colors.blue : Colors.grey),
                       onPressed: () => _toggleAdmin(uid, nome, !isAdmin),
                     ),
             );
@@ -197,20 +148,14 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
     );
   }
 
-  // ABA 2 e 3: LOJISTAS E PRESTADORES (Ver Conteúdo e Excluir)
+  // ABA 2 e 3: LOJISTAS E PRESTADORES
   Widget _buildListaEspeciais(String colecao) {
     return StreamBuilder<QuerySnapshot>(
-      // Mostra todos, aprovados ou não, pois o admin pode querer banir alguém aprovado
       stream: FirebaseFirestore.instance.collection(colecao).snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final docs = snapshot.data!.docs;
-
-        if (docs.isEmpty) {
-          return const Center(child: Text('Nenhum usuário encontrado.'));
-        }
+        if (docs.isEmpty) return const Center(child: Text('Nenhum usuário encontrado.'));
 
         return ListView.separated(
           itemCount: docs.length,
@@ -220,66 +165,60 @@ class _TelaGerenciarUsuariosState extends State<TelaGerenciarUsuarios>
             final dados = doc.data() as Map<String, dynamic>;
             final uid = doc.id;
 
-            // Tratamento para pegar nome (lojista usa dadosDoResponsavel ou razaoSocial)
             String nome = 'Sem nome';
             if (colecao == 'lojistas') {
-              nome =
-                  dados['razaoSocial'] ??
-                  dados['dadosDoResponsavel']?['nome'] ??
-                  'Lojista';
+              nome = dados['razaoSocial'] ?? dados['dadosDoResponsavel']?['nome'] ?? 'Lojista';
             } else {
               nome = '${dados['nome']} ${dados['sobrenome']}';
             }
 
+            // Identifica se está pendente
+            final statusCadastro = dados['statusCadastro'] ?? 'pendente';
+            final isPendente = statusCadastro == 'pendente';
+
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: colecao == 'lojistas'
-                    ? Colors.orange[100]
-                    : Colors.blue[100],
-                child: Icon(
-                  colecao == 'lojistas' ? Icons.store : Icons.build,
-                  color: Colors.black54,
-                ),
+                backgroundColor: colecao == 'lojistas' ? Colors.orange[100] : Colors.blue[100],
+                child: Icon(colecao == 'lojistas' ? Icons.store : Icons.build, color: Colors.black54),
               ),
-              title: Text(
-                nome,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(
-                colecao == 'lojistas'
-                    ? 'Toque para ver produtos'
-                    : 'Toque para ver portfólio',
-              ),
-
-              // CLIQUE NO ITEM: ABRE GERENCIAMENTO DE CONTEÚDO
+              title: Text(nome, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(isPendente ? 'Aguardando Avaliação' : 'Toque para gerenciar conteúdo'),
+              
+              // CLIQUE NO ITEM
               onTap: () {
-                if (colecao == 'lojistas') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TelaAdminConteudoLojista(
-                        lojistaId: uid,
-                        nomeLojista: nome,
-                      ),
-                    ),
-                  );
+                if (isPendente) {
+                  // Se estiver pendente, abre a tela de Aprovação/Rejeição
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => TelaDetalhesCadastro(usuarioId: uid, colecao: colecao, nomeUsuario: nome),
+                  ));
                 } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TelaAdminConteudoPrestador(
-                        uidPrestador: uid,
-                        nomePrestador: nome,
-                      ),
-                    ),
-                  );
+                  // Se já estiver aprovado, abre o gerenciador de conteúdo
+                  if (colecao == 'lojistas') {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => TelaAdminConteudoLojista(lojistaId: uid, nomeLojista: nome),
+                    ));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => TelaAdminConteudoPrestador(uidPrestador: uid, nomePrestador: nome),
+                    ));
+                  }
                 }
               },
 
-              // BOTÃO DE LIXEIRA: EXCLUIR O USUÁRIO
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_forever, color: Colors.red),
-                onPressed: () => _confirmarExclusao(uid, nome, colecao),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isPendente)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
+                      child: const Text('Pendente', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_forever, color: Colors.red),
+                    onPressed: () => _confirmarExclusao(uid, nome, colecao),
+                  ),
+                ],
               ),
             );
           },
