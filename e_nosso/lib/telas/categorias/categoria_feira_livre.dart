@@ -57,8 +57,20 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text("Erro ao carregar lojas. Tente novamente mais tarde."),
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text("Nenhuma loja cadastrada nesta categoria."),
+                  );
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {

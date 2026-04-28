@@ -57,8 +57,18 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text("Erro ao carregar lojas. Tente novamente mais tarde."),
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("Nenhuma loja encontrada."));
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
