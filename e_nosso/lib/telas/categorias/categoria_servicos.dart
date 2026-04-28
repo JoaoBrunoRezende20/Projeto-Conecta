@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
+import '../cliente/tela_detalhes_servico.dart';
 
 class CategoriaServicos extends StatefulWidget {
   const CategoriaServicos({super.key});
@@ -114,10 +115,13 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TelaProdutosDisponiveis(
-              lojaId: lojaId,
-              storeName: nome,
-              rating: avaliacao,
+            builder: (_) => TelaDetalhesServico(
+              prestador: {
+                'id': lojaId,
+                'nome': nome,
+                'descricao': descricaoExtra,
+                'avaliacao': avaliacao,
+              },
             ),
           ),
         );
