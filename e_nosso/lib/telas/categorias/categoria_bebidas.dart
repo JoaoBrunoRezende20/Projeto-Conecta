@@ -57,6 +57,12 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text("Erro ao carregar lojas. Tente novamente mais tarde."),
+                  );
+                }
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
