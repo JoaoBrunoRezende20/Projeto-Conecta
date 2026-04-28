@@ -25,53 +25,7 @@ class TelaInicialPrestador extends StatefulWidget {
 }
 
 class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
-  PrestadorProfile? _prestador;
-  bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchData();
-  }
-
-  // Função para buscar todos os dados do Firebase
-  Future<void> _fetchData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('prestadorServicos')
-          .doc(user.uid)
-          .get();
-
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        
-        final nomeFormatado = UsuarioUtil.getNomeCompleto(
-          data,
-          colecao: 'prestadorServicos',
-        );
-
-        setState(() {
-          _prestador = PrestadorProfile(
-            nome: nomeFormatado,
-            areaAtuacao: data['areaAtuacao'] ?? "Profissão não definida",
-          );
-
-          // Removemos o carregamento de mocks aqui. Agora usamos um StreamBuilder no build.
-          _isLoading = false;
-        });
-      } else {
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      debugPrint("Erro ao buscar dados do prestador: $e");
-      setState(() => _isLoading = false);
-    }
-  }
-
-  // <<< AQUI ESTÁ A CORREÇÃO >>>
   // A função de Logout agora é muito mais simples.
   Future<void> _signOut() async {
     // Apenas avisa ao Firebase para deslogar.
@@ -82,67 +36,75 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text('Seu Perfil', style: TextStyle(color: Colors.black)),
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
-        /*leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          /*onPressed: () { /* TODO: Abrir Drawer */ },*/
-          onPressed: (){ //**********
-            Scaffold.of(context).openDrawer();
-          },
-        ),*/
-         */
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            // Chama a nova função de logout
-            onPressed: _signOut,
-          ),
-          BotaoNotificacao(colecaoUsuario: 'prestadorServicos'), // <--- AQUI
-          const SizedBox(width: 10),
-        ],
-      ),
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const Scaffold(body: Center(child: Text("Erro de ID")));
 
-      //drawer: const MenuLateral(), //**********
-      drawer: MenuLateral(nomeUsuario: _prestador?.nome ?? "Usuário"),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildProfileContent(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          /* TODO: Adicionar ação principal */
-        },
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('prestadorServicos').doc(user.uid).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+        final data = snapshot.data!.data() as Map<String, dynamic>?;
+        if (data == null) return const Scaffold(body: Center(child: Text("Cadastro não encontrado.")));
+
+        final nomeFormatado = UsuarioUtil.getNomeCompleto(data, colecao: 'prestadorServicos');
+        final areaAtuacao = data['areaAtuacao'] ?? "Profissão não definida";
+        
+        final prestador = PrestadorProfile(nome: nomeFormatado, areaAtuacao: areaAtuacao);
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: true,
+            title: const Text('Seu Perfil', style: TextStyle(color: Colors.black)),
+            leading: Builder(
+              builder: (context) {
+                return IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.black),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                );
+              },
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.black),
+                onPressed: _signOut,
+              ),
+              BotaoNotificacao(colecaoUsuario: 'prestadorServicos'),
+              const SizedBox(width: 10),
+            ],
+          ),
+          drawer: MenuLateral(
+            nomeUsuario: prestador.nome,
+            colecaoUsuario: 'prestadorServicos',
+          ),
+          body: _buildProfileContent(prestador),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              /* TODO: Adicionar ação principal */
+            },
+            backgroundColor: Colors.red,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        );
+      },
     );
   }
 
   // O resto do seu código (os métodos _build...) continua o mesmo
 
-  Widget _buildProfileContent() {
+  Widget _buildProfileContent(PrestadorProfile prestador) {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
             Text(
-              '${_prestador?.areaAtuacao ?? ''} ${_prestador?.nome ?? ''}',
+              '${prestador.areaAtuacao} ${prestador.nome}',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 24),

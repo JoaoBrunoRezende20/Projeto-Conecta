@@ -3,17 +3,20 @@ import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../telas/suporte/tela_faq.dart';
+import '../telas/perfil/tela_notificacoes.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
   final String? urlFotoPerfil;
   final bool isVisitante;
+  final String colecaoUsuario;
 
   const MenuLateral({
     super.key,
     required this.nomeUsuario,
     this.urlFotoPerfil,
     this.isVisitante = false,
+    this.colecaoUsuario = 'usuarioComum',
   });
 
   void _mostrarAvisoDesenvolvimento(BuildContext context) {
@@ -154,15 +157,30 @@ class MenuLateral extends StatelessWidget {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.favorite_border),
-                      title: const Text("Favoritos"),
-                      onTap: () => _mostrarAvisoDesenvolvimento(context),
+                      leading: const Icon(Icons.notifications_none),
+                      title: const Text("Notificações"),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
+                          ),
+                        );
+                      },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.history),
-                      title: const Text("Histórico de pedidos"),
-                      onTap: () => _mostrarAvisoDesenvolvimento(context),
-                    ),
+                    if (colecaoUsuario == 'usuarioComum') ...[
+                      ListTile(
+                        leading: const Icon(Icons.favorite_border),
+                        title: const Text("Favoritos"),
+                        onTap: () => _mostrarAvisoDesenvolvimento(context),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.history),
+                        title: const Text("Histórico de pedidos"),
+                        onTap: () => _mostrarAvisoDesenvolvimento(context),
+                      ),
+                    ],
                   ],
                 ],
               ),

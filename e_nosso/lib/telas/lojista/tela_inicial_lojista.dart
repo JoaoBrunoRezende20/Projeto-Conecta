@@ -202,6 +202,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         nomeUsuario:
             FirebaseAuth.instance.currentUser?.displayName ?? 'Lojista',
         urlFotoPerfil: FirebaseAuth.instance.currentUser?.photoURL,
+        colecaoUsuario: 'lojistas',
       ),
 
       appBar: AppBar(
