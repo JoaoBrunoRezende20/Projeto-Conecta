@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
+import 'tela_detalhes_produto.dart';
 import '../../utils/carrinho_util.dart';
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
@@ -155,142 +156,152 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
     final int estoqueDisponivel = produto["estoque"] ?? 0;
     final int quantidadeNoCarrinho = carrinhoGlobal[id]?['quantidade'] ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TelaDetalhesProduto(produto: {...produto, 'id': id}),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  produto["nome"] ?? "Produto",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  estoqueDisponivel > 0
-                      ? "$estoqueDisponivel unidades disponíveis"
-                      : "Esgotado",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: estoqueDisponivel < 5
-                        ? Colors.orange[900]
-                        : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "R\$ ${(produto["preco"] ?? 0).toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (quantidadeNoCarrinho > 0)
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.remove_circle_outline,
-                    color: Colors.black,
-                  ),
-                  onPressed: () => setState(() {
-                    if (quantidadeNoCarrinho > 1) {
-                      carrinhoGlobal[id]!['quantidade']--;
-                    } else {
-                      carrinhoGlobal.remove(id);
-                    }
-                    CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
-                  }),
-                ),
-                Text(
-                  "$quantidadeNoCarrinho",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.add_circle_outline,
-                    color: Colors.green,
-                  ),
-                  onPressed: quantidadeNoCarrinho < estoqueDisponivel
-                      ? () => setState(() {
-                            carrinhoGlobal[id]!['quantidade']++;
-                            CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
-                          })
-                      : null,
-                ),
-              ],
-            )
-          else
-            ElevatedButton(
-              onPressed: estoqueDisponivel > 0
-                  ? () {
-                      final user = FirebaseAuth.instance.currentUser;
-                      final isVisitor = user == null || user.isAnonymous;
-                      if (isVisitor) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Autenticação necessária"),
-                            content: const Text("Por favor, faça login ou crie uma conta para adicionar produtos ao carrinho."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("OK"),
-                              ),
-                            ],
-                          ),
-                        );
-                        return;
-                      }
-                      setState(() {
-                        carrinhoGlobal[id] = {
-                          'nome': produto['nome'],
-                          'preco': produto['preco'],
-                          'quantidade': 1,
-                        };
-                        CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
-                      });
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: estoqueDisponivel > 0
-                    ? Colors.red
-                    : Colors.grey,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+        ).then((_) => setState(() {})); // Atualiza a lista ao voltar
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text("Adicionar"),
+              child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
             ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    produto["nome"] ?? "Produto",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    estoqueDisponivel > 0
+                        ? "$estoqueDisponivel unidades disponíveis"
+                        : "Esgotado",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: estoqueDisponivel < 5
+                          ? Colors.orange[900]
+                          : Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "R\$ ${(produto["preco"] ?? 0).toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (quantidadeNoCarrinho > 0)
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: Colors.black,
+                    ),
+                    onPressed: () => setState(() {
+                      if (quantidadeNoCarrinho > 1) {
+                        carrinhoGlobal[id]!['quantidade']--;
+                      } else {
+                        carrinhoGlobal.remove(id);
+                      }
+                      CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                    }),
+                  ),
+                  Text(
+                    "$quantidadeNoCarrinho",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.green,
+                    ),
+                    onPressed: quantidadeNoCarrinho < estoqueDisponivel
+                        ? () => setState(() {
+                              carrinhoGlobal[id]!['quantidade']++;
+                              CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                            })
+                        : null,
+                  ),
+                ],
+              )
+            else
+              ElevatedButton(
+                onPressed: estoqueDisponivel > 0
+                    ? () {
+                        final user = FirebaseAuth.instance.currentUser;
+                        final isVisitor = user == null || user.isAnonymous;
+                        if (isVisitor) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Autenticação necessária"),
+                              content: const Text("Por favor, faça login ou crie uma conta para adicionar produtos ao carrinho."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() {
+                          carrinhoGlobal[id] = {
+                            'nome': produto['nome'],
+                            'preco': produto['preco'],
+                            'quantidade': 1,
+                          };
+                          CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                        });
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: estoqueDisponivel > 0
+                      ? Colors.red
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text("Adicionar"),
+              ),
+          ],
+        ),
       ),
     );
   }
