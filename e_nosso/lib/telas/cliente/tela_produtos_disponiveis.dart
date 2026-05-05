@@ -42,19 +42,14 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
     final lojaSalva = dadosSalvos['lojaId'] as String?;
     final carrinhoSalvo = dadosSalvos['carrinho'] as Map<String, Map<String, dynamic>>?;
 
-    // Se o usuário entrar numa loja diferente da que estava salva
-    if (lojaSalva != null && lojaSalva != widget.lojaId) {
+    if (carrinhoSalvo != null && carrinhoSalvo.isNotEmpty) {
       carrinhoGlobal.clear();
-      lojaIdDoCarrinho = widget.lojaId;
-      await CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+      carrinhoGlobal.addAll(carrinhoSalvo);
+      lojaIdDoCarrinho = lojaSalva;
     } else {
-      // Se for a mesma loja ou vazio, recuperamos os dados salvos
       lojaIdDoCarrinho = widget.lojaId;
-      if (carrinhoSalvo != null && carrinhoSalvo.isNotEmpty) {
-        carrinhoGlobal.clear();
-        carrinhoGlobal.addAll(carrinhoSalvo);
-      }
     }
+
     // Atualiza a tela se necessário
     if (mounted) setState(() {});
   }
@@ -104,7 +99,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         ),
       ),
       body: _buildListaProdutos(),
-      bottomNavigationBar: carrinhoGlobal.isNotEmpty
+      bottomNavigationBar: (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho == widget.lojaId)
           ? _buildBarraCarrinho()
           : null,
     );
@@ -279,7 +274,43 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                           );
                           return;
                         }
+                        if (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho != null && lojaIdDoCarrinho != widget.lojaId) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Carrinho de outra loja"),
+                              content: const Text("Seu carrinho contém itens de outra loja. Deseja esvaziar o carrinho para adicionar este item?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancelar"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // fecha dialog
+                                    setState(() {
+                                      carrinhoGlobal.clear();
+                                      lojaIdDoCarrinho = widget.lojaId;
+                                      carrinhoGlobal[id] = {
+                                        'nome': produto['nome'],
+                                        'preco': produto['preco'],
+                                        'quantidade': 1,
+                                      };
+                                      CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                                    });
+                                  },
+                                  child: const Text("Esvaziar e Adicionar"),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+
                         setState(() {
+                          if (carrinhoGlobal.isEmpty) {
+                            lojaIdDoCarrinho = widget.lojaId;
+                          }
                           carrinhoGlobal[id] = {
                             'nome': produto['nome'],
                             'preco': produto['preco'],
