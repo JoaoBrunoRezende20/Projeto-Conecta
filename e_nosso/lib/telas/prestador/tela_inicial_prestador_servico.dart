@@ -5,9 +5,7 @@ import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
 import '../../utils/usuario_util.dart';
 
-// --- Modelos de Dados (para organizar a informação) ---
-
-// Guarda os dados do perfil do prestador
+// --- Modelos de Dados ---
 class PrestadorProfile {
   final String nome;
   final String areaAtuacao;
@@ -16,7 +14,6 @@ class PrestadorProfile {
 }
 
 // --- A Tela ---
-
 class TelaInicialPrestador extends StatefulWidget {
   const TelaInicialPrestador({super.key});
 
@@ -26,11 +23,7 @@ class TelaInicialPrestador extends StatefulWidget {
 
 class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
 
-  // A função de Logout agora é muito mais simples.
   Future<void> _signOut() async {
-    // Apenas avisa ao Firebase para deslogar.
-    // O AuthWrapper no main.dart vai ouvir essa mudança e
-    // automaticamente redirecionar para a TelaTipoUsuario.
     await FirebaseAuth.instance.signOut();
   }
 
@@ -47,55 +40,146 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
         final data = snapshot.data!.data() as Map<String, dynamic>?;
         if (data == null) return const Scaffold(body: Center(child: Text("Cadastro não encontrado.")));
 
+        // 1. LÓGICA DE VALIDAÇÃO (TRAVA DE ACESSO)
+        final statusCadastro = data['statusCadastro'] ?? 'pendente';
+        final motivosRejeicao = data['motivosRejeicao'] ?? '';
+
+        if (statusCadastro == 'pendente') {
+          return _buildTelaBloqueio(
+            titulo: "Cadastro em Análise",
+            mensagem: "Sua conta está em análise. Aguarde a aprovação do Administrador.",
+            icone: Icons.hourglass_top,
+            cor: Colors.orange,
+            mostrarBotaoReenvio: true,
+          );
+        }
+
+        if (statusCadastro == 'rejeitado') {
+          return _buildTelaBloqueio(
+            titulo: "Cadastro Não Aprovado",
+            mensagem: "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte.",
+            icone: Icons.error_outline,
+            cor: Colors.red,
+            mostrarBotaoReenvio: false,
+          );
+        }
+
+        // 2. SE APROVADO, CARREGA OS DADOS E MOSTRA O PERFIL
         final nomeFormatado = UsuarioUtil.getNomeCompleto(data, colecao: 'prestadorServicos');
         final areaAtuacao = data['areaAtuacao'] ?? "Profissão não definida";
         
         final prestador = PrestadorProfile(nome: nomeFormatado, areaAtuacao: areaAtuacao);
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: true,
-            title: const Text('Seu Perfil', style: TextStyle(color: Colors.black)),
-            leading: Builder(
-              builder: (context) {
-                return IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.black),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                );
-              },
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.black),
-                onPressed: _signOut,
-              ),
-              BotaoNotificacao(colecaoUsuario: 'prestadorServicos'),
-              const SizedBox(width: 10),
-            ],
-          ),
-          drawer: MenuLateral(
-            nomeUsuario: prestador.nome,
-            colecaoUsuario: 'prestadorServicos',
-          ),
-          body: _buildProfileContent(prestador),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              /* TODO: Adicionar ação principal */
-            },
-            backgroundColor: Colors.red,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        );
+        return _buildTelaAprovada(prestador);
       },
     );
   }
 
-  // O resto do seu código (os métodos _build...) continua o mesmo
+  // --- TELA DE BLOQUEIO (PENDENTE / REJEITADO) ---
+  Widget _buildTelaBloqueio({
+    required String titulo, 
+    required String mensagem, 
+    required IconData icone, 
+    required Color cor,
+    bool mostrarBotaoReenvio = false,
+  }) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white, 
+        elevation: 0, 
+        actions: [
+          IconButton(icon: const Icon(Icons.logout, color: Colors.black), onPressed: _signOut)
+        ]
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(30.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icone, size: 80, color: cor),
+            const SizedBox(height: 24),
+            Text(titulo, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cor), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Text(mensagem, style: const TextStyle(fontSize: 16, color: Colors.black54, height: 1.5), textAlign: TextAlign.center),
+            
+            if (mostrarBotaoReenvio) ...[
+              const SizedBox(height: 40),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  try {
+                    await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.mark_email_read),
+                label: const Text('Reenviar E-mail de Confirmação'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: cor,
+                  side: BorderSide(color: cor),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- TELA PRINCIPAL (APROVADO) ---
+  Widget _buildTelaAprovada(PrestadorProfile prestador) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('Seu Perfil', style: TextStyle(color: Colors.black)),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: _signOut,
+          ),
+          BotaoNotificacao(colecaoUsuario: 'prestadorServicos'),
+          const SizedBox(width: 10),
+        ],
+      ),
+      drawer: MenuLateral(
+        nomeUsuario: prestador.nome,
+        colecaoUsuario: 'prestadorServicos',
+      ),
+      body: _buildProfileContent(prestador),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          /* TODO: Adicionar ação principal */
+        },
+        backgroundColor: Colors.red,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
 
   Widget _buildProfileContent(PrestadorProfile prestador) {
     return SingleChildScrollView(
@@ -218,13 +302,11 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
   Widget _buildBottomButtons() {
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: 12, // espaço horizontal entre os botões
-      runSpacing: 12, // espaço vertical quando quebram a linha
+      spacing: 12,
+      runSpacing: 12,
       children: [
         ElevatedButton.icon(
-          onPressed: () {
-            /* TODO */
-          },
+          onPressed: () {},
           icon: const Icon(Icons.edit, size: 16),
           label: const Text('Editar Itens'),
           style: ElevatedButton.styleFrom(
@@ -233,9 +315,7 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           ),
         ),
         ElevatedButton(
-          onPressed: () {
-            /* TODO */
-          },
+          onPressed: () {},
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,
@@ -243,9 +323,7 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           child: const Text('Serviços Agendados'),
         ),
         ElevatedButton(
-          onPressed: () {
-            /* TODO */
-          },
+          onPressed: () {},
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,
