@@ -371,19 +371,43 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  // ABA 2: PEDIDOS
   Widget _buildAbaPedidos() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('pedidos').where('lojistaId', isEqualTo: lojistaId).snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (snapshot.hasError) {
+          return Center(child: Text("Erro: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
         final docs = snapshot.data!.docs.toList();
-        docs.sort((a, b) {
-          final dataA = (a.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
-          final dataB = (b.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
-          if (dataA == null || dataB == null) return 0;
-          return dataB.compareTo(dataA);
-        });
+        
+        try {
+          docs.sort((a, b) {
+            final mapA = a.data() as Map<String, dynamic>?;
+            final mapB = b.data() as Map<String, dynamic>?;
+            
+            final dataA = mapA?['dataCriacao'];
+            final dataB = mapB?['dataCriacao'];
+
+            final Timestamp? tA = dataA is Timestamp ? dataA : null;
+            final Timestamp? tB = dataB is Timestamp ? dataB : null;
+
+            if (tA == null && tB == null) return 0;
+            if (tA == null) return 1;
+            if (tB == null) return -1;
+            
+            return tB.compareTo(tA);
+          });
+        } catch (e) {
+          print("Erro ao ordenar pedidos: $e");
+        }
+
         if (docs.isEmpty) return const Center(child: Text("Você ainda não recebeu nenhum pedido.", style: TextStyle(color: Colors.grey, fontSize: 16)));
         return ListView.builder(
           padding: const EdgeInsets.all(12),
