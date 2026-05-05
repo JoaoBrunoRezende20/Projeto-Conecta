@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_cadastro_usuarios.dart';
 import 'tela_tipo_usuario.dart'; // Importe a tela para onde vamos voltar
+import '../../utils/auth_wrapper.dart';
 
 class TelaLogin extends StatefulWidget {
   final String tipoUsuario;
@@ -25,7 +26,7 @@ class _TelaLoginState extends State<TelaLogin> {
     super.dispose();
   }
 
-  // --- LÓGICA DE LOGIN ---
+// --- LÓGICA DE LOGIN ---
   Future<void> _login() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
@@ -35,10 +36,16 @@ class _TelaLoginState extends State<TelaLogin> {
         email: _emailController.text.trim(),
         password: _senhaController.text.trim(),
       );
-      // Aqui não precisamos navegar manualmente se o AuthWrapper estiver configurado
-      // Mas se precisar forçar, o popUntil é seguro
+      
+      // >>> ALTERAÇÃO AQUI <<<
+      // Ao invés de usar popUntil (que volta pra tela inicial), 
+      // enviamos o usuário para o AuthWrapper, que vai ler o banco de dados e enviá-lo para a tela correta.
       if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          (route) => false, // Remove o histórico para não voltar ao login clicando em "Voltar"
+        );
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {

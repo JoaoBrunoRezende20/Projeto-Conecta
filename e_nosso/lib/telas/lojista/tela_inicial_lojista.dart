@@ -128,7 +128,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   }
 
   // --- TRAVA DE ACESSO PARCIAL (StreamBuilder Principal) ---
-  @override
+@override
   Widget build(BuildContext context) {
     if (lojistaId == null) return const Scaffold(body: Center(child: Text("Erro de ID")));
 
@@ -146,9 +146,11 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         if (statusCadastro == 'pendente') {
           return _buildTelaBloqueio(
             titulo: "Cadastro em Análise",
-            mensagem: "Sua conta e seus documentos estão sendo analisados pela nossa equipe.\n\nVocê receberá uma notificação assim que seu acesso for liberado para começar a vender e visualizar serviços.",
+            // Texto exato exigido no Critério de Aceite:
+            mensagem: "Sua conta está em análise. Aguarde a aprovação do Administrador.",
             icone: Icons.hourglass_top,
             cor: Colors.orange,
+            mostrarBotaoReenvio: true, // Ativa o botão opcional
           );
         }
 
@@ -158,6 +160,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             mensagem: "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte.",
             icone: Icons.error_outline,
             cor: Colors.red,
+            mostrarBotaoReenvio: false,
           );
         }
 
@@ -167,7 +170,14 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  Widget _buildTelaBloqueio({required String titulo, required String mensagem, required IconData icone, required Color cor}) {
+  // Interface de Validação Atualizada
+  Widget _buildTelaBloqueio({
+    required String titulo, 
+    required String mensagem, 
+    required IconData icone, 
+    required Color cor,
+    bool mostrarBotaoReenvio = false, // Novo parâmetro para o Critério Opcional
+  }) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, actions: [IconButton(icon: const Icon(Icons.logout, color: Colors.black), onPressed: _signOut)]),
@@ -182,12 +192,41 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             Text(titulo, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cor), textAlign: TextAlign.center),
             const SizedBox(height: 16),
             Text(mensagem, style: const TextStyle(fontSize: 16, color: Colors.black54, height: 1.5), textAlign: TextAlign.center),
+            
+            // Requisito Opcional: Botão de Reenvio de Confirmação
+            if (mostrarBotaoReenvio) ...[
+              const SizedBox(height: 40),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  try {
+                    await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.mark_email_read),
+                label: const Text('Reenviar E-mail de Confirmação'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: cor,
+                  side: BorderSide(color: cor),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+            ]
           ],
         ),
       ),
     );
   }
-
   // --- O PAINEL DE TRABALHO COMPLETO (COM 3 ABAS) ---
   Widget _buildTelaAprovada() {
     String tituloApp = 'Meus Produtos';
@@ -202,6 +241,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         nomeUsuario:
             FirebaseAuth.instance.currentUser?.displayName ?? 'Lojista',
         urlFotoPerfil: FirebaseAuth.instance.currentUser?.photoURL,
+        colecaoUsuario: 'lojistas',
       ),
 
       appBar: AppBar(
