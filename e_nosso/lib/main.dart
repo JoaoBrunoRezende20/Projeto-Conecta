@@ -82,9 +82,10 @@ class AuthWrapper extends StatelessWidget {
       if (dados != null && dados['tipo'] == 'admin') {
         return 'administrador';
       }
+      return 'comum';
     }
 
-    return 'comum';
+    return 'desconhecido';
   }
 
   Widget _getHomeScreen(String tipo) {
@@ -95,6 +96,9 @@ class AuthWrapper extends StatelessWidget {
         return TelaInicialLojista();
       case 'prestador':
         return TelaInicialPrestador();
+      case 'desconhecido':
+        FirebaseAuth.instance.signOut();
+        return const TelaTipoUsuario();
       case 'comum':
       default:
         return TelaInicialComum();
