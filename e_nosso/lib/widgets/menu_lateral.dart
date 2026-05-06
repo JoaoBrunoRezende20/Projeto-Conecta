@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../telas/suporte/tela_faq.dart';
 import '../telas/perfil/tela_notificacoes.dart';
+import '../telas/cliente/tela_historico_pedidos.dart';
+import '../telas/cliente/tela_confirmacao_servico.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
@@ -178,7 +180,28 @@ class MenuLateral extends StatelessWidget {
                       ListTile(
                         leading: const Icon(Icons.history),
                         title: const Text("Histórico de pedidos"),
-                        onTap: () => _mostrarAvisoDesenvolvimento(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaHistoricoPedidos(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.pending_actions),
+                        title: const Text("Serviços Pendentes"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaConfirmacaoServico(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ],

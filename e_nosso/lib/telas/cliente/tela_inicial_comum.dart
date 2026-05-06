@@ -9,6 +9,7 @@ import '../categorias/categoria_bebidas.dart';
 import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
+import '../../widgets/widget_pedidos_pendentes.dart';
 
 class TelaInicialComum extends StatefulWidget {
   const TelaInicialComum({super.key});
@@ -88,7 +89,9 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const WidgetPedidosPendentes(),
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
