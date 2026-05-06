@@ -129,7 +129,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
           MaterialPageRoute(
             builder: (_) => TelaDetalhesServico(
               prestador: {
-                'id': lojaId,
+                'prestadorId': lojaId,
                 'nome': nome,
                 'descricao': descricaoExtra,
                 'avaliacao': avaliacao,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'tela_produtos_disponiveis.dart'; // Para acessar carrinhoGlobal e lojaIdDoCarrinho
-import '../../utils/carrinho_util.dart';
+import 'tela_checkout_servico.dart';
+
 
 class TelaDetalhesServico extends StatefulWidget {
   final Map<String, dynamic> prestador; // Dados do prestador e seus serviços
@@ -14,7 +14,8 @@ class TelaDetalhesServico extends StatefulWidget {
 
 class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
   DateTime? dataSelecionada;
-  Set<int> servicosSelecionados = {}; // Armazena os índices dos serviços escolhidos
+  Set<int> servicosSelecionados =
+      {}; // Armazena os índices dos serviços escolhidos
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +94,9 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                             childAspectRatio: 0.7,
                           ),
                       itemBuilder: (context, index) {
-                        bool estaSelecionado = servicosSelecionados.contains(index);
+                        bool estaSelecionado = servicosSelecionados.contains(
+                          index,
+                        );
 
                         return GestureDetector(
                           onTap: () {
@@ -112,12 +115,16 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: estaSelecionado 
-                                            ? Colors.green[100] // Destaque se selecionado
+                                        color: estaSelecionado
+                                            ? Colors
+                                                  .green[100] // Destaque se selecionado
                                             : Colors.grey[600],
                                         borderRadius: BorderRadius.circular(15),
                                         border: estaSelecionado
-                                            ? Border.all(color: Colors.green, width: 3)
+                                            ? Border.all(
+                                                color: Colors.green,
+                                                width: 3,
+                                              )
                                             : null,
                                       ),
                                       child: Center(
@@ -125,7 +132,9 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                                           "*Imagens do serviço",
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
-                                            color: estaSelecionado ? Colors.green[800] : Colors.white,
+                                            color: estaSelecionado
+                                                ? Colors.green[800]
+                                                : Colors.white,
                                             fontSize: 8,
                                           ),
                                         ),
@@ -138,7 +147,11 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                                         child: CircleAvatar(
                                           backgroundColor: Colors.green,
                                           radius: 10,
-                                          child: Icon(Icons.check, color: Colors.white, size: 12),
+                                          child: Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 12,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -149,8 +162,12 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                                 "Serviço ${index + 1}",
                                 style: TextStyle(
                                   fontSize: 10,
-                                  fontWeight: estaSelecionado ? FontWeight.bold : FontWeight.w500,
-                                  color: estaSelecionado ? Colors.green[900] : Colors.black,
+                                  fontWeight: estaSelecionado
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: estaSelecionado
+                                      ? Colors.green[900]
+                                      : Colors.black,
                                 ),
                               ),
                               Text(
@@ -178,10 +195,10 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _selecionarDataEAgendar(context),
+                    onPressed: () => _irParaCheckout(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: servicosSelecionados.isEmpty 
-                          ? Colors.grey[400] 
+                      backgroundColor: servicosSelecionados.isEmpty
+                          ? Colors.grey[400]
                           : Colors.grey[600],
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -190,9 +207,9 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
                     child: Text(
-                      servicosSelecionados.isEmpty 
-                        ? "Selecione algo" 
-                        : "Agendar (${servicosSelecionados.length})",
+                      servicosSelecionados.isEmpty
+                          ? "Selecione algo"
+                          : "Agendar (${servicosSelecionados.length})",
                     ),
                   ),
                 ),
@@ -202,7 +219,9 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
                     onPressed: () {
                       final nome = widget.prestador['nome'] ?? "Prestador";
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Iniciando conversa com $nome...")),
+                        SnackBar(
+                          content: Text("Iniciando conversa com $nome..."),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -224,10 +243,12 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
     );
   }
 
-  void _selecionarDataEAgendar(BuildContext context) async {
+  void _irParaCheckout(BuildContext context) {
     if (servicosSelecionados.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, selecione pelo menos um serviço.")),
+        const SnackBar(
+          content: Text("Por favor, selecione pelo menos um serviço."),
+        ),
       );
       return;
     }
@@ -240,57 +261,25 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
       return;
     }
 
-    final DateTime? data = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2027),
-      helpText: "Selecione uma data para o serviço",
-    );
-
-    if (data != null) {
-      setState(() {
-        dataSelecionada = data;
+    // Preparar os serviços selecionados
+    List<Map<String, dynamic>> itensParaCheckout = [];
+    for (int index in servicosSelecionados) {
+      itensParaCheckout.add({
+        'nome': "Serviço ${index + 1}",
+        'preco': 30.0 + (index * 15),
       });
-      _finalizarAgendamento();
     }
-  }
 
-  void _finalizarAgendamento() {
-    final String? prestadorId = widget.prestador['id'];
-    if (prestadorId == null) return;
-
-    final dataFormatada = "${dataSelecionada!.day}/${dataSelecionada!.month}";
-    
-    setState(() {
-      for (int index in servicosSelecionados) {
-        // Criamos um ID único para cada serviço do prestador no carrinho
-        // Ex: "ID_PRESTADOR_SERV_1"
-        final String itemKey = "${prestadorId}_serv_$index";
-        final String nomeServico = "Serviço ${index + 1}";
-        final double preco = 30.0 + (index * 15);
-
-        carrinhoGlobal[itemKey] = {
-          'nome': "${widget.prestador['nome']} - $nomeServico ($dataFormatada)",
-          'preco': preco,
-          'quantidade': 1,
-        };
-      }
-    });
-
-    CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("${servicosSelecionados.length} serviços agendados para $dataFormatada!"),
-        backgroundColor: Colors.green,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TelaCheckoutServico(
+          servicosSelecionados: itensParaCheckout,
+          nomePrestador: widget.prestador['nome'] ?? "Prestador",
+          prestadorId: widget.prestador['id'] ?? "",
+        ),
       ),
     );
-
-    // Limpar seleção após agendar
-    setState(() {
-      servicosSelecionados.clear();
-    });
   }
 
   void _mostrarDialogoLogin() {
@@ -298,7 +287,9 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Autenticação necessária"),
-        content: const Text("Por favor, faça login ou crie uma conta para agendar serviços."),
+        content: const Text(
+          "Por favor, faça login ou crie uma conta para agendar serviços.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
