@@ -276,7 +276,7 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
         builder: (context) => TelaCheckoutServico(
           servicosSelecionados: itensParaCheckout,
           nomePrestador: widget.prestador['nome'] ?? "Prestador",
-          prestadorId: widget.prestador['id'] ?? "",
+          prestadorId: widget.prestador['prestadorId'] ?? "",
         ),
       ),
     );

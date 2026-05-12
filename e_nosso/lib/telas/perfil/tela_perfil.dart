@@ -17,6 +17,17 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   final _documentoController = TextEditingController();
   final _telefoneController = TextEditingController();
 
+  final Map<String, String> _horariosSemanais = {};
+  final List<String> _diasSemana = [
+    'Dom',
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+  ];
+
   final _telefoneFormatter = MaskTextInputFormatter(
     mask: '(##) #####-####',
     filter: {"#": RegExp(r'[0-9]')},
@@ -31,7 +42,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     mask: '##.###.###/####-##',
     filter: {"#": RegExp(r'[0-9]')},
   );
-  
+
   bool _isLoading = true;
   String? _userId;
   String _colecaoUsuario = 'usuarioComum';
@@ -59,18 +70,27 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
     try {
       // Tenta achar em prestadorServicos
-      var doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(_userId).get();
+      var doc = await FirebaseFirestore.instance
+          .collection('prestadorServicos')
+          .doc(_userId)
+          .get();
       if (doc.exists) {
         _colecaoUsuario = 'prestadorServicos';
         _isPrestador = true;
       } else {
         // Tenta lojista
-        doc = await FirebaseFirestore.instance.collection('lojistas').doc(_userId).get();
+        doc = await FirebaseFirestore.instance
+            .collection('lojistas')
+            .doc(_userId)
+            .get();
         if (doc.exists) {
           _colecaoUsuario = 'lojistas';
         } else {
           // Tenta usuario comum
-          doc = await FirebaseFirestore.instance.collection('usuarioComum').doc(_userId).get();
+          doc = await FirebaseFirestore.instance
+              .collection('usuarioComum')
+              .doc(_userId)
+              .get();
           if (doc.exists) {
             _colecaoUsuario = 'usuarioComum';
           }
@@ -79,19 +99,21 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
-        
+
         if (_colecaoUsuario == 'lojistas') {
           _nomeController.text = data['razaoSocial'] ?? '';
           _documentoController.text = data['cnpj'] ?? '';
           _telefoneController.text = data['telefoneComercial'] ?? '';
         } else {
-          _nomeController.text = data['nome'] ?? data['nomeCompleto'] ?? data['razaoSocial'] ?? '';
+          _nomeController.text =
+              data['nome'] ?? data['nomeCompleto'] ?? data['razaoSocial'] ?? '';
           _documentoController.text = data['cpf'] ?? '';
           _telefoneController.text = data['telefone'] ?? '';
         }
-        
+
         if (_isPrestador) {
           _areaAtuacaoController.text = data['areaAtuacao'] ?? '';
+          _parseDisponibilidade(data['disponibilidadeAtendimento']);
         }
       }
     } catch (e) {
@@ -101,14 +123,82 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     }
   }
 
+  void _parseDisponibilidade(String? disponibilidade) {
+    if (disponibilidade == null ||
+        disponibilidade == "Não informado" ||
+        disponibilidade.isEmpty) return;
+
+    try {
+      final partes = disponibilidade.split(", ");
+      for (var parte in partes) {
+        final subPartes = parte.split(": ");
+        if (subPartes.length == 2) {
+          _horariosSemanais[subPartes[0]] = subPartes[1];
+        }
+      }
+    } catch (e) {
+      debugPrint("Erro ao parsear disponibilidade: $e");
+    }
+  }
+
+  Future<void> _selecionarHorario(String dia) async {
+    final TimeOfDay? inicio = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 8, minute: 0),
+      helpText: 'Início do atendimento na $dia',
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (inicio == null || !mounted) return;
+
+    final TimeOfDay? fim = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 18, minute: 0),
+      helpText: 'Fim do atendimento na $dia',
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (fim == null || !mounted) return;
+
+    setState(() {
+      final inicioStr =
+          '${inicio.hour.toString().padLeft(2, '0')}:${inicio.minute.toString().padLeft(2, '0')}';
+      final fimStr =
+          '${fim.hour.toString().padLeft(2, '0')}:${fim.minute.toString().padLeft(2, '0')}';
+      _horariosSemanais[dia] = '$inicioStr às $fimStr';
+    });
+  }
+
+  void _removerHorario(String dia) {
+    setState(() {
+      _horariosSemanais.remove(dia);
+    });
+  }
+
+  String _formatarDisponibilidadeParaSalvar() {
+    if (_horariosSemanais.isEmpty) return "Não informado";
+    final buffer = StringBuffer();
+    for (var dia in _diasSemana) {
+      if (_horariosSemanais.containsKey(dia)) {
+        if (buffer.isNotEmpty) buffer.write(", ");
+        buffer.write("$dia: ${_horariosSemanais[dia]}");
+      }
+    }
+    return buffer.toString();
+  }
+
   Future<void> _salvarPerfil() async {
     if (!_formKey.currentState!.validate()) return;
     if (_userId == null) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final Map<String, dynamic> dadosAtualizados = {};
-      
+
       // Salva o nome na chave correta dependendo da coleção
       if (_colecaoUsuario == 'lojistas') {
         dadosAtualizados['razaoSocial'] = _nomeController.text.trim();
@@ -126,6 +216,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
       if (_isPrestador) {
         dadosAtualizados['areaAtuacao'] = _areaAtuacaoController.text.trim();
+        dadosAtualizados['disponibilidadeAtendimento'] =
+            _formatarDisponibilidadeParaSalvar();
       }
 
       await FirebaseFirestore.instance
@@ -141,9 +233,9 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar perfil: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao salvar perfil: $e")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -169,7 +261,10 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text("Nome / Razão Social:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Nome / Razão Social:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _nomeController,
@@ -177,28 +272,46 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         border: OutlineInputBorder(),
                         hintText: "Seu nome",
                       ),
-                      validator: (value) => value == null || value.trim().isEmpty ? "Campo obrigatório" : null,
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? "Campo obrigatório"
+                          : null,
                     ),
                     const SizedBox(height: 16),
-                    Text("Documento (${_colecaoUsuario == 'lojistas' ? 'CNPJ' : 'CPF'}):", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Documento (${_colecaoUsuario == 'lojistas' ? 'CNPJ' : 'CPF'}):",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _documentoController,
-                      inputFormatters: [_colecaoUsuario == 'lojistas' ? _cnpjFormatter : _cpfFormatter],
+                      inputFormatters: [
+                        _colecaoUsuario == 'lojistas'
+                            ? _cnpjFormatter
+                            : _cpfFormatter,
+                      ],
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
-                        hintText: _colecaoUsuario == 'lojistas' ? "00.000.000/0000-00" : "000.000.000-00",
+                        hintText: _colecaoUsuario == 'lojistas'
+                            ? "00.000.000/0000-00"
+                            : "000.000.000-00",
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return "Campo obrigatório";
-                        if (_colecaoUsuario == 'lojistas' && value.length < 18) return "CNPJ inválido";
-                        if (_colecaoUsuario != 'lojistas' && value.length < 14) return "CPF inválido";
+                        if (value == null || value.trim().isEmpty)
+                          return "Campo obrigatório";
+                        if (_colecaoUsuario == 'lojistas' && value.length < 18)
+                          return "CNPJ inválido";
+                        if (_colecaoUsuario != 'lojistas' && value.length < 14)
+                          return "CPF inválido";
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
-                    const Text("Telefone:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Telefone:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _telefoneController,
@@ -209,14 +322,18 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         hintText: "(00) 00000-0000",
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return "Campo obrigatório";
+                        if (value == null || value.trim().isEmpty)
+                          return "Campo obrigatório";
                         if (value.length < 14) return "Telefone inválido";
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
                     if (_isPrestador) ...[
-                      const Text("Área de atuação:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Área de atuação:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _areaAtuacaoController,
@@ -224,8 +341,81 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                           border: OutlineInputBorder(),
                           hintText: "Ex: Encanador, Eletricista",
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty ? "Campo obrigatório" : null,
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? "Campo obrigatório"
+                            : null,
                       ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Disponibilidade de Atendimento:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Toque nos dias da semana para adicionar horários:',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        alignment: WrapAlignment.center,
+                        children: _diasSemana.map((dia) {
+                          bool selecionado = _horariosSemanais.containsKey(dia);
+                          return ChoiceChip(
+                            label: Text(dia),
+                            selected: selecionado,
+                            selectedColor: Colors.deepPurple.shade100,
+                            onSelected: (bool selected) {
+                              if (selected) {
+                                _selecionarHorario(dia);
+                              } else {
+                                _removerHorario(dia);
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      if (_horariosSemanais.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _horariosSemanais.entries.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4.0),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      '${entry.key}: ',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(entry.value),
+                                    const Spacer(),
+                                    InkWell(
+                                      onTap: () => _removerHorario(entry.key),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                     ],
                     const SizedBox(height: 16),

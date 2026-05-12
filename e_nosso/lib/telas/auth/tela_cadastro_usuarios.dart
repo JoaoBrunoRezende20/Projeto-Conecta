@@ -1100,6 +1100,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(
           controller: _cnpjPrestadorController,
           decoration: const InputDecoration(labelText: 'CNPJ (Se houver)'),
+          inputFormatters: [AppFormatadores.maskCNPJ],
+          validator: AppFormatadores.validarCNPJOpcional,
           keyboardType: TextInputType.number,
         ),
       ];

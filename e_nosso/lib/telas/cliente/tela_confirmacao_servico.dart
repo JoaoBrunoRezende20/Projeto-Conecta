@@ -158,11 +158,17 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                           const SizedBox(height: 20),
                           Center(
                             child: Text(
-                              isConfirmado
+                              status == 'Confirmado'
                                   ? "Serviço confirmado"
-                                  : "Aguardando confirmação!",
+                                  : (status == 'Rejeitado'
+                                      ? "Serviço recusado"
+                                      : "Aguardando confirmação!"),
                               style: TextStyle(
-                                color: isConfirmado ? Colors.green : Colors.red,
+                                color: status == 'Confirmado'
+                                    ? Colors.green
+                                    : (status == 'Rejeitado'
+                                        ? Colors.orange
+                                        : Colors.red),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),

@@ -96,7 +96,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     'clienteId',
                     isEqualTo: FirebaseAuth.instance.currentUser?.uid,
                   )
-                  .orderBy('dataCriacao', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -108,17 +107,37 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final docs = snapshot.data?.docs ?? [];
-                if (docs.isEmpty) {
+                final allDocs = snapshot.data?.docs ?? [];
+                if (allDocs.isEmpty) {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
+                // Filtrar apenas concluídos e ordenar manual client-side
+                final docs = allDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['status'] == 'Concluído';
+                }).toList();
+
+                if (docs.isEmpty) {
+                  return const Center(child: Text("Nenhum serviço concluído no histórico."));
+                }
+
+                final sortedDocs = List.from(docs);
+                sortedDocs.sort((a, b) {
+                  final dataA = a.data() as Map<String, dynamic>;
+                  final dataB = b.data() as Map<String, dynamic>;
+                  final Timestamp? tA = dataA['dataCriacao'] as Timestamp?;
+                  final Timestamp? tB = dataB['dataCriacao'] as Timestamp?;
+                  if (tA == null || tB == null) return 0;
+                  return tB.compareTo(tA); // Descendente
+                });
+
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: docs.length,
+                  itemCount: sortedDocs.length,
                   itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final id = docs[index].id;
+                    final data = sortedDocs[index].data() as Map<String, dynamic>;
+                    final id = sortedDocs[index].id;
 
                     // Adaptando dados do Firestore para a estrutura do Card
                     final itemAdaptado = {
@@ -154,101 +173,114 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   Widget _buildCard(Map<String, dynamic> item) {
     bool ehServico = item['tipo'] == 'servico';
     bool pendente = item['ehPendente'];
+    bool concluido = item['status'] == 'Concluído';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[300], // Fundo cinza conforme mockups
+        color: Colors.grey[200], // Fundo cinza claro conforme imagem
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabeçalho: Nome e Valores
+          // Nome do Serviço
+          Text(
+            item['loja'],
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Valor
+          Text(
+            "R\$ ${item['total'].toStringAsFixed(2)}",
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 5),
+
+          // Ícone e Pagamento
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  item['loja'],
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              const Icon(Icons.credit_card, size: 18),
+              const SizedBox(width: 8),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "R\$ ${item['total'].toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    "Pagamento no ${item['pagamento']}",
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
                   ),
                   Text(
-                    "Pago no ${item['pagamento']}",
-                    style: const TextStyle(fontSize: 11),
+                    "(${item['data']})",
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
                   ),
-                  Text(item['entrega'], style: const TextStyle(fontSize: 11)),
-                  Text(item['data'], style: const TextStyle(fontSize: 11)),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 15),
 
-          // Listagem de Itens
-          ...item['itens']
-              .map<Widget>(
-                (i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        i['nome'],
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      if (!ehServico) // Só mostra "Unidades" para produtos
-                        Text(
-                          "${i['quantidade']} Unidades",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.black54,
-                          ),
-                        ),
-                    ],
-                  ),
+          if (concluido) ...[
+            const SizedBox(height: 20),
+            const Center(
+              child: Text(
+                "Serviço concluído!",
+                style: TextStyle(
+                  color: Color(0xFF4CAF50),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-              )
-              .toList(),
-
-          const SizedBox(height: 20),
-
-          // Status Centralizado
-          Center(
-            child: Text(
-              item['status'],
-              style: TextStyle(
-                color: pendente ? Colors.red : Colors.green,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
               ),
             ),
-          ),
-          const SizedBox(height: 15),
+            const SizedBox(height: 20),
+            // Botão Avaliar
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B9467), // Cor verde oliva da imagem
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "AVALIAR SERVIÇO",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
 
-          // Botão de Chat Adaptável
+          const SizedBox(height: 12),
+
+          // Botão Contato
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[600],
+                backgroundColor: const Color(0xFF8E8E8E), // Cinza da imagem
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -256,15 +288,19 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               child: Text(
                 ehServico
                     ? "Entrar em contato com o prestador"
-                    : "Entrar em chat com o vendedor",
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                    : "Entrar em contato com a loja",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
 
-          // Botão de Cancelamento (Critério de Aceite)
+          // Botão Cancelar se pendente
           if (pendente) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
