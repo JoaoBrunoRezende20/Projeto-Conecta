@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
+import 'tela_pedidos_pendentes_prestador.dart';
 import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados ---
@@ -323,7 +324,14 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           child: const Text('Serviços Agendados'),
         ),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TelaPedidosPendentesPrestador(),
+              ),
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,

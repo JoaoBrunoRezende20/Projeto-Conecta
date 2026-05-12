@@ -125,7 +125,7 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
   }
 
   void _usarDisponibilidadePadrao() {
-    final dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    final dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     for (var dia in dias) {
       diasDisponiveis.add(dia);
       horariosPorDia[dia] = _gerarSlots("08:00", "18:00");
@@ -148,31 +148,55 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
   }
 
   String _getDiaDaSemana(DateTime date) {
-    final days = [
-      "Segunda",
-      "Terça",
-      "Quarta",
-      "Quinta",
-      "Sexta",
-      "Sábado",
-      "Domingo",
-    ];
-    return days[date.weekday - 1];
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return days[date.weekday % 7];
   }
 
   Future<void> _selecionarData(BuildContext context) async {
-    DateTime initialDate = DateTime.now();
-    while (!diasDisponiveis.contains(_getDiaDaSemana(initialDate))) {
-      initialDate = initialDate.add(const Duration(days: 1));
-      if (initialDate.isAfter(DateTime.now().add(const Duration(days: 30))))
+    if (carregandoDisponibilidade) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Carregando disponibilidade... Aguarde.")),
+      );
+      return;
+    }
+
+    if (diasDisponiveis.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Este prestador não possui dias de atendimento configurados.")),
+      );
+      return;
+    }
+
+    // Normaliza para considerar apenas a data, sem horas
+    DateTime now = DateTime.now();
+    DateTime firstDate = DateTime(now.year, now.month, now.day);
+    DateTime initialDate = firstDate;
+
+    // Busca o primeiro dia disponível a partir de hoje (procura em até 365 dias)
+    bool encontrouDia = false;
+    for (int i = 0; i < 365; i++) {
+      DateTime candidate = initialDate.add(Duration(days: i));
+      if (diasDisponiveis.contains(_getDiaDaSemana(candidate))) {
+        initialDate = candidate;
+        encontrouDia = true;
         break;
+      }
+    }
+
+    if (!encontrouDia) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("O prestador não possui disponibilidade configurada."),
+        ),
+      );
+      return;
     }
 
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      firstDate: firstDate,
+      lastDate: firstDate.add(const Duration(days: 90)),
       selectableDayPredicate: (DateTime date) {
         String dayName = _getDiaDaSemana(date);
         return diasDisponiveis.contains(dayName);

@@ -6,6 +6,9 @@ import '../telas/suporte/tela_faq.dart';
 import '../telas/perfil/tela_notificacoes.dart';
 import '../telas/cliente/tela_historico_pedidos.dart';
 import '../telas/cliente/tela_confirmacao_servico.dart';
+import '../telas/prestador/tela_pedidos_pendentes_prestador.dart';
+import '../telas/prestador/tela_servicos_agendados_prestador.dart';
+import '../telas/prestador/tela_historico_servicos_prestador.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
@@ -199,6 +202,47 @@ class MenuLateral extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const TelaConfirmacaoServico(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    if (colecaoUsuario == 'prestadorServicos') ...[
+                      ListTile(
+                        leading: const Icon(Icons.pending_actions),
+                        title: const Text("Serviços Pendentes"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaPedidosPendentesPrestador(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.event_available),
+                        title: const Text("Serviços Agendados"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaServicosAgendadosPrestador(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.history),
+                        title: const Text("Histórico de Serviços"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaHistoricoServicosPrestador(),
                             ),
                           );
                         },
