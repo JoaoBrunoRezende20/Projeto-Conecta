@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_checkout_servico.dart';
+import 'tela_detalhes_prestador.dart';
 
 
 class TelaDetalhesServico extends StatefulWidget {
@@ -24,7 +25,19 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.menu, color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.black),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TelaDetalhesPrestador(
+                  prestadorId: widget.prestador['prestadorId'] ?? "",
+                ),
+              ),
+            );
+          },
+        ),
         title: Text(
           widget.prestador['nome'] ?? "Prestador de Serviço",
           style: const TextStyle(
