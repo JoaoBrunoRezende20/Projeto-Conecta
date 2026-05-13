@@ -222,6 +222,20 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               child: ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
+                    // Validação de Troco
+                    if (_metodoPagamento == 'Dinheiro' && _precisaTroco) {
+                      double? valorTroco = double.tryParse(_trocoController.text.replaceAll(',', '.'));
+                      if (valorTroco == null || valorTroco < widget.valorTotal) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("O valor para troco deve ser maior ou igual ao total do pedido."),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return; // Bloqueia a finalização do pedido
+                      }
+                    }
+                    
                     _finalizarPedido();
                   }
                 },
