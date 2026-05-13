@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'tela_avaliacao_servico.dart';
 
 class TelaHistoricoPedidos extends StatefulWidget {
   const TelaHistoricoPedidos({super.key});
@@ -157,6 +158,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                           data['status'] == "Aguardando confirmação!",
                       "total": (data['valor'] ?? 0).toDouble(),
                       "itens": data['servicos'] ?? data['itens'] ?? [],
+                      "prestadorId": data['prestadorId'] ?? "",
+                      "avaliado": data['avaliado'] ?? false,
                     };
 
                     return _buildCard(itemAdaptado);
@@ -235,7 +238,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             ],
           ),
 
-          if (concluido) ...[
+          if (concluido && !(item['avaliado'] as bool)) ...[
             const SizedBox(height: 20),
             const Center(
               child: Text(
@@ -252,7 +255,18 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TelaAvaliacaoServico(
+                        pedidoId: item['id'],
+                        prestadorId: item['prestadorId'],
+                        nomePrestador: item['loja'],
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B9467), // Cor verde oliva da imagem
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -271,6 +285,17 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             ),
           ],
 
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              "Serviço concluído!",
+              style: TextStyle(
+                color: Color(0xFF4CAF50),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
 
           // Botão Contato

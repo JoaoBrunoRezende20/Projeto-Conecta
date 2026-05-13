@@ -519,7 +519,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
       final String uid = credencial.user!.uid;
 
       // ATUALIZA O NOME DO USUÁRIO NO AUTH (Para não aparecer como Visitante)
-      String nomeCompleto = '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'.trim();
+      String nomeCompleto =
+          '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'
+              .trim();
       await credencial.user!.updateDisplayName(nomeCompleto);
 
       // 2. Faz o upload das imagens para o Storage
@@ -542,17 +544,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
             uid,
           );
         }
-        
+
         // 3. Salva todos os dados e as URLs no Firestore
         await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio);
-        
       } catch (e) {
         // Se qualquer coisa falhar após a criação do Auth, deletamos o usuário para não deixá-lo órfão.
         await credencial.user!.delete();
-        throw Exception('Falha ao concluir o cadastro. O usuário foi removido. Erro: $e');
+        throw Exception(
+          'Falha ao concluir o cadastro. O usuário foi removido. Erro: $e',
+        );
       }
-
-
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
