@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart'; // Certifique-se que adicionou 'gal' no pubspec.yaml
+import 'package:flutter/services.dart';
 import '../../utils/usuario_util.dart';
 
 class TelaDetalhesCadastro extends StatefulWidget {
@@ -45,10 +46,22 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
         });
   }
 
-  // --- LÓGICA DE SALVAR NA GALERIA (CORRIGIDA COM GAL) ---
-  Future<void> _baixarImagem(String base64String) async {
+  Future<void> _baixarImagem(String imageData) async {
+    if (imageData.startsWith('http')) {
+      await Clipboard.setData(ClipboardData(text: imageData));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Link da imagem copiado!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      return;
+    }
+
     try {
-      Uint8List bytes = UsuarioUtil.decodificarBase64(base64String);
+      Uint8List bytes = UsuarioUtil.decodificarBase64(imageData);
 
       // Salva usando a biblioteca 'gal'
       await Gal.putImageBytes(bytes);
@@ -85,7 +98,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   // --- LÓGICA DE APAGAR UMA IMAGEM ESPECÍFICA ---
   Future<void> _apagarImagemEspecifica(
     String campo,
-    String base64String,
+    String imageData,
   ) async {
     bool confirmar =
         await showDialog(
@@ -117,7 +130,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           .collection(widget.colecao)
           .doc(widget.usuarioId)
           .update({
-            campo: FieldValue.arrayRemove([base64String]),
+            campo: FieldValue.arrayRemove([imageData]),
           });
       if (mounted) {
         Navigator.pop(context); // Fecha o dialog da imagem
@@ -131,7 +144,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   }
 
   // --- VISUALIZADOR TELA CHEIA ---
-  void _verImagemTelaCheia(String base64String, String campoOrigem) {
+  void _verImagemTelaCheia(String imageData, String campoOrigem) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -141,8 +154,8 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           children: [
             Positioned.fill(
               child: InteractiveViewer(
-                child: Image.memory(
-                  UsuarioUtil.decodificarBase64(base64String),
+                child: UsuarioUtil.buildImageWidget(
+                  imageData,
                   fit: BoxFit.contain,
                 ),
               ),
@@ -163,9 +176,9 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => _baixarImagem(base64String),
+                    onPressed: () => _baixarImagem(imageData),
                     icon: const Icon(Icons.download),
-                    label: const Text('Baixar'),
+                    label: const Text('Baixar / Copiar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -173,7 +186,7 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () =>
-                        _apagarImagemEspecifica(campoOrigem, base64String),
+                        _apagarImagemEspecifica(campoOrigem, imageData),
                     icon: const Icon(Icons.delete_forever),
                     label: const Text('Apagar do Banco'),
                     style: ElevatedButton.styleFrom(
@@ -305,10 +318,10 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
   }
 
   // --- WIDGETS ---
-  Widget _buildImagemBase64(String base64String, String campoOrigem) {
+  Widget _buildImagemBase64(String imageData, String campoOrigem) {
     try {
       return GestureDetector(
-        onTap: () => _verImagemTelaCheia(base64String, campoOrigem),
+        onTap: () => _verImagemTelaCheia(imageData, campoOrigem),
         child: Container(
           margin: const EdgeInsets.only(right: 8),
           width: 120,
@@ -319,10 +332,9 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.memory(
-              UsuarioUtil.decodificarBase64(base64String),
+            child: UsuarioUtil.buildImageWidget(
+              imageData,
               fit: BoxFit.cover,
-              errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
             ),
           ),
         ),

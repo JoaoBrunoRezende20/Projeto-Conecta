@@ -171,9 +171,9 @@ class TelaDetalhesPrestador extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       itemCount: portfolioImagens.length,
                       itemBuilder: (context, index) {
-                        final base64String = portfolioImagens[index] as String;
+                        final imageData = portfolioImagens[index] as String;
                         return GestureDetector(
-                          onTap: () => _verImagemTelaCheia(context, base64String),
+                          onTap: () => _verImagemTelaCheia(context, imageData),
                           child: Container(
                             margin: const EdgeInsets.only(right: 15),
                             width: 130,
@@ -189,7 +189,7 @@ class TelaDetalhesPrestador extends StatelessWidget {
                               ],
                             ),
                             clipBehavior: Clip.hardEdge,
-                            child: _buildPortfolioImage(base64String),
+                            child: _buildPortfolioImage(imageData),
                           ),
                         );
                       },
@@ -220,19 +220,11 @@ class TelaDetalhesPrestador extends StatelessWidget {
     );
   }
 
-  Widget _buildPortfolioImage(String base64String) {
-    try {
-      return Image.memory(
-        UsuarioUtil.decodificarBase64(base64String),
-        fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, color: Colors.grey),
-      );
-    } catch (e) {
-      return const Center(child: Icon(Icons.broken_image, color: Colors.grey));
-    }
+  Widget _buildPortfolioImage(String imageData) {
+    return UsuarioUtil.buildImageWidget(imageData);
   }
 
-  void _verImagemTelaCheia(BuildContext context, String base64String) {
+  void _verImagemTelaCheia(BuildContext context, String imageData) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -242,10 +234,7 @@ class TelaDetalhesPrestador extends StatelessWidget {
           children: [
             Positioned.fill(
               child: InteractiveViewer(
-                child: Image.memory(
-                  UsuarioUtil.decodificarBase64(base64String),
-                  fit: BoxFit.contain,
-                ),
+                child: UsuarioUtil.buildImageWidget(imageData, fit: BoxFit.contain),
               ),
             ),
             Positioned(

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'package:flutter/material.dart';
 class UsuarioUtil {
 
   /// Recupera o nome completo do usuário de forma consistente
@@ -114,4 +114,32 @@ class UsuarioUtil {
       throw Exception('Erro ao decodificar Base64: $e');
     }
   }
-}
+
+  /// Retorna um widget de imagem capaz de renderizar tanto URLs (Firebase Storage) 
+  /// quanto strings legadas em formato Base64.
+  static Widget buildImageWidget(String imageData, {BoxFit fit = BoxFit.cover}) {
+    if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+      return Image.network(
+        imageData,
+        fit: fit,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    } else {
+      try {
+        return Image.memory(
+          decodificarBase64(imageData),
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      } catch (e) {
+        return const Icon(Icons.broken_image, color: Colors.grey);
+      }
+    }
+  }
+}
