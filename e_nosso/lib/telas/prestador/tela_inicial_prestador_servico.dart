@@ -266,12 +266,9 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: imagemBase64 != null && imagemBase64.isNotEmpty
-                    ? Image.memory(
-                        UsuarioUtil.decodificarBase64(imagemBase64),
+                    ? UsuarioUtil.buildImageWidget(
+                        imagemBase64,
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => const Center(
-                          child: Icon(Icons.image_not_supported, color: Colors.white70),
-                        ),
                       )
                     : const Center(
                         child: Text(
