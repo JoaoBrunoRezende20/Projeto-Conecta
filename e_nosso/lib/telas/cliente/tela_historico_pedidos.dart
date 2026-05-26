@@ -113,14 +113,14 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
-                // Filtrar apenas concluídos e ordenar manual client-side
+                // Filtrar apenas concluídos e rejeitados e ordenar manual client-side
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  return data['status'] == 'Concluído';
+                  return data['status'] == 'Concluído' || data['status'] == 'Rejeitado';
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhum serviço concluído no histórico."));
+                  return const Center(child: Text("Nenhum serviço no histórico."));
                 }
 
                 final sortedDocs = List.from(docs);
@@ -177,6 +177,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     bool ehServico = item['tipo'] == 'servico';
     bool pendente = item['ehPendente'];
     bool concluido = item['status'] == 'Concluído';
+    bool rejeitado = item['status'] == 'Rejeitado';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -240,17 +241,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
 
           if (concluido && !(item['avaliado'] as bool)) ...[
             const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                "Serviço concluído!",
-                style: TextStyle(
-                  color: Color(0xFF4CAF50),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
             // Botão Avaliar
             SizedBox(
               width: double.infinity,
@@ -286,16 +276,28 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           ],
 
           const SizedBox(height: 20),
-          const Center(
-            child: Text(
-              "Serviço concluído!",
-              style: TextStyle(
-                color: Color(0xFF4CAF50),
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+          if (rejeitado)
+            const Center(
+              child: Text(
+                "Serviço Recusado",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            )
+          else if (concluido)
+            const Center(
+              child: Text(
+                "Serviço concluído!",
+                style: TextStyle(
+                  color: Color(0xFF4CAF50),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 12),
 
           // Botão Contato
