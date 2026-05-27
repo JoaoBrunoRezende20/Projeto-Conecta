@@ -63,7 +63,11 @@ class TelaNotificacoes extends StatelessWidget {
 
               // LOGICA AUTOMÁTICA: Marca como lida se ainda não foi
               if (!lida) {
-                _usuarioRepository.marcarNotificacaoComoLida(user.uid, colecaoUsuario, doc.id);
+                // OTIMIZAÇÃO: Usar addPostFrameCallback evita ciclos infinitos de leitura/gravação 
+                // por tentar modificar o estado (Firebase) enquanto a UI ainda está sendo construída.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _usuarioRepository.marcarNotificacaoComoLida(user.uid, colecaoUsuario, doc.id);
+                });
               }
 
               return Card(
