@@ -23,7 +23,6 @@ class UsuarioPendente {
     required this.cpfOuCnpj,
   });
 }
-
 class TelaInicialAdministrador extends StatefulWidget {
   const TelaInicialAdministrador({super.key});
 

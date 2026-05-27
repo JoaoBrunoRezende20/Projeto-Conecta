@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../repositories/auth_repository.dart';
+import '../../repositories/usuario_repository.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class EditarPerfilPage extends StatefulWidget {
@@ -11,6 +12,9 @@ class EditarPerfilPage extends StatefulWidget {
 }
 
 class _EditarPerfilPageState extends State<EditarPerfilPage> {
+  final AuthRepository _authRepository = AuthRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
+
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _areaAtuacaoController = TextEditingController();
@@ -64,40 +68,18 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   }
 
   Future<void> _carregarDadosUsuario() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _authRepository.usuarioAtual;
     if (user == null) return;
     _userId = user.uid;
 
     try {
-      // Tenta achar em prestadorServicos
-      var doc = await FirebaseFirestore.instance
-          .collection('prestadorServicos')
-          .doc(_userId)
-          .get();
-      if (doc.exists) {
-        _colecaoUsuario = 'prestadorServicos';
-        _isPrestador = true;
-      } else {
-        // Tenta lojista
-        doc = await FirebaseFirestore.instance
-            .collection('lojistas')
-            .doc(_userId)
-            .get();
-        if (doc.exists) {
-          _colecaoUsuario = 'lojistas';
-        } else {
-          // Tenta usuario comum
-          doc = await FirebaseFirestore.instance
-              .collection('usuarioComum')
-              .doc(_userId)
-              .get();
-          if (doc.exists) {
-            _colecaoUsuario = 'usuarioComum';
-          }
-        }
-      }
-
-      if (doc.exists) {
+      final colecao = await _usuarioRepository.descobrirPerfilUsuario(_userId!);
+      
+      if (colecao != null) {
+        _colecaoUsuario = colecao;
+        _isPrestador = colecao == 'prestadorServicos';
+        
+        final doc = await _usuarioRepository.getUsuario(_userId!, colecao);
         final data = doc.data() as Map<String, dynamic>;
 
         if (_colecaoUsuario == 'lojistas') {
@@ -220,10 +202,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             _formatarDisponibilidadeParaSalvar();
       }
 
-      await FirebaseFirestore.instance
-          .collection(_colecaoUsuario)
-          .doc(_userId)
-          .update(dadosAtualizados);
+      await _usuarioRepository.salvarDadosUsuario(
+          _userId!, _colecaoUsuario, dadosAtualizados);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

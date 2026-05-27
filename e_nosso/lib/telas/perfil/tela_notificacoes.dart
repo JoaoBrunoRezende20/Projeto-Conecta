@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../repositories/auth_repository.dart';
+import '../../repositories/usuario_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class TelaNotificacoes extends StatelessWidget {
   final String colecaoUsuario; // 'lojistas' ou 'prestadorServicos'
+  
+  final AuthRepository _authRepository = AuthRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
-  const TelaNotificacoes({super.key, required this.colecaoUsuario});
+  TelaNotificacoes({super.key, required this.colecaoUsuario});
 
   String _formatarData(Timestamp? timestamp) {
     if (timestamp == null) return 'Data desconhecida';
@@ -15,7 +19,7 @@ class TelaNotificacoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _authRepository.usuarioAtual;
     if (user == null) return const Scaffold(body: Center(child: Text('Erro: Não logado')));
 
     return Scaffold(
@@ -27,12 +31,7 @@ class TelaNotificacoes extends StatelessWidget {
       ),
       backgroundColor: const Color(0xFFF5F5F5),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection(colecaoUsuario)
-            .doc(user.uid)
-            .collection('notificacoes')
-            .orderBy('data', descending: true)
-            .snapshots(),
+        stream: _usuarioRepository.getNotificacoesStream(user.uid, colecaoUsuario),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -64,7 +63,11 @@ class TelaNotificacoes extends StatelessWidget {
 
               // LOGICA AUTOMÁTICA: Marca como lida se ainda não foi
               if (!lida) {
-                doc.reference.update({'lida': true});
+                // OTIMIZAÇÃO: Usar addPostFrameCallback evita ciclos infinitos de leitura/gravação 
+                // por tentar modificar o estado (Firebase) enquanto a UI ainda está sendo construída.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _usuarioRepository.marcarNotificacaoComoLida(user.uid, colecaoUsuario, doc.id);
+                });
               }
 
               return Card(
