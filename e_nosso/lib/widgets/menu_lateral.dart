@@ -9,6 +9,7 @@ import '../telas/cliente/tela_confirmacao_servico.dart';
 import '../telas/prestador/tela_pedidos_pendentes_prestador.dart';
 import '../telas/prestador/tela_servicos_agendados_prestador.dart';
 import '../telas/prestador/tela_historico_servicos_prestador.dart';
+import '../telas/perfil/tela_planos_anuncios.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
@@ -243,6 +244,24 @@ class MenuLateral extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const TelaHistoricoServicosPrestador(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    if (colecaoUsuario == 'lojistas' || colecaoUsuario == 'prestadorServicos') ...[
+                      ListTile(
+                        leading: const Icon(Icons.campaign, color: Colors.orange),
+                        title: const Text(
+                          "Destacar meu Negócio",
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaPlanosAnuncios(),
                             ),
                           );
                         },
