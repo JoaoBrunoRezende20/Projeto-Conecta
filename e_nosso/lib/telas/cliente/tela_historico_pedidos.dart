@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_avaliacao_servico.dart';
+import '../../repositories/pedido_repository.dart';
 
 class TelaHistoricoPedidos extends StatefulWidget {
   const TelaHistoricoPedidos({super.key});
@@ -11,6 +12,7 @@ class TelaHistoricoPedidos extends StatefulWidget {
 }
 
 class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
+  final PedidoRepository _pedidoRepository = PedidoRepository();
   // Lista unificada: o campo 'tipo' define se é Produto ou Serviço
   List<Map<String, dynamic>> historicoGeral = [
     {
@@ -91,13 +93,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           const SizedBox(height: 20),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('pedidos')
-                  .where(
-                    'clienteId',
-                    isEqualTo: FirebaseAuth.instance.currentUser?.uid,
-                  )
-                  .snapshots(),
+              stream: _pedidoRepository.getPedidosPorCliente(FirebaseAuth.instance.currentUser?.uid ?? ''),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -369,10 +365,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               try {
-                await FirebaseFirestore.instance
-                    .collection('pedidos')
-                    .doc(id)
-                    .update({'status': 'Cancelado'});
+                await _pedidoRepository.atualizarStatusPedido(id, 'Cancelado');
 
                 if (mounted) {
                   Navigator.pop(context);

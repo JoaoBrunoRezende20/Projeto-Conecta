@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // NOVO: Para salvar no b
 import 'package:firebase_auth/firebase_auth.dart'; // NOVO: Para pegar o ID do cliente
 import 'tela_produtos_disponiveis.dart'; // NOVO: Para acessar a variável carrinhoGlobal
 import '../../utils/carrinho_util.dart';
+import '../../repositories/pedido_repository.dart';
 
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -14,6 +15,7 @@ class TelaDadosEntrega extends StatefulWidget {
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final _formKey = GlobalKey<FormState>();
+  final PedidoRepository _pedidoRepository = PedidoRepository();
 
   // Controladores para capturar os dados
   final _nomeController = TextEditingController();
@@ -304,8 +306,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         },
       };
 
-      // 3. Salva no banco de dados na coleção "pedidos"
-      await FirebaseFirestore.instance.collection('pedidos').add(pedidoData);
+      // 3. Salva no banco de dados
+      await _pedidoRepository.criarPedido(pedidoData);
 
       // 4. Limpa o carrinho global e a memória local agora que a compra foi feita
       carrinhoGlobal.clear();

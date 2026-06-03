@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'tela_historico_pedidos.dart';
 import 'tela_confirmacao_servico.dart';
+import '../../repositories/pedido_repository.dart';
+import '../../repositories/usuario_repository.dart';
 
 class TelaCheckoutServico extends StatefulWidget {
   final List<Map<String, dynamic>> servicosSelecionados;
@@ -36,6 +38,9 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
   final FocusNode _telefoneFocus = FocusNode();
   String? pagamentoSelecionado;
 
+  final PedidoRepository _pedidoRepository = PedidoRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
+
   final _telefoneFormatter = MaskTextInputFormatter(
     mask: '(##) #####-####',
     filter: {"#": RegExp(r'[0-9]')},
@@ -62,10 +67,7 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(user.uid)
-          .get();
+      final doc = await _usuarioRepository.getUsuario(user.uid, 'usuarios');
       if (doc.exists) {
         final data = doc.data();
         setState(() {
@@ -85,10 +87,7 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
 
   Future<void> _buscarDisponibilidade() async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('prestadorServicos')
-          .doc(widget.prestadorId)
-          .get();
+      final doc = await _usuarioRepository.getUsuario(widget.prestadorId, 'prestadorServicos');
 
       if (doc.exists) {
         final data = doc.data();
@@ -712,7 +711,7 @@ class _TelaCheckoutServicoState extends State<TelaCheckoutServico> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    await FirebaseFirestore.instance.collection('pedidos').add({
+    await _pedidoRepository.criarPedido({
       'clienteId': user.uid,
       'prestador': widget.nomePrestador,
       'prestadorId': widget.prestadorId,

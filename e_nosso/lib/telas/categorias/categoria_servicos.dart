@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 import '../cliente/tela_detalhes_servico.dart';
 import '../cliente/tela_perfil_prestador.dart';
+import '../../repositories/categoria_repository.dart';
 
 class CategoriaServicos extends StatefulWidget {
   const CategoriaServicos({super.key});
@@ -13,6 +14,7 @@ class CategoriaServicos extends StatefulWidget {
 
 class _CategoriaServicosState extends State<CategoriaServicos> {
   String pesquisa = "";
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +53,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("prestadorServicos")
-                  .where("tipo", isEqualTo: "prestador")
-                  .where('statusCadastro', isEqualTo: 'aprovado')
-                  .snapshots(),
+              stream: _categoriaRepository.getPrestadoresAprovados(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(

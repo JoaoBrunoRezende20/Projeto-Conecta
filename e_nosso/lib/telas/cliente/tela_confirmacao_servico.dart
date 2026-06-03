@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import '../../repositories/pedido_repository.dart';
 
 class TelaConfirmacaoServico extends StatefulWidget {
   const TelaConfirmacaoServico({super.key});
@@ -14,6 +15,7 @@ class TelaConfirmacaoServico extends StatefulWidget {
 class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
   late Timer _timer;
   Stream<QuerySnapshot>? _pedidosStream;
+  final PedidoRepository _pedidoRepository = PedidoRepository();
 
   @override
   void initState() {
@@ -21,12 +23,7 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
     
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _pedidosStream = FirebaseFirestore.instance
-          .collection('pedidos')
-          .where('clienteId', isEqualTo: user.uid)
-          .where('status', whereIn: ['Pendente', 'Confirmado'])
-          .where('tipo', isEqualTo: 'servico')
-          .snapshots();
+      _pedidosStream = _pedidoRepository.getServicosPendentesCliente(user.uid);
     }
 
     // Timer para atualizar a tela a cada segundo (cronômetro)
@@ -279,9 +276,7 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
     );
 
     if (confirmar == true) {
-      await FirebaseFirestore.instance.collection('pedidos').doc(id).update({
-        'status': 'Cancelado',
-      });
+      await _pedidoRepository.atualizarStatusPedido(id, 'Cancelado');
     }
   }
 }

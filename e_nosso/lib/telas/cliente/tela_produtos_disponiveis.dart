@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
 import '../../utils/carrinho_util.dart';
+import '../../repositories/produto_repository.dart';
+import '../../repositories/pedido_repository.dart';
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
 // Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
@@ -30,6 +32,9 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 }
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
+  final PedidoRepository _pedidoRepository = PedidoRepository();
+
   @override
   void initState() {
     super.initState();
@@ -107,10 +112,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
 
   Widget _buildListaProdutos() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('produtos')
-          .where('lojistaId', isEqualTo: widget.lojaId)
-          .snapshots(),
+      stream: _produtoRepository.getProdutosPorLojista(widget.lojaId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
