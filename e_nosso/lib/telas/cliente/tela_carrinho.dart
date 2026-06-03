@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-// Certifique-se de que o nome do arquivo abaixo é exatamente o nome do arquivo que contém a TelaDadosEntrega
 import 'tela_finalizacao_compra.dart';
 
-class TelaRevisaoCarrinho extends StatelessWidget {
+class TelaRevisaoCarrinho extends StatefulWidget {
   final Map<String, Map<String, dynamic>> itens;
   final String lojaName;
 
@@ -12,10 +11,14 @@ class TelaRevisaoCarrinho extends StatelessWidget {
     required this.lojaName,
   });
 
+  @override
+  State<TelaRevisaoCarrinho> createState() => _TelaRevisaoCarrinhoState();
+}
+
+class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
   double get _total {
     double total = 0.0;
-    itens.forEach((key, value) {
-      // Adicionada verificação de segurança para evitar erro de null
+    widget.itens.forEach((key, value) {
       final preco = value['preco'] ?? 0.0;
       final qtd = value['quantidade'] ?? 0;
       total += (preco * qtd);
@@ -23,136 +26,214 @@ class TelaRevisaoCarrinho extends StatelessWidget {
     return total;
   }
 
+  int get _totalItens {
+    int total = 0;
+    widget.itens.forEach((key, value) {
+      total += (value['quantidade'] as int? ?? 0);
+    });
+    return total;
+  }
+
+  void _atualizarQuantidade(String id, int delta) {
+    setState(() {
+      if (widget.itens.containsKey(id)) {
+        int atual = widget.itens[id]!['quantidade'] ?? 0;
+        int novaQtd = atual + delta;
+        if (novaQtd > 0) {
+          widget.itens[id]!['quantidade'] = novaQtd;
+        } else {
+          widget.itens.remove(id); // Remove do carrinho se zerar
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          lojaName,
-          style: const TextStyle(
+        title: const Text(
+          "Sacola",
+          style: TextStyle(
             color: Colors.black,
-            fontWeight: FontWeight.bold,
+            fontSize: 22,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.menu, color: Colors.black),
+          onPressed: () {}, // Ação do menu se necessário
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 15.0),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black, width: 1.5),
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 18,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: itens.isEmpty
-                ? const Center(child: Text("Seu carrinho está vazio"))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: itens.length,
+      body: widget.itens.isEmpty
+          ? const Center(child: Text("Sua sacola está vazia"))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- CABEÇALHO DA LOJA ---
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.lojaName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              "Adicionar mais itens",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                  // --- ITENS ADICIONADOS ---
+                  const Text(
+                    "Itens adicionados",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  // LISTA DE ITENS
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: widget.itens.length,
                     itemBuilder: (context, index) {
-                      final item = itens.values.elementAt(index);
-                      return _cardItemCarrinho(item);
+                      final key = widget.itens.keys.elementAt(index);
+                      final item = widget.itens[key]!;
+                      return _cardItemCarrinho(item, key);
                     },
                   ),
-          ),
-          _buildResumoValores(),
-        ],
-      ),
-      bottomNavigationBar: _buildAcoesFinais(context),
-    );
-  }
-
-  Widget _cardItemCarrinho(Map<String, dynamic> item) {
-    final precoTotal = (item['preco'] ?? 0.0) * (item['quantidade'] ?? 0);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
-        ],
-      ),
-      child: Row(
-        children: [
-          Text(
-            "${item['quantidade']}x",
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              item['nome'] ?? "Produto",
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-          Text(
-            "R\$ ${precoTotal.toStringAsFixed(2)}",
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
+      bottomNavigationBar: widget.itens.isEmpty ? null : _buildBottomBar(),
     );
   }
 
-  Widget _buildResumoValores() {
-    double taxaEntrega = 5.0;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _linhaResumo("Subtotal", "R\$ ${_total.toStringAsFixed(2)}"),
-          _linhaResumo(
-            "Taxa de Entrega",
-            "R\$ ${taxaEntrega.toStringAsFixed(2)}",
-          ),
-          const Divider(height: 24),
-          _linhaResumo(
-            "Total",
-            "R\$ ${(_total + taxaEntrega).toStringAsFixed(2)}",
-            isTotal: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _linhaResumo(String label, String valor, {bool isTotal = false}) {
+  Widget _cardItemCarrinho(Map<String, dynamic> item, String id) {
+    final double precoTotal = (item['preco'] ?? 0.0) * (item['quantidade'] ?? 0);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.only(bottom: 25),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 18 : 14,
+          // IMAGEM PLACEHOLDER
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-          Text(
-            valor,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 18 : 14,
-              color: isTotal ? Colors.black : Colors.black,
+          const SizedBox(width: 15),
+          // INFOS DO PRODUTO
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['nome'] ?? "Produto",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  "${item['quantidade']} unidades",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  "R\$ ${precoTotal.toStringAsFixed(2).replaceAll('.', ',')}",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // SELETOR DE QUANTIDADE
+          Container(
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.remove, size: 14, color: Colors.black54),
+                  onPressed: () => _atualizarQuantidade(id, -1),
+                ),
+                Text(
+                  "${item['quantidade']}",
+                  style: const TextStyle(fontSize: 13),
+                ),
+                IconButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.add, size: 14, color: Colors.black54),
+                  onPressed: () => _atualizarQuantidade(id, 1),
+                ),
+              ],
             ),
           ),
         ],
@@ -160,54 +241,70 @@ class TelaRevisaoCarrinho extends StatelessWidget {
     );
   }
 
-  Widget _buildAcoesFinais(BuildContext context) {
+  Widget _buildBottomBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
       color: Colors.white,
       child: SafeArea(
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: const BorderSide(color: Colors.grey),
-                ),
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "VOLTAR",
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: itens.isEmpty
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                TelaDadosEntrega(valorTotal: _total + 5),
-                          ),
-                        );
-                      },
-                child: const Text(
-                  "PRÓXIMO PASSO",
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Total com a entrega",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                   ),
+                ),
+                const SizedBox(height: 2),
+                RichText(
+                  text: TextSpan(
+                    text: "R\$${_total.toStringAsFixed(2).replaceAll('.', ',')} ",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: "/ $_totalItens itens",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A4A4A), // Cinza escuro como na imagem
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Continuar",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
