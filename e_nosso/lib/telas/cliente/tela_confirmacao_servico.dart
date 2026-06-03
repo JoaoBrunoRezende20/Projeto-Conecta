@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 
 class TelaConfirmacaoServico extends StatefulWidget {
@@ -18,18 +17,15 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
   @override
   void initState() {
     super.initState();
-    
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      // Busca TODOS os pedidos do cliente — filtramos client-side
       _pedidosStream = FirebaseFirestore.instance
           .collection('pedidos')
           .where('clienteId', isEqualTo: user.uid)
-          .where('status', whereIn: ['Pendente', 'Confirmado'])
-          .where('tipo', isEqualTo: 'servico')
           .snapshots();
     }
-
-    // Timer para atualizar a tela a cada segundo (cronômetro)
+    // Atualiza o cronômetro a cada segundo
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) setState(() {});
     });
@@ -41,18 +37,82 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
     super.dispose();
   }
 
+  // Pedido finalizado = some da tela de pendentes e vai para o histórico
+  bool _isFinalizado(String status) {
+    final s = status.toLowerCase();
+    return s == 'concluido' ||
+        s == 'concluído' ||
+        s == 'cancelado' ||
+        s == 'rejeitado';
+  }
+
+  // Confirmado = lojista aceitou ('aceito') ou prestador confirmou ('Confirmado')
+  bool _isConfirmado(String status) {
+    final s = status.toLowerCase();
+    return s == 'aceito' || s == 'confirmado';
+  }
+
+  // Pendente = ainda não teve resposta do lojista/prestador
+  bool _isPendente(String status) {
+    return status.toLowerCase() == 'pendente';
+  }
+
+  // Pode cancelar: apenas se pendente E após 15 minutos sem confirmação
   bool _podeCancelar(Timestamp? dataCriacao, String status) {
-    if (status == 'Confirmado') return false; // Não pode cancelar se já confirmado
-    if (dataCriacao == null) return true; // Se não tem data (pedidos antigos), permite cancelar por segurança
-    
+    if (!_isPendente(status)) return false;
+    if (dataCriacao == null) return true; // sem data: libera por segurança
     final diferenca = DateTime.now().difference(dataCriacao.toDate());
     return diferenca.inMinutes >= 15;
   }
 
+  String _tempoRestanteMMSS(Timestamp dataCriacao) {
+    final diff = DateTime.now().difference(dataCriacao.toDate());
+    final restanteSegundos = (15 * 60) - diff.inSeconds;
+    if (restanteSegundos <= 0) return "00:00";
+    final minutos = (restanteSegundos ~/ 60).toString().padLeft(2, '0');
+    final segundos = (restanteSegundos % 60).toString().padLeft(2, '0');
+    return "$minutos:$segundos";
+  }
+
+  String _getNomePedido(Map<String, dynamic> data) {
+    final bool ehServico = data['tipo'] == 'servico';
+    if (ehServico) {
+      if (data['prestador'] != null) return data['prestador'];
+      final List servicos = data['servicos'] ?? [];
+      if (servicos.isNotEmpty) {
+        return servicos.map((s) => s['nome'] ?? '').join(', ');
+      }
+      return 'Serviço';
+    } else {
+      // Produtos: pega o nome do primeiro item do mapa
+      if (data['itens'] is Map) {
+        final itens = data['itens'] as Map;
+        if (itens.isNotEmpty) {
+          final primeiro = itens.values.first;
+          if (primeiro is Map) return primeiro['nome']?.toString() ?? 'Pedido';
+        }
+      }
+      if (data['itens'] is List) {
+        final itens = data['itens'] as List;
+        if (itens.isNotEmpty) return itens.first['nome']?.toString() ?? 'Pedido';
+      }
+      return 'Pedido';
+    }
+  }
+
+  double _getValor(Map<String, dynamic> data) {
+    return (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
+  }
+
+  String _getPagamento(Map<String, dynamic> data) {
+    if (data['pagamento'] is Map) {
+      return (data['pagamento'] as Map)['metodo']?.toString() ?? 'Cartão';
+    }
+    return data['pagamento']?.toString() ?? 'Cartão';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -64,8 +124,11 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.arrow_circle_left_outlined,
-                color: Colors.black, size: 30),
+            icon: const Icon(
+              Icons.arrow_circle_left_outlined,
+              color: Colors.black,
+              size: 30,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -74,7 +137,7 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
         children: [
           const SizedBox(height: 10),
           const Text(
-            "Serviços pendentes",
+            "Pedidos Pendentes",
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -89,20 +152,78 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("Nenhum serviço pendente."));
+                if (!snapshot.hasData) {
+                  return const Center(child: Text("Nenhum pedido pendente."));
+                }
+
+                // Filtra client-side: remove os finalizados
+                final docs = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final status = (data['status'] ?? '').toString();
+                  return !_isFinalizado(status);
+                }).toList();
+
+                // Ordena: mais recente primeiro
+                try {
+                  docs.sort((a, b) {
+                    final tA = (a.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
+                    final tB = (b.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
+                    if (tA == null && tB == null) return 0;
+                    if (tA == null) return 1;
+                    if (tB == null) return -1;
+                    return tB.compareTo(tA);
+                  });
+                } catch (_) {}
+
+                if (docs.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 60, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          "Nenhum pedido pendente.",
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final doc = snapshot.data!.docs[index];
+                    final doc = docs[index];
                     final data = doc.data() as Map<String, dynamic>;
                     final dataCriacao = data['dataCriacao'] as Timestamp?;
-                    final String status = data['status'] ?? 'Pendente';
-                    final podeCancelar = _podeCancelar(dataCriacao, status);
-                    final bool isConfirmado = status == 'Confirmado';
+                    final String status = (data['status'] ?? 'Pendente').toString();
+                    final bool isConfirmado = _isConfirmado(status);
+                    final bool isPendente = _isPendente(status);
+                    final bool podeCancelar = _podeCancelar(dataCriacao, status);
+                    final bool ehServico = data['tipo'] == 'servico';
+
+                    final nomePedido = _getNomePedido(data);
+                    final valor = _getValor(data);
+                    final pagamento = _getPagamento(data);
+
+                    // Subtítulo: data/horário para serviços ou tipo entrega para produtos
+                    String subtitulo = '';
+                    if (ehServico) {
+                      final dia = (data['data'] ?? data['dia'] ?? '').toString();
+                      final horario = (data['horario'] ?? '').toString();
+                      if (dia.isNotEmpty) subtitulo = "$dia às $horario";
+                    } else {
+                      final dadosEntrega = data['dadosEntrega'];
+                      if (dadosEntrega is Map) {
+                        final tipo = dadosEntrega['tipoEntrega']?.toString() ?? '';
+                        final endereco = dadosEntrega['endereco']?.toString() ?? '';
+                        subtitulo = (tipo == 'Entrega' && endereco.isNotEmpty)
+                            ? "Entrega: $endereco"
+                            : tipo;
+                      }
+                    }
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 25),
@@ -122,7 +243,7 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            data['prestador'] ?? "Nome do Serviço",
+                            nomePedido,
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -130,7 +251,7 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                           ),
                           const SizedBox(height: 15),
                           Text(
-                            "R\$ ${(data['valor'] ?? 0).toStringAsFixed(2)}",
+                            "R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}",
                             style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
@@ -139,42 +260,49 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              const Icon(Icons.credit_card,
-                                  size: 18, color: Colors.black54),
+                              const Icon(
+                                Icons.credit_card,
+                                size: 18,
+                                color: Colors.black54,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                "Pagamento no ${data['pagamento'] ?? 'Crédito'}",
+                                "Pagamento no $pagamento",
                                 style: const TextStyle(
-                                    fontSize: 12, color: Colors.black54),
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            "${data['data'] ?? data['dia']} às ${data['horario'] ?? ''}",
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black54),
-                          ),
+                          if (subtitulo.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              subtitulo,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.black54),
+                            ),
+                          ],
+
                           const SizedBox(height: 20),
+
+                          // STATUS: verde se confirmado, vermelho se aguardando
                           Center(
                             child: Text(
-                              status == 'Confirmado'
-                                  ? "Serviço confirmado"
-                                  : (status == 'Rejeitado'
-                                      ? "Serviço recusado"
-                                      : "Aguardando confirmação!"),
+                              isConfirmado
+                                  ? "Pedido confirmado! ✓"
+                                  : "Aguardando confirmação...",
                               style: TextStyle(
-                                color: status == 'Confirmado'
-                                    ? Colors.green
-                                    : (status == 'Rejeitado'
-                                        ? Colors.orange
-                                        : Colors.red),
+                                color: isConfirmado ? Colors.green : Colors.red,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 15),
+
+                          // Botão de contato
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -184,17 +312,23 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                elevation: 0,
                               ),
-                              child: const Text(
-                                "Entrar em contato com o prestador",
-                                style: TextStyle(
+                              child: Text(
+                                ehServico
+                                    ? "Entrar em contato com o prestador"
+                                    : "Entrar em contato com a loja",
+                                style: const TextStyle(
                                     color: Colors.white, fontSize: 13),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          // Botão de Cancelamento condicional
-                          if (!isConfirmado)
+
+                          // Botão cancelar — só aparece enquanto pendente (sem confirmação)
+                          if (isPendente) ...[
+                            const SizedBox(height: 10),
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton(
@@ -211,6 +345,8 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
                                 ),
                                 child: Text(
                                   "Cancelar Pedido",
@@ -223,19 +359,22 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
                                 ),
                               ),
                             ),
-                          if (!isConfirmado && !podeCancelar && dataCriacao != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Center(
-                                child: Text(
-                                  "Cancelamento disponível em: ${_tempoRestanteMMSS(dataCriacao)}",
-                                  style: const TextStyle(
+                            // Cronômetro de cancelamento
+                            if (!podeCancelar && dataCriacao != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Center(
+                                  child: Text(
+                                    "Cancelamento disponível em: ${_tempoRestanteMMSS(dataCriacao)}",
+                                    style: const TextStyle(
                                       fontSize: 11,
                                       color: Colors.redAccent,
-                                      fontWeight: FontWeight.w500),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                          ],
                         ],
                       ),
                     );
@@ -249,18 +388,6 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
     );
   }
 
-  String _tempoRestanteMMSS(Timestamp dataCriacao) {
-    final diff = DateTime.now().difference(dataCriacao.toDate());
-    final restanteSegundos = (15 * 60) - diff.inSeconds;
-
-    if (restanteSegundos <= 0) return "00:00";
-
-    final minutos = (restanteSegundos ~/ 60).toString().padLeft(2, '0');
-    final segundos = (restanteSegundos % 60).toString().padLeft(2, '0');
-
-    return "$minutos:$segundos";
-  }
-
   void _cancelarPedido(String id) async {
     bool? confirmar = await showDialog<bool>(
       context: context,
@@ -269,19 +396,22 @@ class _TelaConfirmacaoServicoState extends State<TelaConfirmacaoServico> {
         content: const Text("Deseja realmente cancelar este pedido?"),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Não")),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Não"),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Sim")),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Sim"),
+          ),
         ],
       ),
     );
 
     if (confirmar == true) {
-      await FirebaseFirestore.instance.collection('pedidos').doc(id).update({
-        'status': 'Cancelado',
-      });
+      await FirebaseFirestore.instance
+          .collection('pedidos')
+          .doc(id)
+          .update({'status': 'Cancelado'});
     }
   }
 }

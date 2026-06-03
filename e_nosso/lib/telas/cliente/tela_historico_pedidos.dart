@@ -113,10 +113,13 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
-                // Filtrar apenas concluídos e rejeitados e ordenar manual client-side
+                // Filtrar apenas finalizados: concluído, cancelado ou rejeitado
+                // Suporta tanto o formato do prestador (capitalizado) quanto do lojista (lowercase)
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  return data['status'] == 'Concluído' || data['status'] == 'Rejeitado';
+                  final status = (data['status'] ?? '').toString().toLowerCase();
+                  return status == 'concluído' ||
+                      status == 'concluido';
                 }).toList();
 
                 if (docs.isEmpty) {
@@ -174,10 +177,12 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   }
 
   Widget _buildCard(Map<String, dynamic> item) {
+    final statusNorm = item['status']?.toString().toLowerCase() ?? '';
     bool ehServico = item['tipo'] == 'servico';
     bool pendente = item['ehPendente'];
-    bool concluido = item['status'] == 'Concluído';
-    bool rejeitado = item['status'] == 'Rejeitado';
+    bool concluido = statusNorm == 'concluído' || statusNorm == 'concluido';
+    bool rejeitado = statusNorm == 'rejeitado';
+    bool cancelado = statusNorm == 'cancelado';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),

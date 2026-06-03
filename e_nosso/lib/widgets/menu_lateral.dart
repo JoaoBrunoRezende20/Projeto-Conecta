@@ -9,6 +9,7 @@ import '../telas/cliente/tela_confirmacao_servico.dart';
 import '../telas/prestador/tela_pedidos_pendentes_prestador.dart';
 import '../telas/prestador/tela_servicos_agendados_prestador.dart';
 import '../telas/prestador/tela_historico_servicos_prestador.dart';
+import '../telas/lojista/tela_historico_pedidos_lojista.dart';
 import '../telas/perfil/tela_planos_anuncios.dart';
 
 class MenuLateral extends StatelessWidget {
@@ -196,7 +197,7 @@ class MenuLateral extends StatelessWidget {
                       ),
                       ListTile(
                         leading: const Icon(Icons.pending_actions),
-                        title: const Text("Serviços Pendentes"),
+                        title: const Text("Pedidos Pendentes"),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -244,6 +245,21 @@ class MenuLateral extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const TelaHistoricoServicosPrestador(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    if (colecaoUsuario == 'lojistas') ...[
+                      ListTile(
+                        leading: const Icon(Icons.history),
+                        title: const Text("Histórico de pedidos"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaHistoricoPedidosLojista(),
                             ),
                           );
                         },

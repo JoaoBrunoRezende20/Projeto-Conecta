@@ -81,7 +81,7 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
     final data = _dadosPrestador!;
     final nome = (data['nome'] ?? data['nomeCompleto'] ?? 'Prestador').toString();
     final areaAtuacao = (data['areaAtuacao'] ?? 'Prestador autônomo').toString();
-    final descricao = (data['descricao'] ?? data['areaAtuacao'] ?? '*Descrição geral dos serviços prestados').toString();
+    final descricao = (data['descricaoServicos'] ?? data['descricao'] ?? data['areaAtuacao'] ?? '*Descrição geral dos serviços prestados').toString();
     final telefone = (data['telefone'] ?? 'Não informado').toString();
     final mediaAvaliacoes = (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
     final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
