@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart'; // NOVO: Import do Storage
+import '../../repositories/auth_repository.dart';
+import '../../repositories/usuario_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,6 +22,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
+
+  final AuthRepository _authRepository = AuthRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
   // NOVO: Estado para controlar a visibilidade da senha
   bool _isPasswordVisible = false;
@@ -117,7 +122,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ];
 
   final List<String> categoriasLojista = [
-    'Quitandas',
+    'Comidas',
     'Bebidas',
     'Feira Livre',
     'Serviços',
@@ -510,11 +515,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
     try {
       // 1. Cria a conta de autenticação primeiro
-      final credencial = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _senhaController.text.trim(),
-          );
+      final credencial = await _authRepository.cadastrar(
+        _emailController.text.trim(),
+        _senhaController.text.trim(),
+      );
 
       final String uid = credencial.user!.uid;
 
@@ -581,7 +585,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     }
   }
 
-  // Função atualizada para receber as URLs do Storage
+  // Função atualizada para receber as URLs do Storage e usar UsuarioRepository
   Future<void> _salvarDadosNoFirestore(
     String uid,
     List<String> documentosUrls,
@@ -589,7 +593,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ) {
     switch (widget.tipoUsuario) {
       case 'lojista':
-        return FirebaseFirestore.instance.collection('lojistas').doc(uid).set({
+        return _usuarioRepository.salvarDadosUsuario(uid, 'lojistas', {
           'cnpj': _cnpjController.text.trim(),
           'emailComercial': _emailComercialController.text.trim(),
           'razaoSocial': _razaoSocialController.text.trim(),
@@ -629,10 +633,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             double.tryParse(_faixaPrecosController.text.replaceAll(',', '.')) ??
             0.0;
 
-        return FirebaseFirestore.instance
-            .collection('prestadorServicos')
-            .doc(uid)
-            .set({
+        return _usuarioRepository.salvarDadosUsuario(uid, 'prestadorServicos', {
               'nome': _nomeController.text.trim(),
               'sobrenome': _sobrenomeController.text.trim(),
               'telefone': _telefoneController.text.trim(),
@@ -658,10 +659,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       case 'comum':
       default:
-        return FirebaseFirestore.instance
-            .collection('usuarioComum')
-            .doc(uid)
-            .set({
+        return _usuarioRepository.salvarDadosUsuario(uid, 'usuarioComum', {
               'nome': _nomeController.text.trim(),
               'sobrenome': _sobrenomeController.text.trim(),
               'cpf': _cpfController.text.trim(),

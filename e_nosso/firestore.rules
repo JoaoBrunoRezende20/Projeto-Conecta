@@ -6,11 +6,27 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Helper: Valida se o preço existe e é um valor numérico positivo ou zero
+    function isPrecoValido(data) {
+      return !('preco' in data) || (data.preco is number && data.preco >= 0);
+    }
+
+    // Helper: Valida o formato/tamanho do CNPJ (14 sem máscara, 18 com máscara)
+    function isCnpjValido(data) {
+      return !('cnpj' in data) || (data.cnpj is string && (data.cnpj.size() == 14 || data.cnpj.size() == 18));
+    }
+
+    // Helper: Valida o formato/tamanho do CPF (11 sem máscara, 14 com máscara)
+    function isCpfValido(data) {
+      return !('cpf' in data) || (data.cpf is string && (data.cpf.size() == 11 || data.cpf.size() == 14));
+    }
+
     // Produtos: leitura pública, mas apenas o lojista dono pode criar, atualizar ou deletar
     match /produtos/{produtoId} {
       allow read: if true;
-      allow create: if isAuthed() && request.resource.data.lojistaId == request.auth.uid;
-      allow update, delete: if isAuthed() && resource.data.lojistaId == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.lojistaId == request.auth.uid && isPrecoValido(request.resource.data);
+      allow update: if isAuthed() && resource.data.lojistaId == request.auth.uid && isPrecoValido(request.resource.data);
+      allow delete: if isAuthed() && resource.data.lojistaId == request.auth.uid;
     }
     
     // Serviços: leitura pública, mas apenas o prestador dono pode criar, atualizar ou deletar
@@ -20,7 +36,7 @@ service cloud.firestore {
       allow update, delete: if isAuthed() && resource.data.prestadorId == request.auth.uid;
     }
 
-    // Categorias: leitura pública, edição restrita a usuários logados (pode ser restrito a admin no futuro)
+    // Categorias: leitura pública, edição restrita a usuários logados
     match /categorias/{categoriaId} {
       allow read: if true;
       allow write: if isAuthed();
@@ -29,31 +45,35 @@ service cloud.firestore {
     // Perfil do Lojista: leitura pública, mas apenas o dono do perfil pode editar
     match /lojistas/{userId} {
       allow read: if true;
-      allow write: if isAuthed() && request.auth.uid == userId;
+      allow create, update: if isAuthed() && request.auth.uid == userId && isCnpjValido(request.resource.data);
+      allow delete: if isAuthed() && request.auth.uid == userId;
     }
 
     // Perfil do Prestador de Serviços: leitura pública, apenas dono do perfil pode editar
     match /prestadorServicos/{userId} {
       allow read: if true;
-      allow write: if isAuthed() && request.auth.uid == userId;
+      allow create, update: if isAuthed() && request.auth.uid == userId && isCnpjValido(request.resource.data) && isCpfValido(request.resource.data);
+      allow delete: if isAuthed() && request.auth.uid == userId;
     }
 
     // Perfil do Usuário Comum (Cliente): o próprio usuário pode ler e editar
     match /usuarioComum/{userId} {
-      allow read, write: if isAuthed() && request.auth.uid == userId;
+      allow read: if isAuthed() && request.auth.uid == userId;
+      allow create, update: if isAuthed() && request.auth.uid == userId && isCpfValido(request.resource.data);
+      allow delete: if isAuthed() && request.auth.uid == userId;
     }
     
-    // Notificações: usuários autenticados (melhoria futura: restringir ao dono)
+    // Notificações: usuários autenticados
     match /notificacoes/{docId} {
       allow read, write: if isAuthed();
     }
     
-    // Pedidos: usuários autenticados (melhoria futura: restringir aos envolvidos no pedido)
+    // Pedidos: usuários autenticados
     match /pedidos/{pedidoId} {
       allow read, write: if isAuthed();
     }
 
-    // Regra padrão de segurança para as outras coleções (mantido fallback original)
+    // Regra padrão de segurança para as outras coleções
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

@@ -2,14 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 
-class CategoriaQuitandas extends StatefulWidget {
-  const CategoriaQuitandas({super.key});
+class CategoriaComidas extends StatefulWidget {
+  const CategoriaComidas({super.key});
 
   @override
-  State<CategoriaQuitandas> createState() => _CategoriaQuitandasState();
+  State<CategoriaComidas> createState() => _CategoriaComidasState();
 }
 
-class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
+class _CategoriaComidasState extends State<CategoriaComidas> {
   String pesquisa = "";
 
   @override
@@ -24,7 +24,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text("Quitandas", style: TextStyle(color: Colors.black)),
+        title: const Text("Comidas", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
@@ -53,7 +53,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Quitandas')
+                  .where('cnae', isEqualTo: 'Comidas')
                   .where('statusCadastro', isEqualTo: 'aprovado')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -100,7 +100,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Quitandas",
+                      categoriaTexto: "Comidas",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );
