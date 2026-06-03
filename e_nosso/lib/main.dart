@@ -13,7 +13,7 @@ import 'telas/cliente/tela_divisao_categoria.dart';
 import 'telas/categorias/categoria_bebidas.dart';
 import 'telas/categorias/categoria_feira_livre.dart';
 import 'telas/categorias/categoria_outros.dart';
-import 'telas/categorias/categoria_quitandas.dart';
+import 'telas/categorias/categoria_comidas.dart';
 import 'telas/categorias/categoria_servicos.dart';
 
 // Telas importadas não são todas necessárias se o AuthWrapper cuidar disso, mas mantemos por segurança.
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/categorias': (_) => const TelaDivisaoCategoria(),
         '/bebidas': (_) => const CategoriaBebidas(),
-        '/quitandas': (_) => const CategoriaQuitandas(),
+        '/comidas': (_) => const CategoriaComidas(),
         '/servicos': (_) => const CategoriaServicos(),
         '/feira': (_) => const CategoriaFeiraLivre(),
         '/outros': (_) => const CategoriaOutros(),

@@ -122,7 +122,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ];
 
   final List<String> categoriasLojista = [
-    'Quitandas',
+    'Comidas',
     'Bebidas',
     'Feira Livre',
     'Serviços',
