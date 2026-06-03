@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // Importe as telas das categorias que você já criou
 // Se ainda não criou alguma, comente o import correspondente
 import '../categorias/categoria_bebidas.dart';
-import '../categorias/categoria_quitandas.dart';
+import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
@@ -91,13 +91,13 @@ class TelaDivisaoCategoria extends StatelessWidget {
           crossAxisSpacing: 20,
           mainAxisSpacing: 20,
           children: [
-            // Card Quitandas
+            // Card Comidas
             _buildCategoriaCard(
               context: context,
               icon: Icons.local_grocery_store, // Ícone de carrinho/mercado
-              label: "Quitandas",
+              label: "Comidas",
               destino:
-                  const CategoriaQuitandas(), // Manda para a tela de Quitandas
+                  const CategoriaComidas(), // Manda para a tela de Comidas
             ),
 
             // Card Bebidas
