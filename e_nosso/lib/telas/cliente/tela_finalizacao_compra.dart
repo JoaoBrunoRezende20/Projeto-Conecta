@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // NOVO: Para salvar no banco
-import 'package:firebase_auth/firebase_auth.dart'; // NOVO: Para pegar o ID do cliente
-import 'tela_produtos_disponiveis.dart'; // NOVO: Para acessar a variável carrinhoGlobal
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'tela_produtos_disponiveis.dart';
 import '../../utils/carrinho_util.dart';
 import '../../repositories/pedido_repository.dart';
 
@@ -14,258 +16,404 @@ class TelaDadosEntrega extends StatefulWidget {
 }
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
-  final _formKey = GlobalKey<FormState>();
   final PedidoRepository _pedidoRepository = PedidoRepository();
+  String _tipoEntrega = 'Entrega';
+  String _metodoPagamento = 'Cartão';
+  
+  // Dados do usuário
+  String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
+  String _telefone = "(xx) 9XXXX-XXXX";
+  String _observacao = "";
 
-  // Controladores para capturar os dados
-  final _nomeController = TextEditingController();
+  final _telefoneFormatter = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+
   final _telefoneController = TextEditingController();
   final _enderecoController = TextEditingController();
   final _bairroController = TextEditingController();
   final _numeroController = TextEditingController();
+  final _observacaoController = TextEditingController();
 
-  String _metodoPagamento = 'Dinheiro';
-  bool _precisaTroco = false;
-  final _trocoController = TextEditingController();
+  double get _subtotal => widget.valorTotal - 5.0; // Desconta a taxa padrão para exibir separadamente
+  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
+  double get _totalGeral => _subtotal + _taxaEntrega;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          "Finalizar Pedido",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.menu, color: Colors.black),
+          onPressed: () {},
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        actions: [
+          Row(
             children: [
-              _buildSecaoTitulo(Icons.person, "Seus Dados"),
-              const SizedBox(height: 12),
-              _buildTextField(
-                "Seu Nome",
-                _nomeController,
-                Icons.person_outline,
+              const Text(
+                "Voltar",
+                style: TextStyle(color: Colors.black, fontSize: 12),
               ),
-              const SizedBox(height: 12),
-              _buildTextField(
-                "Telefone / WhatsApp",
-                _telefoneController,
-                Icons.phone_android,
-                keyboardType: TextInputType.phone,
-              ),
-
-              const SizedBox(height: 30),
-              _buildSecaoTitulo(Icons.location_on, "Endereço de Entrega"),
-              const SizedBox(height: 12),
-              _buildTextField("Rua / Avenida", _enderecoController, Icons.map),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField("Bairro", _bairroController, null),
+              const SizedBox(width: 5),
+              Padding(
+                padding: const EdgeInsets.only(right: 15.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black, width: 1.5),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: _buildTextField("Nº", _numeroController, null),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                ],
+                ),
               ),
-
-              const SizedBox(height: 30),
-              _buildSecaoTitulo(Icons.payment, "Forma de Pagamento"),
-              const SizedBox(height: 12),
-              _buildOpcoesPagamento(),
-
-              if (_metodoPagamento == 'Dinheiro') _buildCampoTroco(),
-
-              const SizedBox(height: 40),
             ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildResumoEBotaoEnvio(),
-    );
-  }
-
-  // Widget para os títulos das seções
-  Widget _buildSecaoTitulo(IconData icon, String titulo) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.red, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          titulo.toUpperCase(),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Colors.black54,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Campos de texto com o estilo que você gostou (bordas arredondadas)
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    IconData? icon, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
-        filled: true,
-        fillColor: Colors.grey[50],
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      validator: (value) => value!.isEmpty ? "Campo obrigatório" : null,
-    );
-  }
-
-  Widget _buildOpcoesPagamento() {
-    return Column(
-      children: ['Dinheiro', 'Cartão (Débito/Crédito)', 'Pix'].map((tipo) {
-        return RadioListTile<String>(
-          title: Text(tipo),
-          value: tipo,
-          groupValue: _metodoPagamento,
-          activeColor: Colors.red,
-          onChanged: (val) => setState(() => _metodoPagamento = val!),
-          contentPadding: EdgeInsets.zero,
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildCampoTroco() {
-    return Column(
-      children: [
-        SwitchListTile(
-          title: const Text("Precisa de troco?"),
-          value: _precisaTroco,
-          activeThumbColor: Colors.red,
-          onChanged: (val) => setState(() => _precisaTroco = val),
-        ),
-        if (_precisaTroco)
-          _buildTextField(
-            "Troco para quanto?",
-            _trocoController,
-            Icons.attach_money,
-            keyboardType: TextInputType.number,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildResumoEBotaoEnvio() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -2),
           ),
         ],
       ),
-      child: SafeArea(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- RESUMO ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Total com entrega:",
-                  style: TextStyle(fontSize: 16),
-                ),
+                const Text("Subtotal", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text("R\$${_subtotal.toStringAsFixed(2).replaceAll('.', ',')}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Valor da entrega", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 Text(
-                  "R\$ ${widget.valorTotal.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                  _taxaEntrega == 0 ? "Grátis" : "R\$ ${_taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')}",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Total", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  "R\$ ${_totalGeral.toStringAsFixed(2).replaceAll('.', ',')}",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // --- CUPOM ---
+            Row(
+              children: [
+                const Icon(Icons.discount_outlined, size: 20),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    "Adicionar cupom de desconto",
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 130,
+                  height: 25,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Digite aqui o cupom",
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
+            const SizedBox(height: 30),
+
+            // --- ENTREGA ---
+            Container(
               width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    // Validação de Troco
-                    if (_metodoPagamento == 'Dinheiro' && _precisaTroco) {
-                      double? valorTroco = double.tryParse(_trocoController.text.replaceAll(',', '.'));
-                      if (valorTroco == null || valorTroco < widget.valorTotal) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("O valor para troco deve ser maior ou igual ao total do pedido."),
-                            backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text("ENTREGA", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 10),
+            _buildRadioOption(
+              title: "Irei buscar",
+              value: "Irei buscar",
+              groupValue: _tipoEntrega,
+              icon: Icons.directions_walk,
+              onChanged: (val) => setState(() => _tipoEntrega = val.toString()),
+            ),
+            _buildRadioOption(
+              title: "Entrega no endereço",
+              value: "Entrega",
+              groupValue: _tipoEntrega,
+              icon: Icons.home_outlined,
+              onChanged: (val) => setState(() => _tipoEntrega = val.toString()),
+            ),
+            if (_tipoEntrega == 'Entrega') ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 45, right: 10),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _enderecoController,
+                      decoration: const InputDecoration(
+                        labelText: "Rua / Avenida",
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: _numeroController,
+                            decoration: const InputDecoration(
+                              labelText: "Número",
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(6),
+                            ],
                           ),
-                        );
-                        return; // Bloqueia a finalização do pedido
-                      }
-                    }
-                    
-                    _finalizarPedido();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: _bairroController,
+                            decoration: const InputDecoration(
+                              labelText: "Bairro",
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+
+            // --- NUMERO PARA CONTATO ---
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text("NUMERO PARA CONTATO", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const SizedBox(width: 10),
+                const Icon(Icons.phone_outlined, color: Colors.grey, size: 20),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: TextField(
+                    controller: _telefoneController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [_telefoneFormatter],
+                    decoration: const InputDecoration(
+                      hintText: "(xx) 9xxxx-xxxx",
+                      isDense: true,
+                      border: UnderlineInputBorder(),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  "CONFIRMAR PEDIDO",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // --- OPÇÕES DE PAGAMENTO ---
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text("OPÇÕES DE PAGAMENTO", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 10),
+            _buildRadioOption(
+              title: "Cartão",
+              value: "Cartão",
+              groupValue: _metodoPagamento,
+              icon: Icons.credit_card,
+              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+            ),
+            _buildRadioOption(
+              title: "PIX",
+              value: "PIX",
+              groupValue: _metodoPagamento,
+              icon: Icons.pix,
+              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+            ),
+            _buildRadioOption(
+              title: "Dinheiro",
+              value: "Dinheiro",
+              groupValue: _metodoPagamento,
+              icon: Icons.attach_money,
+              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+            ),
+            const SizedBox(height: 30),
+
+            // --- BOTOES FINAIS ---
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _editarObservacao,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[400],
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  _observacao.isEmpty ? "Adicionar observação" : "Editar observação",
+                  style: const TextStyle(color: Colors.black54, fontSize: 16),
                 ),
               ),
             ),
+            const SizedBox(height: 15),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _finalizarPedido,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4A4A4A),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Finalizar Pedido",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  // --- NOVA LÓGICA DE SALVAR NO FIREBASE ---
+  Widget _buildRadioOption({
+    required String title,
+    required String value,
+    required String groupValue,
+    required IconData icon,
+    required Function(String?) onChanged,
+    VoidCallback? onTextTap,
+  }) {
+    return InkWell(
+      onTap: () => onChanged(value),
+      child: Row(
+        children: [
+          Radio<String>(
+            value: value,
+            groupValue: groupValue,
+            onChanged: onChanged,
+            activeColor: Colors.grey[800],
+          ),
+          Icon(icon, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 15),
+          Expanded(
+            child: GestureDetector(
+              onTap: onTextTap ?? () => onChanged(value),
+              child: Text(
+                title,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+  void _editarObservacao() {
+    _observacaoController.text = _observacao;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Observação do Pedido"),
+        content: TextField(
+          controller: _observacaoController,
+          decoration: const InputDecoration(hintText: "Ex: Tirar cebola, troco para 50..."),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _observacao = _observacaoController.text;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("Salvar"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _finalizarPedido() async {
-    // Mostra um círculo de carregamento enquanto salva no banco
+    if (_telefoneController.text.trim().length < 14) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, insira um número de telefone válido com DDD.")),
+      );
+      return;
+    }
+
+    if (_tipoEntrega == 'Entrega') {
+      if (_enderecoController.text.trim().isEmpty ||
+          _numeroController.text.trim().isEmpty ||
+          _bairroController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Por favor, preencha todos os campos do endereço de entrega.")),
+        );
+        return;
+      }
+      _enderecoCompleto = "${_enderecoController.text.trim()}, ${_numeroController.text.trim()}, ${_bairroController.text.trim()}";
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -273,11 +421,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     );
 
     try {
-      // 1. Pega o ID do usuário que está comprando
-      final clienteId =
-          FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
-
-      // 2. Monta o pacote de dados do pedido com CÓPIA do carrinho para evitar erro de referência
+      final clienteId = FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
       final itensCopia = <String, dynamic>{};
       carrinhoGlobal.forEach((key, value) {
         itensCopia[key] = Map<String, dynamic>.from(value);
@@ -285,73 +429,56 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
       final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
-        'lojistaId': lojaIdDoCarrinho ?? 'desconhecido', // Vem da tela anterior
-        'itens': itensCopia, // Cópia segura
-        'valorTotal': widget.valorTotal,
-        'status': 'pendente', // pendente, aceito, cancelado, etc.
+        'lojistaId': lojaIdDoCarrinho ?? 'desconhecido',
+        'itens': itensCopia,
+        'valorTotal': _totalGeral,
+        'status': 'pendente',
         'dataCriacao': FieldValue.serverTimestamp(),
         'dadosCliente': <String, dynamic>{
-          'nome': _nomeController.text.trim(),
+          'nome': "Cliente",
           'telefone': _telefoneController.text.trim(),
         },
         'dadosEntrega': <String, dynamic>{
-          'endereco': _enderecoController.text.trim(),
-          'bairro': _bairroController.text.trim(),
-          'numero': _numeroController.text.trim(),
+          'tipoEntrega': _tipoEntrega,
+          'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
         },
         'pagamento': <String, dynamic>{
           'metodo': _metodoPagamento,
-          'precisaTroco': _precisaTroco,
-          'trocoPara': _precisaTroco ? _trocoController.text.trim() : '',
         },
+        'observacao': _observacao,
       };
 
       // 3. Salva no banco de dados
       await _pedidoRepository.criarPedido(pedidoData);
 
-      // 4. Limpa o carrinho global e a memória local agora que a compra foi feita
       carrinhoGlobal.clear();
       lojaIdDoCarrinho = null;
       await CarrinhoUtil.limparCarrinho();
 
-      // Fecha a bolinha de carregamento
       if (mounted) Navigator.pop(context);
 
-      // 5. Mostra o aviso de Sucesso
       if (mounted) {
         showDialog(
           context: context,
-          barrierDismissible: false, // Usuário tem que clicar no OK para sair
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text("Sucesso!"),
-            content: const Text(
-              "Seu pedido foi enviado com sucesso para o lojista.",
-            ),
+            content: const Text("Seu pedido foi enviado com sucesso para o lojista."),
             actions: [
               TextButton(
                 onPressed: () {
-                  // Volta para o início do aplicativo (Tela inicial do cliente)
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: const Text(
-                  "OK",
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: const Text("OK", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
         );
       }
     } catch (e) {
-      // Se der erro, fecha o carregamento e avisa
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Erro ao salvar o pedido: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao salvar o pedido: $e")));
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'tela_detalhes_servico.dart';
 
 class TelaPerfilPrestador extends StatefulWidget {
@@ -81,7 +82,7 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
     final data = _dadosPrestador!;
     final nome = (data['nome'] ?? data['nomeCompleto'] ?? 'Prestador').toString();
     final areaAtuacao = (data['areaAtuacao'] ?? 'Prestador autônomo').toString();
-    final descricao = (data['descricao'] ?? data['areaAtuacao'] ?? '*Descrição geral dos serviços prestados').toString();
+    final descricao = (data['descricaoServicos'] ?? data['descricao'] ?? data['areaAtuacao'] ?? '*Descrição geral dos serviços prestados').toString();
     final telefone = (data['telefone'] ?? 'Não informado').toString();
     final mediaAvaliacoes = (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
     final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
@@ -174,11 +175,18 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Iniciando conversa com $nome...'),
-                              ),
-                            );
+                            final tel = telefone;
+                            if (tel.isNotEmpty && tel != 'Não informado') {
+                              final numWhats = tel.replaceAll(RegExp(r'[^0-9]'), '');
+                              final uri = Uri.parse("https://wa.me/55$numWhats");
+                              launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Telefone não informado pelo prestador.'),
+                                ),
+                              );
+                            }
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.black38),

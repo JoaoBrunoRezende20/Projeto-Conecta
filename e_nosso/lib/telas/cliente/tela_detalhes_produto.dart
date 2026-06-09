@@ -125,9 +125,9 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              "Descrição da composição do produto",
-                              style: TextStyle(
+                            Text(
+                              widget.produto['descricao'] ?? "Descrição do produto",
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
                                 height: 1.4,

@@ -122,7 +122,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ];
 
   final List<String> categoriasLojista = [
-    'Quitandas',
+    'Comidas',
     'Bebidas',
     'Feira Livre',
     'Serviços',
@@ -767,14 +767,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
           keyboardType: TextInputType.emailAddress,
           validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _telefoneComercialController,
-          decoration: const InputDecoration(labelText: 'Telefone Comercial'),
-          inputFormatters: [AppFormatadores.maskTelefone],
-          validator: AppFormatadores.validarTelefone,
-          keyboardType: TextInputType.phone,
-        ),
+        // Ocultado conforme regra de não possuir contato externo
+        // const SizedBox(height: 16),
+        // TextFormField(
+        //   controller: _telefoneComercialController,
+        //   decoration: const InputDecoration(labelText: 'Telefone Comercial'),
+        //   inputFormatters: [AppFormatadores.maskTelefone],
+        //   validator: AppFormatadores.validarTelefone,
+        //   keyboardType: TextInputType.phone,
+        // ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _categoriaSelecionadaCnae,

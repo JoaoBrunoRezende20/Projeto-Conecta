@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
 
-class CategoriaQuitandas extends StatefulWidget {
-  const CategoriaQuitandas({super.key});
+class CategoriaComidas extends StatefulWidget {
+  const CategoriaComidas({super.key});
 
   @override
-  State<CategoriaQuitandas> createState() => _CategoriaQuitandasState();
+  State<CategoriaComidas> createState() => _CategoriaComidasState();
 }
 
-class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
+class _CategoriaComidasState extends State<CategoriaComidas> {
   String pesquisa = "";
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
@@ -26,7 +26,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text("Quitandas", style: TextStyle(color: Colors.black)),
+        title: const Text("Comidas", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
         children: [
@@ -53,7 +53,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
           // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _categoriaRepository.getLojistasPorCategoria('Quitandas'),
+              stream: _categoriaRepository.getLojistasPorCategoria('Comidas'),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
@@ -98,7 +98,7 @@ class _CategoriaQuitandasState extends State<CategoriaQuitandas> {
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Quitandas",
+                      categoriaTexto: "Comidas",
                       descricaoExtra: descricao,
                       avaliacao: 5.0,
                     );

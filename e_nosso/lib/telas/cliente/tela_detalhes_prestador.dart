@@ -45,7 +45,7 @@ class TelaDetalhesPrestador extends StatelessWidget {
           final areaAtuacao = data['areaAtuacao'] ?? 'Prestador de Serviço';
           final email = data['email'] ?? 'Não informado';
           final telefone = data['telefone'] ?? 'Não informado';
-          final descricao = data['descricao'] ?? 'O prestador ainda não adicionou uma descrição.';
+          final descricao = data['descricaoServicos'] ?? data['descricao'] ?? 'O prestador ainda não adicionou uma descrição.';
           final disponibilidade = data['disponibilidadeAtendimento'] ?? 'Não informado';
           final urlFoto = data['urlFotoPerfil'] ?? data['fotoPerfil'] ?? data['fotoUrl'];
           

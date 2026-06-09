@@ -4,7 +4,7 @@ import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import es
 import '../auth/tela_tipo_usuario.dart';
 
 // Imports das categorias
-import '../categorias/categoria_quitandas.dart';
+import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_bebidas.dart';
 import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
@@ -99,8 +99,8 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                 children: [
                   _buildCategoryCard(
                     icon: Icons.cake_outlined,
-                    label: 'Quitandas',
-                    onTap: () => _navegarPara(const CategoriaQuitandas()),
+                    label: 'Comidas',
+                    onTap: () => _navegarPara(const CategoriaComidas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.local_drink_outlined,
