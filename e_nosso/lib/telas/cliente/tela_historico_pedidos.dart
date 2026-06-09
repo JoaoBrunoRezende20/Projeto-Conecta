@@ -305,30 +305,30 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             ),
           const SizedBox(height: 12),
 
-          // Botão Contato
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8E8E8E), // Cinza da imagem
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          if (ehServico) ...[
+            // Botão Contato
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8E8E8E), // Cinza da imagem
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-              ),
-              child: Text(
-                ehServico
-                    ? "Entrar em contato com o prestador"
-                    : "Entrar em contato com a loja",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                child: Text(
+                  "Entrar em contato com o prestador",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
 
           // Botão Cancelar se pendente
           if (pendente) ...[

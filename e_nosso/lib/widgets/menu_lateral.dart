@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../telas/suporte/tela_faq.dart';
 import '../telas/perfil/tela_notificacoes.dart';
 import '../telas/cliente/tela_historico_pedidos.dart';
-import '../telas/cliente/tela_confirmacao_servico.dart';
 import '../telas/prestador/tela_pedidos_pendentes_prestador.dart';
 import '../telas/prestador/tela_servicos_agendados_prestador.dart';
 import '../telas/prestador/tela_historico_servicos_prestador.dart';
@@ -195,19 +194,7 @@ class MenuLateral extends StatelessWidget {
                           );
                         },
                       ),
-                      ListTile(
-                        leading: const Icon(Icons.pending_actions),
-                        title: const Text("Pedidos Pendentes"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TelaConfirmacaoServico(),
-                            ),
-                          );
-                        },
-                      ),
+
                     ],
                     if (colecaoUsuario == 'prestadorServicos') ...[
                       ListTile(

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'tela_detalhes_servico.dart';
 
 class TelaPerfilPrestador extends StatefulWidget {
@@ -174,11 +175,18 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Iniciando conversa com $nome...'),
-                              ),
-                            );
+                            final tel = telefone;
+                            if (tel.isNotEmpty && tel != 'Não informado') {
+                              final numWhats = tel.replaceAll(RegExp(r'[^0-9]'), '');
+                              final uri = Uri.parse("https://wa.me/55$numWhats");
+                              launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Telefone não informado pelo prestador.'),
+                                ),
+                              );
+                            }
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.black38),

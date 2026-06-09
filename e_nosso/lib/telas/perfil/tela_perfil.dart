@@ -288,26 +288,29 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      "Telefone:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _telefoneController,
-                      inputFormatters: [_telefoneFormatter],
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: "(00) 00000-0000",
+                    if (_colecaoUsuario != 'lojistas') ...[
+                      const Text(
+                        "Telefone:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty)
-                          return "Campo obrigatório";
-                        if (value.length < 14) return "Telefone inválido";
-                        return null;
-                      },
-                    ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _telefoneController,
+                        inputFormatters: [_telefoneFormatter],
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "(00) 00000-0000",
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty)
+                            return "Campo obrigatório";
+                          if (value.length < 14) return "Telefone inválido";
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     const SizedBox(height: 16),
                     if (_isPrestador) ...[
                       const Text(
