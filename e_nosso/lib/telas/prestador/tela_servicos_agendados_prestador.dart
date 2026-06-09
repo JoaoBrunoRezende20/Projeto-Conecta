@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart';
 import '../../utils/usuario_util.dart';
+import '../../repositories/pedido_repository.dart';
+import '../../repositories/usuario_repository.dart';
 
 class TelaServicosAgendadosPrestador extends StatefulWidget {
   const TelaServicosAgendadosPrestador({super.key});
@@ -14,24 +16,22 @@ class TelaServicosAgendadosPrestador extends StatefulWidget {
 class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPrestador> {
   Stream<QuerySnapshot>? _pedidosStream;
   String? _nomeUsuario;
+  final PedidoRepository _pedidoRepository = PedidoRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
   @override
   void initState() {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _pedidosStream = FirebaseFirestore.instance
-          .collection('pedidos')
-          .where('prestadorId', isEqualTo: user.uid)
-          .where('status', isEqualTo: 'Confirmado')
-          .snapshots();
+      _pedidosStream = _pedidoRepository.getPedidosPorPrestador(user.uid, 'Confirmado');
       
       _buscarNomeUsuario(user.uid);
     }
   }
 
   Future<void> _buscarNomeUsuario(String uid) async {
-    final doc = await FirebaseFirestore.instance.collection('prestadorServicos').doc(uid).get();
+    final doc = await _usuarioRepository.getUsuario(uid, 'prestadorServicos');
     if (doc.exists) {
       setState(() {
         _nomeUsuario = UsuarioUtil.getNomeCompleto(doc.data() as Map<String, dynamic>, colecao: 'prestadorServicos');
@@ -41,10 +41,7 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
 
   void _concluirServico(String pedidoId) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('pedidos')
-          .doc(pedidoId)
-          .update({'status': 'Concluído'});
+      await _pedidoRepository.atualizarStatusPedido(pedidoId, 'Concluído');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

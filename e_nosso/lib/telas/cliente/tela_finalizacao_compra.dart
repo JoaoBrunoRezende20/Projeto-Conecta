@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'tela_produtos_disponiveis.dart';
 import '../../utils/carrinho_util.dart';
+import '../../repositories/pedido_repository.dart';
 
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -15,6 +16,7 @@ class TelaDadosEntrega extends StatefulWidget {
 }
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
+  final PedidoRepository _pedidoRepository = PedidoRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
   
@@ -446,7 +448,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         'observacao': _observacao,
       };
 
-      await FirebaseFirestore.instance.collection('pedidos').add(pedidoData);
+      // 3. Salva no banco de dados
+      await _pedidoRepository.criarPedido(pedidoData);
 
       carrinhoGlobal.clear();
       lojaIdDoCarrinho = null;

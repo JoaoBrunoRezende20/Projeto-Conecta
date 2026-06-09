@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
+import '../../repositories/categoria_repository.dart';
 
 class CategoriaFeiraLivre extends StatefulWidget {
   const CategoriaFeiraLivre({super.key});
@@ -11,6 +12,7 @@ class CategoriaFeiraLivre extends StatefulWidget {
 
 class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
   String pesquisa = "";
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +53,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
           // Lista
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Feira Livre')
-                  .where('statusCadastro', isEqualTo: 'aprovado')
-                  .snapshots(),
+              stream: _categoriaRepository.getLojistasPorCategoria('Feira Livre'),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(

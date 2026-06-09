@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/botao_notificacao.dart';
 import 'package:e_nosso/widgets/menu_lateral.dart';
+import '../../repositories/produto_repository.dart';
+import '../../repositories/pedido_repository.dart';
+import '../../repositories/categoria_repository.dart';
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -44,6 +47,9 @@ class TelaInicialLojista extends StatefulWidget {
 
 class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   final String? lojistaId = FirebaseAuth.instance.currentUser?.uid;
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
+  final PedidoRepository _pedidoRepository = PedidoRepository();
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
   
   // Controle de Abas: 0 (Produtos), 1 (Pedidos), 2 (Serviços)
   int _indiceAbaAtual = 0; 
@@ -80,7 +86,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             onPressed: () async {
               if (nomeController.text.isNotEmpty && precoController.text.isNotEmpty && estoqueController.text.isNotEmpty) {
                 int estoque = int.tryParse(estoqueController.text) ?? 0;
-                await FirebaseFirestore.instance.collection('produtos').add({
+                await _produtoRepository.adicionarProduto({
                   'lojistaId': lojistaId,
                   'nome': nomeController.text,
                   'descricao': descricaoController.text,
@@ -114,17 +120,17 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         ],
       ),
     );
-    if (confirmar == true) FirebaseFirestore.instance.collection('produtos').doc(id).delete();
+    if (confirmar == true) await _produtoRepository.deletarProduto(id);
   }
 
   Future<void> _atualizarEstoque(Produto produto, int delta) async {
     int novoEstoque = produto.estoque + delta;
     if (novoEstoque < 0) novoEstoque = 0;
-    await FirebaseFirestore.instance.collection('produtos').doc(produto.id).update({'estoque': novoEstoque, 'ativo': novoEstoque > 0});
+    await _produtoRepository.atualizarEstoque(produto.id, novoEstoque);
   }
 
   Future<void> _atualizarStatusPedido(String pedidoId, String novoStatus) async {
-    await FirebaseFirestore.instance.collection('pedidos').doc(pedidoId).update({'status': novoStatus});
+    await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
   }
 
   // --- TRAVA DE ACESSO PARCIAL (StreamBuilder Principal) ---
@@ -315,7 +321,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
   Widget _buildProductList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('produtos').where('lojistaId', isEqualTo: lojistaId).snapshots(),
+      stream: _produtoRepository.getProdutosPorLojista(lojistaId!),
       builder: (_, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final produtos = snapshot.data!.docs.map((doc) => Produto.fromFirestore(doc)).toList();
@@ -369,7 +375,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
   Widget _buildAbaPedidos() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('pedidos').where('lojistaId', isEqualTo: lojistaId).snapshots(),
+      stream: _pedidoRepository.getPedidosPorLojista(lojistaId!),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text("Erro: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
@@ -712,10 +718,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             // Consulta APENAS os prestadores que foram APROVADOS (status == true)
-            stream: FirebaseFirestore.instance
-                .collection('prestadorServicos')
-                .where('status', isEqualTo: true) 
-                .snapshots(),
+            stream: _categoriaRepository.getTodosPrestadoresAtivos(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 

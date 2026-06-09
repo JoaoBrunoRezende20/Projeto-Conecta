@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../repositories/produto_repository.dart';
 
 class TelaAdminConteudoLojista extends StatelessWidget {
   final String lojistaId;
   final String nomeLojista;
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
 
-  const TelaAdminConteudoLojista({super.key, required this.lojistaId, required this.nomeLojista});
+  TelaAdminConteudoLojista({super.key, required this.lojistaId, required this.nomeLojista});
 
   void _excluirProduto(BuildContext context, String idProduto, String nomeProduto) {
     showDialog(
@@ -19,7 +21,7 @@ class TelaAdminConteudoLojista extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              await FirebaseFirestore.instance.collection('produtos').doc(idProduto).delete();
+              await _produtoRepository.deletarProduto(idProduto);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Produto removido por violação.')));
               }
@@ -37,10 +39,7 @@ class TelaAdminConteudoLojista extends StatelessWidget {
       appBar: AppBar(title: Text('Produtos de $nomeLojista')),
       body: StreamBuilder<QuerySnapshot>(
         // Busca produtos onde o dono é este lojista
-        stream: FirebaseFirestore.instance
-            .collection('produtos')
-            .where('lojistaId', isEqualTo: lojistaId)
-            .snapshots(),
+        stream: _produtoRepository.getProdutosPorLojista(lojistaId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final produtos = snapshot.data!.docs;
