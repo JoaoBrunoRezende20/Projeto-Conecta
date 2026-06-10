@@ -178,7 +178,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     bool pendente = item['ehPendente'];
     bool concluido = statusNorm == 'concluído' || statusNorm == 'concluido';
     bool rejeitado = statusNorm == 'rejeitado';
-    bool cancelado = statusNorm == 'cancelado';
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -188,7 +188,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,7 +357,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   void _confirmarCancelamento(String id) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: const Text("Confirmar Cancelamento"),
         content: const Text("Tem certeza que deseja cancelar este pedido?"),
@@ -372,8 +372,10 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               try {
                 await _pedidoRepository.atualizarStatusPedido(id, 'Cancelado');
 
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
                 if (mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Solicitação cancelada com sucesso."),
@@ -381,9 +383,11 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   );
                 }
               } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("Erro ao cancelar: $e")));
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Erro ao cancelar: $e")));
+                }
               }
             },
             child: const Text(

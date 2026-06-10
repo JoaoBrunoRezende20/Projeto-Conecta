@@ -257,7 +257,7 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                           child: Image.network(
                             fotos[index],
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (context, error, stackTrace) => Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8),

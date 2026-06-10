@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../repositories/auth_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
@@ -108,7 +108,9 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   void _parseDisponibilidade(String? disponibilidade) {
     if (disponibilidade == null ||
         disponibilidade == "Não informado" ||
-        disponibilidade.isEmpty) return;
+        disponibilidade.isEmpty) {
+      return;
+    }
 
     try {
       final partes = disponibilidade.split(", ");
@@ -278,12 +280,15 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                             : "000.000.000-00",
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty)
+                        if (value == null || value.trim().isEmpty) {
                           return "Campo obrigatório";
-                        if (_colecaoUsuario == 'lojistas' && value.length < 18)
+                        }
+                        if (_colecaoUsuario == 'lojistas' && value.length < 18) {
                           return "CNPJ inválido";
-                        if (_colecaoUsuario != 'lojistas' && value.length < 14)
+                        }
+                        if (_colecaoUsuario != 'lojistas' && value.length < 14) {
                           return "CPF inválido";
+                        }
                         return null;
                       },
                     ),
@@ -303,9 +308,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                           hintText: "(00) 00000-0000",
                         ),
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty)
+                          if (value == null || value.trim().isEmpty) {
                             return "Campo obrigatório";
-                          if (value.length < 14) return "Telefone inválido";
+                          }
+                          if (value.length < 14) {
+                            return "Telefone inválido";
+                          }
                           return null;
                         },
                       ),

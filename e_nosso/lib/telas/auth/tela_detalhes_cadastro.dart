@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -308,10 +307,11 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -391,8 +391,9 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
             .doc(widget.usuarioId)
             .get(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Usuário não encontrado'));
           }

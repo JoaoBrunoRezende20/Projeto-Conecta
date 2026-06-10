@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../cliente/tela_produtos_disponiveis.dart';
-import '../cliente/tela_detalhes_servico.dart';
+
 import '../cliente/tela_perfil_prestador.dart';
 import '../../repositories/categoria_repository.dart';
 

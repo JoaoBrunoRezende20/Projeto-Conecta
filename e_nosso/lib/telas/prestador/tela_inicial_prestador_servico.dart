@@ -111,13 +111,13 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
                 onPressed: () async {
                   try {
                     await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
                       );
                     }
                   } catch (e) {
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
                       );
