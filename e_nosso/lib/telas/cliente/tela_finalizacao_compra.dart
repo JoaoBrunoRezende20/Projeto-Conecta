@@ -22,7 +22,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   
   // Dados do usuário
   String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
-  String _telefone = "(xx) 9XXXX-XXXX";
+
   String _observacao = "";
 
   final _telefoneFormatter = MaskTextInputFormatter(

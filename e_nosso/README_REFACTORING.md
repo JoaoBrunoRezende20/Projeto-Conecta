@@ -49,3 +49,17 @@ Se houver problemas ao ler dados após essa refatoração:
 1. **Erros de permissão/regras do Firestore**: Certifique-se de que os repositórios estão apontando para as coleções exatas com letras minúsculas adequadas (`lojistas`, `pedidos`, etc.) e as regras definidas no console suportem a *query*.
 2. **Dados em branco nas *Streams***: Confirme se os IDs (ex: `uid`, `prestadorId`, `lojistaId`) estão sendo preenchidos corretamente nos construtores dos repositórios.
 3. **Erros de sintaxe ou tela não reflete as mudanças**: Use `flutter clean` e `flutter pub get`. A arquitetura nova conta com chamadas estritas; se houver chamadas residuais de `FirebaseFirestore.instance` que tentam manipular os dados refatorados, conflitos podem ocorrer. Mantenha-se utilizando estritamente as classes na pasta `repositories`.
+
+---
+
+## Fase 3: Limpeza de Código e Linter (Clean Code)
+
+Na terceira fase focamos em eliminar mais de 50 avisos (warnings) do linter do Flutter e aprimorar a estabilidade e a clareza do código da aplicação.
+
+### Principais correções:
+- **`use_build_context_synchronously`**: Corrigimos o uso do `BuildContext` após operações assíncronas (async gaps), adicionando verificações `if (mounted)` e referenciando os contextos de diálogo (ex: `dialogContext.mounted`) corretamente para evitar falhas de execução (`crashes`).
+- **Remoção de Código Morto**: Exclusão de imports não utilizados (ex: `dart:convert`, `firebase_auth`), variáveis privadas e funções ociosas (`unused_element`, `unused_field`) que não agregavam ao projeto e pesavam o arquivo.
+- **Boas Práticas de UI**: Substituição de métodos depreciados como `.withOpacity()` por `.withValues(alpha: ...)`, padronização das chaves `{}` nas estruturas `if`, e substituição de `print()` por `debugPrint()` para evitar vazamento de logs no ambiente de produção.
+- **Parametrização Moderna**: Adoção do `super.key` ao invés de construtores verbosos com `Key? key`.
+
+Esta fase deixou a base de código aderente às rígidas normas do Flutter, facilitando que futuros desenvolvedores estendam o projeto com muito menos risco de introduzirem bugs visuais ou lógicos relacionados ao clico de vida dos componentes.

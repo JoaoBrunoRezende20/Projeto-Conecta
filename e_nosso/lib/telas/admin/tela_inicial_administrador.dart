@@ -463,7 +463,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                print("Botão Cadastrar clicado");
+                debugPrint("Botão Cadastrar clicado");
               },
               style: darkButtonStyle,
               child: const Text(

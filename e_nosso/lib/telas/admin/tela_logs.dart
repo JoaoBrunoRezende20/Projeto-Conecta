@@ -125,8 +125,9 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
             .orderBy('dataHora', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
+          }
 
           final todosLogs = snapshot.data!.docs;
 
@@ -147,8 +148,9 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
             if (tipo == 'prestadorServicos' && !_filtroPrestador) return false;
             if (tipo != 'lojistas' &&
                 tipo != 'prestadorServicos' &&
-                !_filtroOutros)
+                !_filtroOutros) {
               return false;
+            }
 
             return true;
           }).toList();
@@ -256,7 +258,7 @@ class _TelaLogsAdmState extends State<TelaLogsAdm> {
                               color: corFundo,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: corTexto.withOpacity(0.5),
+                                color: corTexto.withValues(alpha: 0.5),
                                 width: 0.5,
                               ),
                             ),

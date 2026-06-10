@@ -8,11 +8,11 @@ class TelaAvaliacaoServico extends StatefulWidget {
   final String nomePrestador;
 
   const TelaAvaliacaoServico({
-    Key? key,
+    super.key,
     required this.pedidoId,
     required this.prestadorId,
     required this.nomePrestador,
-  }) : super(key: key);
+  });
 
   @override
   State<TelaAvaliacaoServico> createState() => _TelaAvaliacaoServicoState();

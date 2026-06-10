@@ -4,11 +4,6 @@ import 'firebase_options.dart';
 import 'utils/auth_wrapper.dart';
 
 // telas
-import 'telas/auth/tela_tipo_usuario.dart';
-import 'telas/cliente/tela_inicial_comum.dart';
-import 'telas/lojista/tela_inicial_lojista.dart';
-import 'telas/prestador/tela_inicial_prestador_servico.dart';
-import 'telas/admin/tela_inicial_administrador.dart';
 import 'telas/cliente/tela_divisao_categoria.dart';
 import 'telas/categorias/categoria_bebidas.dart';
 import 'telas/categorias/categoria_feira_livre.dart';
