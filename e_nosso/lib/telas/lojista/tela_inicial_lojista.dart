@@ -655,43 +655,6 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _atualizarStatusPedido(pedidoId, 'aceito'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black, // Botão preto da imagem
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "Confirmar envio",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-
-          if (status == 'aceito') ...[
-            const Center(
-              child: Text(
-                "Envio Confirmado!",
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
                 onPressed: () => _atualizarStatusPedido(pedidoId, 'concluido'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, 
@@ -702,10 +665,33 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   elevation: 0,
                 ),
                 child: const Text(
-                  "Marcar como Entregue",
+                  "Confirmar Pedido",
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'cancelado'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Recusar Pedido",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
                 ),
@@ -728,7 +714,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                 elevation: 0,
               ),
               child: const Text(
-                "Entrar em chat com o cliente",
+                "Entrar em chat com cliente",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
