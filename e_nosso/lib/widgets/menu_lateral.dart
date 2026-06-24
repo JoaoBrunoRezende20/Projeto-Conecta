@@ -9,6 +9,8 @@ import '../telas/prestador/tela_pedidos_pendentes_prestador.dart';
 import '../telas/prestador/tela_servicos_agendados_prestador.dart';
 import '../telas/prestador/tela_historico_servicos_prestador.dart';
 import '../telas/lojista/tela_historico_pedidos_lojista.dart';
+import '../telas/cliente/tela_pedidos_pendentes_cliente.dart';
+import '../telas/perfil/tela_planos_anuncios.dart';
 import '../telas/perfil/tela_planos_anuncios.dart';
 
 class MenuLateral extends StatelessWidget {
@@ -180,6 +182,19 @@ class MenuLateral extends StatelessWidget {
                         leading: const Icon(Icons.favorite_border),
                         title: const Text("Favoritos"),
                         onTap: () => _mostrarAvisoDesenvolvimento(context),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.pending_actions),
+                        title: const Text("Pedidos Pendentes"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TelaPedidosPendentesCliente(),
+                            ),
+                          );
+                        },
                       ),
                       ListTile(
                         leading: const Icon(Icons.history),
