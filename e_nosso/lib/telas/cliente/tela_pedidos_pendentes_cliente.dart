@@ -118,7 +118,8 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                   final data = doc.data() as Map<String, dynamic>;
                   final tipo = data['tipo'] ?? 'produto';
                   final avaliado = data['avaliado'] ?? false;
-                  return tipo != 'servico' && !avaliado;
+                  final status = data['status']?.toString().toLowerCase() ?? 'pendente';
+                  return tipo != 'servico' && !avaliado && status != 'concluido' && status != 'concluído' && status != 'cancelado' && status != 'rejeitado';
                 }).toList();
 
                 if (docs.isEmpty) {
@@ -154,7 +155,8 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
   }
 
   Widget _buildCardPedido(String pedidoId, Map<String, dynamic> data) {
-    final loja = data['prestador'] ?? data['loja'] ?? "Loja";
+    final prestadorId = data['lojistaId'] ?? data['prestadorId'] ?? "";
+    final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
     final dataCriacao = data['dataCriacao'] as Timestamp?;
     
@@ -195,24 +197,38 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
     // Regras de Status
     final statusNorm = (data['status'] ?? 'pendente').toString().toLowerCase();
     final bool isPendente = statusNorm == 'pendente' || statusNorm == 'aguardando';
-    final bool isConfirmado = statusNorm == 'concluído' || statusNorm == 'concluido' || statusNorm == 'confirmado';
+    final bool isEmAndamento = statusNorm == 'em andamento' || statusNorm == 'confirmado';
     final bool isRejeitado = statusNorm == 'rejeitado' || statusNorm == 'cancelado';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loja,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('lojistas').doc(prestadorId).get(),
+      builder: (context, snapshot) {
+        String nomeLojaExibicao = loja;
+        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+          final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
+          if (dadosLojista != null) {
+            nomeLojaExibicao = dadosLojista['razaoSocial'] ??
+                               dadosLojista['nome'] ??
+                               dadosLojista['dadosDoResponsavel']?['nome'] ??
+                               loja;
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(15),
           ),
-          const SizedBox(height: 15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                nomeLojaExibicao,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const SizedBox(height: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: itensList.map((item) {
@@ -263,7 +279,7 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
           if (isPendente) ...[
             const Center(
               child: Text(
-                "Aguardando confirmação do pedido",
+                "Aguardando confirmação do lojista",
                 style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
@@ -272,10 +288,10 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                 dataCriacao: dataCriacao,
                 onCancelar: () => _confirmarCancelamento(pedidoId),
               ),
-          ] else if (isConfirmado) ...[
+          ] else if (isEmAndamento) ...[
             const Center(
               child: Text(
-                "Pedido confirmado com sucesso!",
+                "Pedido em andamento",
                 style: TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
@@ -289,6 +305,8 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
           ],
         ],
       ),
+    );
+      },
     );
   }
 }
