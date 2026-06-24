@@ -655,7 +655,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _atualizarStatusPedido(pedidoId, 'concluido'),
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'em andamento'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, 
                   shape: RoundedRectangleBorder(
@@ -689,6 +689,43 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                 ),
                 child: const Text(
                   "Recusar Pedido",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          
+          if (status == 'em andamento') ...[
+            const Center(
+              child: Text(
+                "Pedido em preparação",
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'concluido'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Concluir Pedido",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
