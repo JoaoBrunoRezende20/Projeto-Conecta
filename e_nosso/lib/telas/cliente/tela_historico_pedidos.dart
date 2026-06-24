@@ -46,12 +46,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     },
   ];
 
-  String _formatarDataCriacao(Timestamp? timestamp) {
-    if (timestamp == null) return "Sem data";
-    final date = timestamp.toDate();
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,62 +139,15 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     final data = sortedDocs[index].data() as Map<String, dynamic>;
                     final id = sortedDocs[index].id;
 
-                    String pagamentoStr = "Crédito";
-                    final pag = data['pagamento'];
-                    if (pag != null) {
-                      if (pag is Map) {
-                        pagamentoStr = pag['metodo']?.toString() ?? "Crédito";
-                      } else if (pag is String) {
-                        pagamentoStr = pag;
-                      } else if (pag is List && pag.isNotEmpty) {
-                        final first = pag[0];
-                        if (first is Map) {
-                          pagamentoStr = first['metodo']?.toString() ?? "Crédito";
-                        } else {
-                          pagamentoStr = first.toString();
-                        }
-                      } else {
-                        pagamentoStr = pag.toString();
-                      }
-                    }
-
-                    // Extrair Itens
-                    List<Map<String, dynamic>> itensList = [];
-                    final rawItens = data['servicos'] ?? data['itens'];
-                    if (rawItens is Map) {
-                      rawItens.forEach((key, val) {
-                        itensList.add({
-                          'nome': val['nome'] ?? 'Produto',
-                          'quantidade': val['quantidade'] ?? 1,
-                        });
-                      });
-                    } else if (rawItens is List) {
-                      for (var item in rawItens) {
-                        if (item is Map) {
-                          itensList.add({
-                            'nome': item['nome'] ?? 'Serviço',
-                            'quantidade': item['quantidade'] ?? 1,
-                          });
-                        }
-                      }
-                    }
-
-                    if (itensList.isEmpty) {
-                      itensList.add({'nome': 'Pedido', 'quantidade': 1});
-                    }
-
                     // Adaptando dados do Firestore para a estrutura do Card
                     final itemAdaptado = {
                       "id": id,
                       "tipo": data['tipo'] ?? 'produto',
                       "loja": data['prestador'] ?? data['loja'] ?? "Loja",
-                      "lojistaId": data['lojistaId'] ?? "",
                       "data": data['tipo'] == 'servico'
                           ? "${data['data'] ?? data['dia']} às ${data['horario'] ?? ''}"
-                          : (data['dataCriacao'] != null
-                              ? _formatarDataCriacao(data['dataCriacao'] as Timestamp)
-                              : (data['data'] ?? data['dia'] ?? "Sem data")),
-                      "pagamento": pagamentoStr,
+                          : data['data'] ?? data['dia'] ?? "Sem data",
+                      "pagamento": data['pagamento'] ?? "Cartão/Pix",
                       "entrega":
                           data['entrega'] ??
                           (data['tipo'] == 'servico' ? "Agendado" : "Entrega"),
@@ -208,8 +155,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                       "ehPendente":
                           data['status'] == "Pendente" ||
                           data['status'] == "Aguardando confirmação!",
-                      "total": (data['valorTotal'] ?? data['valor'] ?? 0).toDouble(),
-                      "itens": itensList,
+                      "total": (data['valor'] ?? 0).toDouble(),
+                      "itens": data['servicos'] ?? data['itens'] ?? [],
                       "prestadorId": data['prestadorId'] ?? "",
                       "avaliado": data['avaliado'] ?? false,
                     };
@@ -226,32 +173,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   }
 
   Widget _buildCard(Map<String, dynamic> item) {
-    bool ehServico = item['tipo'] == 'servico';
-    if (!ehServico && item['lojistaId'] != null && item['lojistaId'].toString().isNotEmpty) {
-      return FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('lojistas').doc(item['lojistaId']).get(),
-        builder: (context, snapshot) {
-          String nomeLoja = item['loja'];
-          if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-            final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
-            if (dadosLojista != null) {
-              nomeLoja = dadosLojista['razaoSocial'] ??
-                         dadosLojista['nome'] ??
-                         dadosLojista['dadosDoResponsavel']?['nome'] ??
-                         item['loja'];
-            }
-          }
-          final novoItem = Map<String, dynamic>.from(item);
-          novoItem['loja'] = nomeLoja;
-          return _buildCardWidget(novoItem);
-        },
-      );
-    } else {
-      return _buildCardWidget(item);
-    }
-  }
-
-  Widget _buildCardWidget(Map<String, dynamic> item) {
     final statusNorm = item['status']?.toString().toLowerCase() ?? '';
     bool ehServico = item['tipo'] == 'servico';
     bool pendente = item['ehPendente'];
@@ -285,32 +206,11 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 10),
-          
-          // Exibição dos Itens do Pedido
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: (item['itens'] as List).map<Widget>((it) {
-              final String nomeItem = it['nome'] ?? 'Produto';
-              final int qtd = it['quantidade'] ?? 1;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  "$nomeItem (x$qtd)",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
 
           // Valor
           Text(
-            "R\$ ${item['total'].toStringAsFixed(2).replaceAll('.', ',')}",
+            "R\$ ${item['total'].toStringAsFixed(2)}",
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -352,7 +252,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     MaterialPageRoute(
                       builder: (_) => TelaAvaliacaoServico(
                         pedidoId: item['id'],
-                        prestadorId: ehServico ? item['prestadorId'] : item['lojistaId'],
+                        prestadorId: item['prestadorId'],
                         nomePrestador: item['loja'],
                       ),
                     ),
@@ -365,9 +265,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  ehServico ? "AVALIAR SERVIÇO" : "AVALIAR LOJA",
-                  style: const TextStyle(
+                child: const Text(
+                  "AVALIAR SERVIÇO",
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -389,10 +289,10 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               ),
             )
           else if (concluido)
-            Center(
+            const Center(
               child: Text(
-                ehServico ? "Serviço concluído!" : "Pedido concluído!",
-                style: const TextStyle(
+                "Serviço concluído!",
+                style: TextStyle(
                   color: Color(0xFF4CAF50),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,

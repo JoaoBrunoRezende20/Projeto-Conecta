@@ -113,18 +113,12 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                 final allDocs = snapshot.data?.docs ?? [];
                 
                 // Filtramos apenas produtos (excluindo serviços) que não foram avaliados ainda
-                // e que também não estão finalizados/cancelados.
+                // para que a tela não fique cheia de coisas muito antigas.
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final tipo = data['tipo'] ?? 'produto';
                   final avaliado = data['avaliado'] ?? false;
-                  final status = (data['status'] ?? 'pendente').toString().toLowerCase();
-                  return tipo != 'servico' &&
-                      !avaliado &&
-                      status != 'concluido' &&
-                      status != 'concluído' &&
-                      status != 'cancelado' &&
-                      status != 'rejeitado';
+                  return tipo != 'servico' && !avaliado;
                 }).toList();
 
                 if (docs.isEmpty) {
@@ -165,22 +159,10 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
     final dataCriacao = data['dataCriacao'] as Timestamp?;
     
     String pagamentoStr = "Crédito";
-    final pag = data['pagamento'];
-    if (pag != null) {
-      if (pag is Map) {
-        pagamentoStr = pag['metodo']?.toString() ?? "Crédito";
-      } else if (pag is String) {
-        pagamentoStr = pag;
-      } else if (pag is List && pag.isNotEmpty) {
-        final first = pag[0];
-        if (first is Map) {
-          pagamentoStr = first['metodo']?.toString() ?? "Crédito";
-        } else {
-          pagamentoStr = first.toString();
-        }
-      } else {
-        pagamentoStr = pag.toString();
-      }
+    if (data['pagamento'] != null && data['pagamento']['metodo'] != null) {
+      pagamentoStr = data['pagamento']['metodo'];
+    } else if (data['pagamento'] is String) {
+      pagamentoStr = data['pagamento'];
     }
 
     String dataString = data['data'] ?? data['dia'] ?? "Sem data";
@@ -213,7 +195,6 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
     // Regras de Status
     final statusNorm = (data['status'] ?? 'pendente').toString().toLowerCase();
     final bool isPendente = statusNorm == 'pendente' || statusNorm == 'aguardando';
-    final bool isEmAndamento = statusNorm == 'em andamento' || statusNorm == 'em_andamento';
     final bool isConfirmado = statusNorm == 'concluído' || statusNorm == 'concluido' || statusNorm == 'confirmado';
     final bool isRejeitado = statusNorm == 'rejeitado' || statusNorm == 'cancelado';
 
@@ -291,13 +272,6 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                 dataCriacao: dataCriacao,
                 onCancelar: () => _confirmarCancelamento(pedidoId),
               ),
-          ] else if (isEmAndamento) ...[
-            const Center(
-              child: Text(
-                "Pedido em andamento",
-                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
           ] else if (isConfirmado) ...[
             const Center(
               child: Text(
