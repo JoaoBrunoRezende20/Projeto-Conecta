@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Adicionado para evitar erro no FirebaseAuth
 
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
@@ -9,7 +10,6 @@ import '../../repositories/produto_repository.dart';
 
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
-// Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
 final Map<String, Map<String, dynamic>> carrinhoGlobal = {};
 String? lojaIdDoCarrinho;
 
@@ -33,7 +33,6 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   final ProdutoRepository _produtoRepository = ProdutoRepository();
-
 
   @override
   void initState() {
@@ -67,52 +66,117 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
     return total;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+  // >>> NOVO: WIDGET QUE DESENHA O BOTÃO DE FILTRO (PÍLULA) <<<
+  Widget _buildFiltro(String nomeCategoria) {
+    return Tab(
+      height: 35,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5), 
         ),
-        title: Column(
-          children: [
-            Text(
-              widget.storeName,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  widget.rating.toStringAsFixed(1),
-                  style: const TextStyle(color: Colors.black, fontSize: 14),
-                ),
-              ],
-            ),
-          ],
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            nomeCategoria,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
       ),
-      body: _buildListaProdutos(),
-      bottomNavigationBar: (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho == widget.lojaId)
-          ? _buildBarraCarrinho()
-          : null,
     );
   }
 
-  Widget _buildListaProdutos() {
+  @override
+  Widget build(BuildContext context) {
+    // >>> NOVO: DEFAULT TAB CONTROLLER ENVOLVENDO A TELA <<<
+    // 5 = Todos, Feira Livre, Quitandas, Bebidas, Outros
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Column(
+            children: [
+              Text(
+                widget.storeName,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star, color: Colors.amber, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.rating.toStringAsFixed(1),
+                    style: const TextStyle(color: Colors.black, fontSize: 14),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // >>> NOVO: A BARRA DE FILTROS SUBSTITUINDO O FORMATO TAB PADRÃO <<<
+          bottom: TabBar(
+            isScrollable: true,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 6.0),
+            indicatorSize: TabBarIndicatorSize.label,
+            dividerColor: Colors.transparent,
+            indicator: BoxDecoration(
+              borderRadius: BorderRadius.circular(25),
+              color: Colors.red, // Cor do filtro ativo
+            ),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey.shade700,
+            tabs: [
+              _buildFiltro("Todos"),
+              _buildFiltro("🛒 Feira Livre"),
+              _buildFiltro("🥖 Quitandas"),
+              _buildFiltro("🥤 Bebidas"),
+              _buildFiltro("📦 Outros"),
+            ],
+          ),
+        ),
+        // >>> NOVO: TAB BAR VIEW PARA ALTERNAR AS LISTAS PELO FILTRO <<<
+        body: TabBarView(
+          children: [
+            _buildListaProdutos(categoria: null), // Mostra tudo
+            _buildListaProdutos(categoria: 'Feira Livre'),
+            _buildListaProdutos(categoria: 'Quitandas'),
+            _buildListaProdutos(categoria: 'Bebidas'),
+            _buildListaProdutos(categoria: 'Outros'),
+          ],
+        ),
+        bottomNavigationBar: (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho == widget.lojaId)
+            ? _buildBarraCarrinho()
+            : null,
+      ),
+    );
+  }
+
+  // >>> ATUALIZADO: AGORA RECEBE A CATEGORIA E FILTRA NO FIREBASE <<<
+  Widget _buildListaProdutos({String? categoria}) {
+    Query query = FirebaseFirestore.instance
+        .collection('produtos')
+        .where('lojistaId', isEqualTo: widget.lojaId);
+
+    // Se houver uma categoria específica selecionada, aplica o filtro
+    if (categoria != null) {
+      query = query.where('categoria', isEqualTo: categoria);
+    }
+
     return StreamBuilder<QuerySnapshot>(
-      stream: _produtoRepository.getProdutosPorLojista(widget.lojaId),
+      stream: query.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -127,7 +191,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         }
         final docs = snapshot.data!.docs;
         if (docs.isEmpty) {
-          return const Center(child: Text("Nenhum produto encontrado."));
+          return const Center(child: Text("Nenhum produto nesta categoria."));
         }
 
         return ListView.builder(
@@ -156,6 +220,9 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
     final String descricao = produto["descricao"] ?? "Descrição do produto";
     final double preco = (produto["preco"] ?? 0).toDouble();
     final double avaliacao = (produto["avaliacao"] ?? 5.0).toDouble();
+    
+    // Variável adicionada para checar quantidade no carrinho corretamente
+    final int quantidadeNoCarrinho = carrinhoGlobal[id]?['quantidade'] ?? 0;
 
     return InkWell(
       onTap: () {
@@ -164,7 +231,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           MaterialPageRoute(
             builder: (context) => TelaDetalhesProduto(produto: {...produto, 'id': id}),
           ),
-        ).then((_) => setState(() {})); // Atualiza a lista ao voltar
+        ).then((_) => setState(() {})); 
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -239,8 +306,8 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 ],
               ),
             ),
+            // Código da MAIN: Preço
             const SizedBox(width: 8),
-            // Preço
             Text(
               "R\$${preco.toStringAsFixed(2).replaceAll('.', ',')}",
               style: const TextStyle(
@@ -249,6 +316,122 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 fontSize: 16,
               ),
             ),
+            const SizedBox(width: 12),
+            // Código da FEAT: Botões do Carrinho
+            if (quantidadeNoCarrinho > 0)
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: Colors.black,
+                    ),
+                    onPressed: () => setState(() {
+                      if (quantidadeNoCarrinho > 1) {
+                        carrinhoGlobal[id]!['quantidade']--;
+                      } else {
+                        carrinhoGlobal.remove(id);
+                      }
+                      CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                    }),
+                  ),
+                  Text(
+                    "$quantidadeNoCarrinho",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.green,
+                    ),
+                    onPressed: quantidadeNoCarrinho < estoqueDisponivel
+                        ? () => setState(() {
+                              carrinhoGlobal[id]!['quantidade']++;
+                              CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                            })
+                        : null,
+                  ),
+                ],
+              )
+            else
+              ElevatedButton(
+                onPressed: estoqueDisponivel > 0
+                    ? () {
+                        final user = FirebaseAuth.instance.currentUser;
+                        final isVisitor = user == null || user.isAnonymous;
+                        if (isVisitor) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Autenticação necessária"),
+                              content: const Text("Por favor, faça login ou crie uma conta para adicionar produtos ao carrinho."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+                        if (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho != null && lojaIdDoCarrinho != widget.lojaId) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Carrinho de outra loja"),
+                              content: const Text("Seu carrinho contém itens de outra loja. Deseja esvaziar o carrinho para adicionar este item?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancelar"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // fecha dialog
+                                    setState(() {
+                                      carrinhoGlobal.clear();
+                                      lojaIdDoCarrinho = widget.lojaId;
+                                      carrinhoGlobal[id] = {
+                                        'nome': produto['nome'],
+                                        'preco': produto['preco'],
+                                        'quantidade': 1,
+                                      };
+                                      CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                                    });
+                                  },
+                                  child: const Text("Esvaziar e Adicionar"),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          if (carrinhoGlobal.isEmpty) {
+                            lojaIdDoCarrinho = widget.lojaId;
+                          }
+                          carrinhoGlobal[id] = {
+                            'nome': produto['nome'],
+                            'preco': produto['preco'],
+                            'quantidade': 1,
+                          };
+                          CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+                        });
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: estoqueDisponivel > 0
+                      ? Colors.red
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text("Adicionar"),
+              ),
           ],
         ),
       ),
@@ -302,12 +485,11 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => TelaRevisaoCarrinho(
-                      itens: carrinhoGlobal, // Passamos o carrinho global
+                      itens: carrinhoGlobal, 
                       lojaName: widget.storeName,
                     ),
                   ),
                 ).then((_) {
-                  // Atualiza a tela quando o utilizador volta do carrinho
                   setState(() {});
                 });
               },
