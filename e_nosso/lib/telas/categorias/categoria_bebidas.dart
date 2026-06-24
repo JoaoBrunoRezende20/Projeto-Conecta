@@ -104,7 +104,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
                       nome: nome,
                       categoriaTexto: "Bebidas",
                       descricaoExtra: descricao,
-                      avaliacao: 5.0,
+                      avaliacao: (data['mediaEstrelas'] ?? 5.0).toDouble(),
                     );
                   },
                 );
