@@ -12,6 +12,7 @@ class Produto {
   final String id;
   final String nome;
   final String descricao;
+  final String caracteristicas;
   final double preco;
   final int estoque;
   bool ativo;
@@ -20,6 +21,7 @@ class Produto {
     required this.id,
     required this.nome,
     required this.descricao,
+    required this.caracteristicas,
     required this.preco,
     required this.estoque,
     required this.ativo,
@@ -31,6 +33,7 @@ class Produto {
       id: doc.id,
       nome: data['nome'] ?? 'Nome indisponível',
       descricao: data['descricao'] ?? '',
+      caracteristicas: data['caracteristicas'] ?? '',
       preco: (data['preco'] ?? 0).toDouble(),
       estoque: data['estoque'] ?? 0,
       ativo: data['ativo'] ?? false,
@@ -64,6 +67,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     final estoqueController = TextEditingController();
     final precoController = TextEditingController();
     final descricaoController = TextEditingController();
+    final caracteristicasController = TextEditingController();
 
     showDialog(
       context: context,
@@ -75,6 +79,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             children: [
               TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome do Produto')),
               TextField(controller: descricaoController, decoration: const InputDecoration(labelText: 'Descrição')),
+              TextField(controller: caracteristicasController, decoration: const InputDecoration(labelText: 'Características (ex: Sabor, Tamanho)')),
               TextField(controller: precoController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço (R\$)')),
               TextField(controller: estoqueController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Estoque')),
             ],
@@ -90,6 +95,56 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   'lojistaId': lojistaId,
                   'nome': nomeController.text,
                   'descricao': descricaoController.text,
+                  'caracteristicas': caracteristicasController.text,
+                  'preco': double.tryParse(precoController.text) ?? 0,
+                  'estoque': estoque,
+                  'ativo': estoque > 0,
+                });
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _abrirDialogEditarProduto(BuildContext context, Produto produto) {
+    final nomeController = TextEditingController(text: produto.nome);
+    final descricaoController = TextEditingController(text: produto.descricao);
+    final caracteristicasController = TextEditingController(text: produto.caracteristicas);
+    final precoController = TextEditingController(text: produto.preco.toString());
+    final estoqueController = TextEditingController(text: produto.estoque.toString());
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar Produto'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome do Produto')),
+              TextField(controller: descricaoController, decoration: const InputDecoration(labelText: 'Descrição')),
+              TextField(controller: caracteristicasController, decoration: const InputDecoration(labelText: 'Características (ex: Sabor, Tamanho)')),
+              TextField(controller: precoController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço (R\$)')),
+              TextField(controller: estoqueController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Estoque')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomeController.text.isNotEmpty && precoController.text.isNotEmpty && estoqueController.text.isNotEmpty) {
+                int estoque = int.tryParse(estoqueController.text) ?? 0;
+                await _produtoRepository.atualizarProduto(produto.id, {
+                  'nome': nomeController.text,
+                  'descricao': descricaoController.text,
+                  'caracteristicas': caracteristicasController.text,
                   'preco': double.tryParse(precoController.text) ?? 0,
                   'estoque': estoque,
                   'ativo': estoque > 0,
@@ -367,7 +422,13 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.green), onPressed: () => _atualizarEstoque(produto, 1)),
                 ],
               ),
-              IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _excluirProduto(produto.id, produto.nome)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _abrirDialogEditarProduto(context, produto)),
+                  IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _excluirProduto(produto.id, produto.nome)),
+                ],
+              ),
             ],
           ),
         ],
@@ -682,7 +743,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
              SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => _atualizarStatusPedido(pedidoId, 'cancelado'),
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'rejeitado'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red, width: 1.5),
                   shape: RoundedRectangleBorder(

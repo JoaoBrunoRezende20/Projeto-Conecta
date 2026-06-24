@@ -61,7 +61,10 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
           final docs = allDocs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final status = data['status']?.toString().toLowerCase() ?? 'pendente';
-            return status == 'concluído' || status == 'concluido';
+            return status == 'concluído' || 
+                   status == 'concluido' ||
+                   status == 'cancelado' ||
+                   status == 'rejeitado';
           }).toList();
 
           try {
@@ -149,9 +152,12 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
 
     Color statusColor = Colors.green;
     String statusLabel = "Entregue";
-    if (status == 'cancelado' || status == 'rejeitado') {
+    if (status == 'cancelado') {
       statusColor = Colors.red;
-      statusLabel = "Recusado / Cancelado";
+      statusLabel = "Pedido Cancelado";
+    } else if (status == 'rejeitado') {
+      statusColor = Colors.red;
+      statusLabel = "Pedido Recusado";
     }
 
     return Container(
