@@ -354,7 +354,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                         pedidoId: item['id'],
                         prestadorId: ehServico ? item['prestadorId'] : item['lojistaId'],
                         nomePrestador: item['loja'],
-                        isLojista: !ehServico,
                       ),
                     ),
                   );

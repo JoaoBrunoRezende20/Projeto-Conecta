@@ -6,14 +6,12 @@ class TelaAvaliacaoServico extends StatefulWidget {
   final String pedidoId;
   final String prestadorId;
   final String nomePrestador;
-  final bool isLojista;
 
   const TelaAvaliacaoServico({
     Key? key,
     required this.pedidoId,
     required this.prestadorId,
     required this.nomePrestador,
-    this.isLojista = false,
   }) : super(key: key);
 
   @override
@@ -40,9 +38,9 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: const Icon(Icons.menu, color: Colors.black),
-        title: Text(
-          widget.isLojista ? 'Avaliar loja' : 'Avaliar serviço',
-          style: const TextStyle(
+        title: const Text(
+          'Avaliar serviço',
+          style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -369,7 +367,7 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
 
     final firestore = FirebaseFirestore.instance;
     final prestadorRef = firestore
-        .collection(widget.isLojista ? 'lojistas' : 'prestadorServicos')
+        .collection('prestadorServicos')
         .doc(widget.prestadorId);
     final avaliacoesRef = prestadorRef.collection('avaliacoes');
     final pedidoRef = firestore.collection('pedidos').doc(widget.pedidoId);

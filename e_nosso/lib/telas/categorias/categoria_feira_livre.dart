@@ -101,7 +101,7 @@ class _CategoriaFeiraLivreState extends State<CategoriaFeiraLivre> {
                       nome: nome,
                       categoriaTexto: "Feira Livre",
                       descricaoExtra: descricao,
-                      avaliacao: (data['mediaEstrelas'] ?? 5.0).toDouble(),
+                      avaliacao: 5.0,
                     );
                   },
                 );
