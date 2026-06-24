@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/botao_notificacao.dart';
 import 'package:e_nosso/widgets/menu_lateral.dart';
+import '../../repositories/produto_repository.dart';
+import '../../repositories/pedido_repository.dart';
+
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -44,6 +47,9 @@ class TelaInicialLojista extends StatefulWidget {
 
 class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   final String? lojistaId = FirebaseAuth.instance.currentUser?.uid;
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
+  final PedidoRepository _pedidoRepository = PedidoRepository();
+
   
   // Controle de Abas: 0 (Produtos), 1 (Pedidos), 2 (Serviços)
   int _indiceAbaAtual = 0; 
@@ -80,7 +86,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             onPressed: () async {
               if (nomeController.text.isNotEmpty && precoController.text.isNotEmpty && estoqueController.text.isNotEmpty) {
                 int estoque = int.tryParse(estoqueController.text) ?? 0;
-                await FirebaseFirestore.instance.collection('produtos').add({
+                await _produtoRepository.adicionarProduto({
                   'lojistaId': lojistaId,
                   'nome': nomeController.text,
                   'descricao': descricaoController.text,
@@ -88,7 +94,9 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   'estoque': estoque,
                   'ativo': estoque > 0,
                 });
-                Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
               }
             },
             child: const Text('Salvar'),
@@ -114,17 +122,17 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         ],
       ),
     );
-    if (confirmar == true) FirebaseFirestore.instance.collection('produtos').doc(id).delete();
+    if (confirmar == true) await _produtoRepository.deletarProduto(id);
   }
 
   Future<void> _atualizarEstoque(Produto produto, int delta) async {
     int novoEstoque = produto.estoque + delta;
     if (novoEstoque < 0) novoEstoque = 0;
-    await FirebaseFirestore.instance.collection('produtos').doc(produto.id).update({'estoque': novoEstoque, 'ativo': novoEstoque > 0});
+    await _produtoRepository.atualizarEstoque(produto.id, novoEstoque);
   }
 
   Future<void> _atualizarStatusPedido(String pedidoId, String novoStatus) async {
-    await FirebaseFirestore.instance.collection('pedidos').doc(pedidoId).update({'status': novoStatus});
+    await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
   }
 
   // --- TRAVA DE ACESSO PARCIAL (StreamBuilder Principal) ---
@@ -200,13 +208,13 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                 onPressed: () async {
                   try {
                     await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
                       );
                     }
                   } catch (e) {
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
                       );
@@ -231,7 +239,6 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   Widget _buildTelaAprovada() {
     String tituloApp = 'Meus Produtos';
     if (_indiceAbaAtual == 1) tituloApp = 'Pedidos Recebidos';
-    if (_indiceAbaAtual == 2) tituloApp = 'Catálogo de Serviços';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -262,7 +269,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         ),
 
         title: Text(
-          _indiceAbaAtual == 0 ? 'Meus Produtos' : 'Pedidos Recebidos',
+          tituloApp,
           style: const TextStyle(color: Colors.black),
         ),
         actions: [
@@ -282,9 +289,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
       // Alternância de Abas
       body: _indiceAbaAtual == 0 
           ? _buildAbaProdutos() 
-          : _indiceAbaAtual == 1 
-              ? _buildAbaPedidos() 
-              : _buildAbaServicos(),
+          : _buildAbaPedidos(),
 
       // Barra Inferior
       bottomNavigationBar: BottomNavigationBar(
@@ -296,7 +301,6 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Produtos'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Pedidos'),
-          BottomNavigationBarItem(icon: Icon(Icons.handyman), label: 'Serviços'),
         ],
       ),
     );
@@ -319,7 +323,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
   Widget _buildProductList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('produtos').where('lojistaId', isEqualTo: lojistaId).snapshots(),
+      stream: _produtoRepository.getProdutosPorLojista(lojistaId!),
       builder: (_, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final produtos = snapshot.data!.docs.map((doc) => Produto.fromFirestore(doc)).toList();
@@ -371,19 +375,48 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  // ABA 2: PEDIDOS
   Widget _buildAbaPedidos() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('pedidos').where('lojistaId', isEqualTo: lojistaId).snapshots(),
+      stream: _pedidoRepository.getPedidosPorLojista(lojistaId!),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final docs = snapshot.data!.docs.toList();
-        docs.sort((a, b) {
-          final dataA = (a.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
-          final dataB = (b.data() as Map<String, dynamic>)['dataCriacao'] as Timestamp?;
-          if (dataA == null || dataB == null) return 0;
-          return dataB.compareTo(dataA);
-        });
+        if (snapshot.hasError) {
+          return Center(child: Text("Erro: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final allDocs = snapshot.data!.docs.toList();
+        final docs = allDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final status = data['status']?.toString().toLowerCase() ?? 'pendente';
+          return status != 'concluido' && status != 'cancelado' && status != 'rejeitado';
+        }).toList();
+        
+        try {
+          docs.sort((a, b) {
+            final mapA = a.data() as Map<String, dynamic>?;
+            final mapB = b.data() as Map<String, dynamic>?;
+            
+            final dataA = mapA?['dataCriacao'];
+            final dataB = mapB?['dataCriacao'];
+
+            final Timestamp? tA = dataA is Timestamp ? dataA : null;
+            final Timestamp? tB = dataB is Timestamp ? dataB : null;
+
+            if (tA == null && tB == null) return 0;
+            if (tA == null) return 1;
+            if (tB == null) return -1;
+            
+            return tB.compareTo(tA);
+          });
+        } catch (e) {
+          debugPrint("Erro ao ordenar pedidos: $e");
+        }
+
         if (docs.isEmpty) return const Center(child: Text("Você ainda não recebeu nenhum pedido.", style: TextStyle(color: Colors.grey, fontSize: 16)));
         return ListView.builder(
           padding: const EdgeInsets.all(12),
@@ -397,181 +430,279 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
+  String _formatarData(Timestamp? timestamp) {
+    if (timestamp == null) return "00/00/0000";
+    final data = timestamp.toDate();
+    return "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}";
+  }
+
   Widget _buildCardPedido(Map<String, dynamic> pedido, String pedidoId) {
     final dadosCliente = pedido['dadosCliente'] ?? {};
-    final itens = pedido['itens'] as Map<String, dynamic>? ?? {};
-    final status = pedido['status'] ?? 'pendente';
-    final valorTotal = pedido['valorTotal'] ?? 0.0;
+    final status = pedido['status']?.toString().toLowerCase() ?? 'pendente';
+    final valorTotal = (pedido['valorTotal'] ?? 0.0).toDouble();
+    final dataCriacao = pedido['dataCriacao'] as Timestamp?;
+    
+    String pagamentoStr = "Crédito";
+    if (pedido['pagamento'] != null && pedido['pagamento']['metodo'] != null) {
+      pagamentoStr = pedido['pagamento']['metodo'];
+    } else if (pedido['pagamento'] is String) {
+      pagamentoStr = pedido['pagamento'];
+    }
 
-    Color corStatus = Colors.orange;
-    if (status == 'aceito') corStatus = Colors.blue;
-    if (status == 'concluido') corStatus = Colors.green;
-    if (status == 'cancelado') corStatus = Colors.red;
+    String entregaStr = "Entrega em casa";
+    if (pedido['dadosEntrega'] != null && pedido['dadosEntrega']['tipoEntrega'] != null) {
+      final tipo = pedido['dadosEntrega']['tipoEntrega'];
+      final endereco = pedido['dadosEntrega']['endereco'];
+      if (tipo == 'Entrega' && endereco != null && endereco.toString().isNotEmpty) {
+        entregaStr = "Entrega: $endereco";
+      } else {
+        entregaStr = tipo;
+      }
+    }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: ExpansionTile(
-        title: Text("Pedido de ${dadosCliente['nome'] ?? 'Cliente'}", style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: corStatus.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: corStatus)),
-              child: Text(status.toUpperCase(), style: TextStyle(color: corStatus, fontSize: 10, fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text("Total: R\$ ${valorTotal.toStringAsFixed(2)}", maxLines: 1, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("ITENS:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                ...itens.entries.map((item) {
-                  final itemData = item.value as Map<String, dynamic>;
-                  return Text("${itemData['quantidade']}x ${itemData['nome']} (R\$ ${itemData['preco']})");
-                }),
-                const Divider(),
-                if (status == 'pendente')
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      OutlinedButton(style: OutlinedButton.styleFrom(foregroundColor: Colors.red), onPressed: () => _atualizarStatusPedido(pedidoId, 'cancelado'), child: const Text("Recusar")),
-                      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue), onPressed: () => _atualizarStatusPedido(pedidoId, 'aceito'), child: const Text("Aceitar Pedido")),
-                    ],
-                  ),
-                if (status == 'aceito')
-                  SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () => _atualizarStatusPedido(pedidoId, 'concluido'), child: const Text("Marcar como Entregue"))),
-              ],
-            ),
-          ),
-        ],
+    // Extrair Itens
+    List<Map<String, dynamic>> itensList = [];
+    if (pedido['itens'] is Map) {
+      (pedido['itens'] as Map).forEach((key, val) {
+        itensList.add({
+          'nome': val['nome'] ?? 'Produto',
+          'quantidade': val['quantidade'] ?? 1,
+        });
+      });
+    } else if (pedido['itens'] is List) {
+      for (var item in (pedido['itens'] as List)) {
+        itensList.add({
+          'nome': item['nome'] ?? 'Serviço',
+          'quantidade': item['quantidade'] ?? 1,
+        });
+      }
+    }
+
+    if (itensList.isEmpty) {
+      itensList.add({'nome': 'Pedido', 'quantidade': 1});
+    }
+
+    final nomeCliente = dadosCliente['nome'] ?? 'Cliente';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 25),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE5E5E5), // Fundo cinza claro
+        borderRadius: BorderRadius.circular(15),
       ),
-    );
-  }
-
-  // --- NOVA ABA 3: CATÁLOGO DE SERVIÇOS ---
-  Widget _buildAbaServicos() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            "Precisa de manutenção na sua loja? Encontre profissionais qualificados aprovados pela plataforma.",
-            style: TextStyle(color: Colors.grey),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // Alinhado à esquerda
+        children: [
+          Text(
+            "$nomeCliente**",
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
           ),
-        ),
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            // Consulta APENAS os prestadores que foram APROVADOS (status == true)
-            stream: FirebaseFirestore.instance
-                .collection('prestadorServicos')
-                .where('status', isEqualTo: true) 
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
-              final prestadores = snapshot.data!.docs;
-
-              if (prestadores.isEmpty) {
-                return const Center(
-                  child: Text("Nenhum profissional disponível no momento.", style: TextStyle(color: Colors.grey)),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: prestadores.length,
-                itemBuilder: (context, index) {
-                  final prestador = prestadores[index].data() as Map<String, dynamic>;
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 1,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.blue.shade50,
-                        child: const Icon(Icons.engineering, color: Colors.blue),
-                      ),
-                      title: Text(
-                        "${prestador['nome']} ${prestador['sobrenome']}",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
+          const SizedBox(height: 20),
+          
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Coluna da Esquerda (Itens)
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: itensList.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 4),
-                          Text(prestador['areaAtuacao'] ?? 'Serviços Gerais', style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 4),
-                          Text("Contato: ${prestador['telefone'] ?? 'Não informado'}", style: const TextStyle(fontSize: 12)),
+                          Text(
+                            item['nome'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          ),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _mostrarDetalhesPrestador(prestador),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+                    );
+                  }).toList(),
+                ),
+              ),
+              
+              const SizedBox(width: 15),
 
-  void _mostrarDetalhesPrestador(Map<String, dynamic> prestador) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("${prestador['nome']} ${prestador['sobrenome']}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-              child: Text("Profissão: ${prestador['areaAtuacao']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+              // Coluna da Direita (Valores e Infos)
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "R\$ ${valorTotal.toStringAsFixed(2).replaceAll('.', ',')}",
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Pagamento no $pagamentoStr",
+                      style: const TextStyle(fontSize: 11, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      entregaStr,
+                      style: const TextStyle(fontSize: 11, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatarData(dataCriacao),
+                      style: const TextStyle(fontSize: 11, color: Colors.black87),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 15),
+          
+          if (status == 'pendente') ...[
+            const Center(
+              child: Text(
+                "Produto disponível no estoque!",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            const Text("Descrição dos Serviços:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-            Text("${prestador['descricaoServicos'] ?? 'Não informada'}"),
-            const SizedBox(height: 12),
-            const Text("Telefone:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-            Text("${prestador['telefone']}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text("Preço Médio:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-            Text("R\$ ${prestador['faixaPrecos']?.toString() ?? 'A combinar'}"),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'aceito'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black, // Botão preto da imagem
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Confirmar envio",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar', style: TextStyle(color: Colors.grey)),
+
+          if (status == 'aceito') ...[
+            const Center(
+              child: Text(
+                "Envio Confirmado!",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'concluido'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, 
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Marcar como Entregue",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          
+          // BOTÃO CHAT
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8E8E8E), // Cinza botão
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Entrar em chat com o cliente",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ),
           ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ligue ou chame no WhatsApp usando o número acima.')),
-              );
-            },
-            icon: const Icon(Icons.phone, color: Colors.white, size: 18),
-            label: const Text('Contatar', style: TextStyle(color: Colors.white)),
-          ),
+          
+          if (status == 'pendente') ...[
+             const SizedBox(height: 10),
+             SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => _atualizarStatusPedido(pedidoId, 'cancelado'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text(
+                  "Recusar Pedido",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+
 }

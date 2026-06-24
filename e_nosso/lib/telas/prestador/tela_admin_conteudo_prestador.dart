@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../../utils/usuario_util.dart';
 
@@ -16,10 +16,19 @@ class TelaAdminConteudoPrestador extends StatefulWidget {
 class _TelaAdminConteudoPrestadorState extends State<TelaAdminConteudoPrestador> {
 
   // Função para remover uma imagem específica do Array 'portfolio'
-  Future<void> _removerFotoPortfolio(String base64Image) async {
+  Future<void> _removerFotoPortfolio(String imageData) async {
     try {
+      // Se for uma URL do Firebase Storage, apaga o arquivo físico também
+      if (imageData.startsWith('http')) {
+        try {
+          await FirebaseStorage.instance.refFromURL(imageData).delete();
+        } catch (e) {
+          debugPrint('Aviso: Não foi possível apagar o arquivo do Storage: $e');
+        }
+      }
+
       await FirebaseFirestore.instance.collection('prestadorServicos').doc(widget.uidPrestador).update({
-        'portfolio': FieldValue.arrayRemove([base64Image])
+        'portfolio': FieldValue.arrayRemove([imageData])
       });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Imagem removida do portfólio.')));
     } catch (e) {
@@ -27,12 +36,8 @@ class _TelaAdminConteudoPrestadorState extends State<TelaAdminConteudoPrestador>
     }
   }
 
-  Widget _buildImagemBase64(String base64String) {
-    try {
-      return Image.memory(UsuarioUtil.decodificarBase64(base64String), fit: BoxFit.cover);
-    } catch (e) {
-      return const Center(child: Icon(Icons.error));
-    }
+  Widget _buildPortfolioImage(String imageData) {
+    return UsuarioUtil.buildImageWidget(imageData);
   }
 
   @override
@@ -83,7 +88,7 @@ class _TelaAdminConteudoPrestadorState extends State<TelaAdminConteudoPrestador>
                         Positioned.fill(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: _buildImagemBase64(imgString),
+                            child: _buildPortfolioImage(imgString),
                           ),
                         ),
                         Positioned(

@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../cliente/tela_produtos_disponiveis.dart';
-import '../cliente/tela_detalhes_servico.dart';
+
+import '../cliente/tela_perfil_prestador.dart';
+import '../../repositories/categoria_repository.dart';
 
 class CategoriaServicos extends StatefulWidget {
   const CategoriaServicos({super.key});
@@ -12,6 +13,7 @@ class CategoriaServicos extends StatefulWidget {
 
 class _CategoriaServicosState extends State<CategoriaServicos> {
   String pesquisa = "";
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +52,13 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("prestadorServicos")
-                  .where("tipo", isEqualTo: "prestador")
-                  .where('statusCadastro', isEqualTo: 'aprovado')
-                  .snapshots(),
+              stream: _categoriaRepository.getPrestadoresAprovados(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
-                    child: Text("Erro ao carregar serviços. Tente novamente mais tarde."),
+                    child: Text(
+                      "Erro ao carregar serviços. Tente novamente mais tarde.",
+                    ),
                   );
                 }
 
@@ -91,18 +91,16 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome = (data["nome"] ?? data["nomeprestadorServicos"])
+                    final nome = (data["nome"] ?? data["nomeprestadorServicos"] ?? "")
                         .toString();
-                    final descricao = (data["descricao"] ?? "Sem descrição")
+                    final telefone = (data["telefone"] ?? "Não informado")
                         .toString();
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
-                      categoriaTexto: "Serviços",
-                      descricaoExtra: descricao,
-                      avaliacao: 5.0,
+                      telefone: telefone,
                     );
                   },
                 );
@@ -118,22 +116,15 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
     required BuildContext context,
     required String lojaId,
     required String nome,
-    required String categoriaTexto,
-    required String descricaoExtra,
-    required double avaliacao,
+    required String telefone,
   }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TelaDetalhesServico(
-              prestador: {
-                'id': lojaId,
-                'nome': nome,
-                'descricao': descricaoExtra,
-                'avaliacao': avaliacao,
-              },
+            builder: (_) => TelaPerfilPrestador(
+              prestadorId: lojaId,
             ),
           ),
         );
@@ -168,11 +159,23 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                       fontSize: 16,
                     ),
                   ),
-                  Text("⭐ $avaliacao  •  $categoriaTexto"),
-                  Text("50–60 min  •  R\$ 5,00"),
-                  Text(
-                    descricaoExtra,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.phone,
+                        size: 15,
+                        color: Colors.black54,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        telefone,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

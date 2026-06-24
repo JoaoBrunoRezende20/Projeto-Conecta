@@ -4,7 +4,7 @@ import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import es
 import '../auth/tela_tipo_usuario.dart';
 
 // Imports das categorias
-import '../categorias/categoria_quitandas.dart';
+import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_bebidas.dart';
 import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
@@ -88,6 +88,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GridView.count(
                 crossAxisCount: 2,
@@ -98,8 +99,8 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                 children: [
                   _buildCategoryCard(
                     icon: Icons.cake_outlined,
-                    label: 'Quitandas',
-                    onTap: () => _navegarPara(const CategoriaQuitandas()),
+                    label: 'Comidas',
+                    onTap: () => _navegarPara(const CategoriaComidas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.local_drink_outlined,
@@ -143,7 +144,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               spreadRadius: 2,
               blurRadius: 5,
               offset: const Offset(0, 3),
@@ -180,7 +181,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               spreadRadius: 2,
               blurRadius: 5,
               offset: const Offset(0, 3),

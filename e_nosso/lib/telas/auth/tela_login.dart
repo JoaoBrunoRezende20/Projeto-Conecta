@@ -43,7 +43,7 @@ class _TelaLoginState extends State<TelaLogin> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          MaterialPageRoute(builder: (context) => AuthWrapper()),
           (route) => false, // Remove o histórico para não voltar ao login clicando em "Voltar"
         );
       }

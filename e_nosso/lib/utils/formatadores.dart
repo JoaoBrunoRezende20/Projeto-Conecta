@@ -45,6 +45,12 @@ class AppFormatadores {
     return null;
   }
 
+  static String? validarCNPJOpcional(String? value) {
+    if (value == null || value.isEmpty) return null;
+    if (value.length < 18) return "CNPJ incompleto";
+    return null;
+  }
+
   static String? validarTelefone(String? value) {
     if (value == null || value.isEmpty) return "Campo obrigatório";
     if (value.length < 15) return "Telefone incompleto";

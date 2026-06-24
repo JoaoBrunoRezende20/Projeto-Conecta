@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
+import 'tela_pedidos_pendentes_prestador.dart';
 import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados ---
@@ -110,13 +111,13 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
                 onPressed: () async {
                   try {
                     await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
                       );
                     }
                   } catch (e) {
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
                       );
@@ -265,12 +266,9 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: imagemBase64 != null && imagemBase64.isNotEmpty
-                    ? Image.memory(
-                        UsuarioUtil.decodificarBase64(imagemBase64),
+                    ? UsuarioUtil.buildImageWidget(
+                        imagemBase64,
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => const Center(
-                          child: Icon(Icons.image_not_supported, color: Colors.white70),
-                        ),
                       )
                     : const Center(
                         child: Text(
@@ -323,7 +321,14 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           child: const Text('Serviços Agendados'),
         ),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TelaPedidosPendentesPrestador(),
+              ),
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,

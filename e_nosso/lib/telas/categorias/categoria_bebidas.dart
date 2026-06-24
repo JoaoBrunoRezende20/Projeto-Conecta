@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
+import '../../repositories/categoria_repository.dart';
 
 class CategoriaBebidas extends StatefulWidget {
   const CategoriaBebidas({super.key});
@@ -11,6 +12,7 @@ class CategoriaBebidas extends StatefulWidget {
 
 class _CategoriaBebidasState extends State<CategoriaBebidas> {
   String pesquisa = "";
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +53,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
           // Lista de lojas
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('lojistas')
-                  .where('cnae', isEqualTo: 'Bebidas')
-                  .where('statusCadastro', isEqualTo: 'aprovado')
-                  .snapshots(),
+              stream: _categoriaRepository.getLojistasPorCategoria('Bebidas'),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
@@ -147,7 +145,7 @@ class _CategoriaBebidasState extends State<CategoriaBebidas> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 5,
               offset: const Offset(0, 3),
             ),

@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Adicionado para evitar erro no FirebaseAuth
+
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
 import '../../utils/carrinho_util.dart';
+import '../../repositories/produto_repository.dart';
+
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
 final Map<String, Map<String, dynamic>> carrinhoGlobal = {};
@@ -29,6 +32,8 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 }
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
       lojaIdDoCarrinho = widget.lojaId;
     }
 
+    // Atualiza a tela se necessário
     if (mounted) setState(() {});
   }
 
@@ -209,6 +215,13 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
 
   Widget _produtoCard(Map<String, dynamic> produto, String id) {
     final int estoqueDisponivel = produto["estoque"] ?? 0;
+    final bool isIndisponivel = estoqueDisponivel <= 0;
+    final String nome = produto["nome"] ?? "Produto";
+    final String descricao = produto["descricao"] ?? "Descrição do produto";
+    final double preco = (produto["preco"] ?? 0).toDouble();
+    final double avaliacao = (produto["avaliacao"] ?? 5.0).toDouble();
+    
+    // Variável adicionada para checar quantidade no carrinho corretamente
     final int quantidadeNoCarrinho = carrinhoGlobal[id]?['quantidade'] ?? 0;
 
     return InkWell(
@@ -224,59 +237,87 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFF2F2F2), // Fundo cinza claro como na imagem
           borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-          ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Imagem placeholder
             Container(
-              width: 60,
-              height: 60,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: const Color(0xFFDFDFDF), // Cinza do box de imagem
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
             ),
             const SizedBox(width: 12),
+            // Informações do produto
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    produto["nome"] ?? "Produto",
+                    nome,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    estoqueDisponivel > 0
-                        ? "$estoqueDisponivel unidades disponíveis"
-                        : "Esgotado",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: estoqueDisponivel < 5
-                          ? Colors.orange[900]
-                          : Colors.grey[600],
                       fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
-                    "R\$ ${(produto["preco"] ?? 0).toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                    descricao.trim().isEmpty ? "Descrição do produto" : descricao,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w400,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_border, size: 16, color: Colors.black54),
+                      const SizedBox(width: 4),
+                      Text(
+                        avaliacao.toStringAsFixed(1).replaceAll('.', ','),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      if (isIndisponivel) ...[
+                        const SizedBox(width: 12),
+                        const Text(
+                          "INDISPONÍVEL",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ]
+                    ],
                   ),
                 ],
               ),
             ),
+            // Código da MAIN: Preço
+            const SizedBox(width: 8),
+            Text(
+              "R\$${preco.toStringAsFixed(2).replaceAll('.', ',')}",
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Código da FEAT: Botões do Carrinho
             if (quantidadeNoCarrinho > 0)
               Row(
                 children: [
