@@ -11,6 +11,13 @@ class CategoriaRepository {
         .snapshots();
   }
 
+  Stream<QuerySnapshot> getTodosLojistas() {
+    return _firestore
+        .collection('lojistas')
+        .where('statusCadastro', isEqualTo: 'aprovado')
+        .snapshots();
+  }
+
   Stream<QuerySnapshot> getPrestadoresAprovados() {
     return _firestore
         .collection('prestadorServicos')

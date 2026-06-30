@@ -14,23 +14,65 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
   String pesquisa = "";
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
+  Widget _buildFiltro(String nomeCategoria) {
+    return Tab(
+      height: 35,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5), 
+        ),
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            nomeCategoria,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context),
+          ),
+          centerTitle: true,
+          title: const Text("Comidas", style: TextStyle(color: Colors.black)),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(40),
+            child: TabBar(
+              isScrollable: true,
+              indicatorSize: TabBarIndicatorSize.label,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                color: Colors.red,
+              ),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey.shade700,
+              tabs: [
+                _buildFiltro("Todos"),
+                _buildFiltro("🛒 Feira Livre"),
+                _buildFiltro("🥖 Quitandas"),
+                _buildFiltro("🥤 Bebidas"),
+                _buildFiltro("📦 Outros"),
+              ],
+            ),
+          ),
         ),
-        centerTitle: true,
-        title: const Text("Comidas", style: TextStyle(color: Colors.black)),
-      ),
-      body: Column(
-        children: [
-          // Barra de pesquisa
+        body: Column(
+          children: [
+            // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -52,63 +94,73 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
 
           // Lista
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _categoriaRepository.getLojistasPorCategoria('Comidas'),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text("Erro ao carregar lojas. Tente novamente mais tarde."),
-                  );
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("Nenhuma loja encontrada."));
-                }
-
-                final docs = snapshot.data!.docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final nome =
-                      (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                  return nome.contains(pesquisa.toLowerCase());
-                }).toList();
-
-                if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhuma loja encontrada."));
-                }
-
-                return ListView.builder(
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final nome =
-                        (data['razaoSocial'] ??
-                                data['nomeLojista'] ??
-                                'Loja sem nome')
-                            .toString();
-                    final descricao = (data['descricao'] ?? 'Sem descrição')
-                        .toString();
-
-                    return _buildLojaCard(
-                      context: context,
-                      lojaId: docs[index].id,
-                      nome: nome,
-                      categoriaTexto: "Comidas",
-                      descricaoExtra: descricao,
-                      avaliacao: 5.0,
-                    );
-                  },
-                );
-              },
+            child: TabBarView(
+              children: [
+                _buildLista(null),
+                _buildLista('Feira Livre'),
+                _buildLista('Comidas'),
+                _buildLista('Bebidas'),
+                _buildLista('Outros'),
+              ],
             ),
           ),
         ],
       ),
+    ));
+  }
+
+  Widget _buildLista(String? categoria) {
+    Stream<QuerySnapshot> stream = categoria == null
+        ? _categoriaRepository.getTodosLojistas()
+        : _categoriaRepository.getLojistasPorCategoria(categoria);
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(
+            child: Text("Erro ao carregar lojas. Tente novamente mais tarde."),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Nenhuma loja encontrada."));
+        }
+
+        final docs = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? '')
+              .toString()
+              .toLowerCase();
+          return nome.contains(pesquisa.toLowerCase());
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const Center(child: Text("Nenhuma loja encontrada."));
+        }
+
+        return ListView.builder(
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final data = docs[index].data() as Map<String, dynamic>;
+            final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
+            final descricao = (data['descricao'] ?? 'Sem descrição').toString();
+
+            return _buildLojaCard(
+              context: context,
+              lojaId: docs[index].id,
+              nome: nome,
+              categoriaTexto: categoria ?? "Loja",
+              descricaoExtra: descricao,
+              avaliacao: 5.0,
+            );
+          },
+        );
+      },
     );
   }
 
