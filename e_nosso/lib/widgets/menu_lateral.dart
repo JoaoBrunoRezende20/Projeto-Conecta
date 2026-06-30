@@ -179,11 +179,6 @@ class MenuLateral extends StatelessWidget {
                     ),
                     if (colecaoUsuario == 'usuarioComum') ...[
                       ListTile(
-                        leading: const Icon(Icons.favorite_border),
-                        title: const Text("Favoritos"),
-                        onTap: () => _mostrarAvisoDesenvolvimento(context),
-                      ),
-                      ListTile(
                         leading: const Icon(Icons.pending_actions),
                         title: const Text("Pedidos Pendentes"),
                         onTap: () {
