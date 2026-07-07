@@ -5,8 +5,6 @@ import 'utils/auth_wrapper.dart';
 
 // telas
 import 'telas/cliente/tela_divisao_categoria.dart';
-import 'telas/categorias/categoria_bebidas.dart';
-import 'telas/categorias/categoria_feira_livre.dart';
 import 'telas/categorias/categoria_outros.dart';
 import 'telas/categorias/categoria_comidas.dart';
 import 'telas/categorias/categoria_servicos.dart';
@@ -34,10 +32,8 @@ class MyApp extends StatelessWidget {
 
       routes: {
         '/categorias': (_) => const TelaDivisaoCategoria(),
-        '/bebidas': (_) => const CategoriaBebidas(),
         '/comidas': (_) => const CategoriaComidas(),
         '/servicos': (_) => const CategoriaServicos(),
-        '/feira': (_) => const CategoriaFeiraLivre(),
         '/outros': (_) => const CategoriaOutros(),
       },
     );

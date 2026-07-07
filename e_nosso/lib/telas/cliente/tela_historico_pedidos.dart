@@ -93,7 +93,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           const SizedBox(height: 20),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _pedidoRepository.getPedidosPorCliente(FirebaseAuth.instance.currentUser?.uid ?? ''),
+              stream: _pedidoRepository.getPedidosPorCliente(
+                FirebaseAuth.instance.currentUser?.uid ?? '',
+              ),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -113,13 +115,16 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                 // Suporta tanto o formato do prestador (capitalizado) quanto do lojista (lowercase)
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final status = (data['status'] ?? '').toString().toLowerCase();
-                  return status == 'concluído' ||
-                      status == 'concluido';
+                  final status = (data['status'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return status == 'concluído' || status == 'concluido';
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhum serviço no histórico."));
+                  return const Center(
+                    child: Text("Nenhum serviço no histórico."),
+                  );
                 }
 
                 final sortedDocs = List.from(docs);
@@ -136,7 +141,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: sortedDocs.length,
                   itemBuilder: (context, index) {
-                    final data = sortedDocs[index].data() as Map<String, dynamic>;
+                    final data =
+                        sortedDocs[index].data() as Map<String, dynamic>;
                     final id = sortedDocs[index].id;
 
                     // Adaptando dados do Firestore para a estrutura do Card
@@ -178,7 +184,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     bool pendente = item['ehPendente'];
     bool concluido = statusNorm == 'concluído' || statusNorm == 'concluido';
     bool rejeitado = statusNorm == 'rejeitado';
-
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -259,7 +264,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B9467), // Cor verde oliva da imagem
+                  backgroundColor: const Color(
+                    0xFF8B9467,
+                  ), // Cor verde oliva da imagem
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -384,9 +391,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text("Erro ao cancelar: $e")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Erro ao cancelar: $e")),
+                  );
                 }
               }
             },
