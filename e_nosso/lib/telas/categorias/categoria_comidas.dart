@@ -48,7 +48,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
-          title: const Text("Comidas", style: TextStyle(color: Colors.black)),
+          title: const Text("Produtos", style: TextStyle(color: Colors.black)),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(40),
             child: TabBar(

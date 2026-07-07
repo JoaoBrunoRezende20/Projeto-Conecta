@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 // Importe as telas das categorias que você já criou
 // Se ainda não criou alguma, comente o import correspondente
-import '../categorias/categoria_bebidas.dart';
 import '../categorias/categoria_comidas.dart';
-import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
 
@@ -91,21 +89,13 @@ class TelaDivisaoCategoria extends StatelessWidget {
           crossAxisSpacing: 20,
           mainAxisSpacing: 20,
           children: [
-            // Card Comidas
+            // Card Produtos
             _buildCategoriaCard(
               context: context,
               icon: Icons.local_grocery_store, // Ícone de carrinho/mercado
-              label: "Comidas",
+              label: "Produtos",
               destino:
                   const CategoriaComidas(), // Manda para a tela de Comidas
-            ),
-
-            // Card Bebidas
-            _buildCategoriaCard(
-              context: context,
-              icon: Icons.local_drink, // Ícone de bebida
-              label: "Bebidas",
-              destino: const CategoriaBebidas(), // Manda para a tela de Bebidas
             ),
 
             // Card Serviços
@@ -115,15 +105,6 @@ class TelaDivisaoCategoria extends StatelessWidget {
               label: "Serviços",
               destino:
                   const CategoriaServicos(), // Manda para a tela de Serviços
-            ),
-
-            // Card Feira Livre
-            _buildCategoriaCard(
-              context: context,
-              icon: Icons.shopping_basket, // Ícone de cesta
-              label: "Feira Livre",
-              destino:
-                  const CategoriaFeiraLivre(), // Manda para a tela de Feira Livre
             ),
 
             // Card Outros

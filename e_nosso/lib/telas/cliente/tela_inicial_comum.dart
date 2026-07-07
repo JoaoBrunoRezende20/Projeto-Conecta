@@ -5,8 +5,6 @@ import '../auth/tela_tipo_usuario.dart';
 
 // Imports das categorias
 import '../categorias/categoria_comidas.dart';
-import '../categorias/categoria_bebidas.dart';
-import '../categorias/categoria_feira_livre.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
 
@@ -98,24 +96,14 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildCategoryCard(
-                    icon: Icons.cake_outlined,
-                    label: 'Comidas',
+                    icon: Icons.local_grocery_store_outlined,
+                    label: 'Produtos',
                     onTap: () => _navegarPara(const CategoriaComidas()),
-                  ),
-                  _buildCategoryCard(
-                    icon: Icons.local_drink_outlined,
-                    label: 'Bebidas',
-                    onTap: () => _navegarPara(const CategoriaBebidas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.build_outlined,
                     label: 'Serviços',
                     onTap: () => _navegarPara(const CategoriaServicos()),
-                  ),
-                  _buildCategoryCard(
-                    icon: Icons.shopping_basket_outlined,
-                    label: 'Feira Livre',
-                    onTap: () => _navegarPara(const CategoriaFeiraLivre()),
                   ),
                 ],
               ),
