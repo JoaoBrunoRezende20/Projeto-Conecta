@@ -13,38 +13,7 @@ class TelaHistoricoPedidos extends StatefulWidget {
 
 class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
-  // Lista unificada: o campo 'tipo' define se é Produto ou Serviço
-  List<Map<String, dynamic>> historicoGeral = [
-    {
-      "id": "101",
-      "tipo": "produto", // Exemplo de Produto
-      "loja": "Emporio da bebida",
-      "data": "05/05/2026",
-      "pagamento": "Crédito",
-      "entrega": "Entrega em casa",
-      "status": "Pedido confirmed!",
-      "ehPendente": false,
-      "total": 37.00,
-      "itens": [
-        {"nome": "Cerveja brahma", "quantidade": 5},
-        {"nome": "Agua mineral", "quantidade": 1},
-      ],
-    },
-    {
-      "id": "201",
-      "tipo": "servico", // Exemplo de Serviço
-      "loja": "Eletricista Fulano de tal",
-      "data": "05/07/2026",
-      "pagamento": "Crédito",
-      "entrega": "Agendado",
-      "status": "Aguardando confirmação!",
-      "ehPendente": true,
-      "total": 100.00,
-      "itens": [
-        {"nome": "Instalação de Chuveiro", "quantidade": 1},
-      ],
-    },
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -111,10 +80,10 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
-                // Filtrar apenas finalizados: concluído, cancelado ou rejeitado
-                // Suporta tanto o formato do prestador (capitalizado) quanto do lojista (lowercase)
+                // Filtrar apenas finalizados: concluído, cancelado
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+<<<<<<< HEAD
                   final status = (data['status'] ?? '')
                       .toString()
                       .toLowerCase();
@@ -125,14 +94,22 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(
                     child: Text("Nenhum serviço no histórico."),
                   );
+=======
+                  final status = (data['status'] ?? '').toString().toLowerCase();
+                  return status == 'concluído' ||
+                      status == 'concluido' ||
+                      status == 'cancelado';
+                }).toList();
+
+                if (docs.isEmpty) {
+                  return const Center(child: Text("Nenhum pedido no histórico."));
+>>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
                 }
 
                 final sortedDocs = List.from(docs);
                 sortedDocs.sort((a, b) {
-                  final dataA = a.data() as Map<String, dynamic>;
-                  final dataB = b.data() as Map<String, dynamic>;
-                  final Timestamp? tA = dataA['dataCriacao'] as Timestamp?;
-                  final Timestamp? tB = dataB['dataCriacao'] as Timestamp?;
+                  final tA = (a.data() as Map)['dataCriacao'] as Timestamp?;
+                  final tB = (b.data() as Map)['dataCriacao'] as Timestamp?;
                   if (tA == null || tB == null) return 0;
                   return tB.compareTo(tA); // Descendente
                 });
@@ -144,30 +121,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     final data =
                         sortedDocs[index].data() as Map<String, dynamic>;
                     final id = sortedDocs[index].id;
-
-                    // Adaptando dados do Firestore para a estrutura do Card
-                    final itemAdaptado = {
-                      "id": id,
-                      "tipo": data['tipo'] ?? 'produto',
-                      "loja": data['prestador'] ?? data['loja'] ?? "Loja",
-                      "data": data['tipo'] == 'servico'
-                          ? "${data['data'] ?? data['dia']} às ${data['horario'] ?? ''}"
-                          : data['data'] ?? data['dia'] ?? "Sem data",
-                      "pagamento": data['pagamento'] ?? "Cartão/Pix",
-                      "entrega":
-                          data['entrega'] ??
-                          (data['tipo'] == 'servico' ? "Agendado" : "Entrega"),
-                      "status": data['status'] ?? "Pendente",
-                      "ehPendente":
-                          data['status'] == "Pendente" ||
-                          data['status'] == "Aguardando confirmação!",
-                      "total": (data['valor'] ?? 0).toDouble(),
-                      "itens": data['servicos'] ?? data['itens'] ?? [],
-                      "prestadorId": data['prestadorId'] ?? "",
-                      "avaliado": data['avaliado'] ?? false,
-                    };
-
-                    return _buildCard(itemAdaptado);
+                    return _buildCard(id, data);
                   },
                 );
               },
@@ -178,13 +132,12 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     );
   }
 
-  Widget _buildCard(Map<String, dynamic> item) {
-    final statusNorm = item['status']?.toString().toLowerCase() ?? '';
-    bool ehServico = item['tipo'] == 'servico';
-    bool pendente = item['ehPendente'];
-    bool concluido = statusNorm == 'concluído' || statusNorm == 'concluido';
-    bool rejeitado = statusNorm == 'rejeitado';
+  Widget _buildCard(String id, Map<String, dynamic> data) {
+    final status = (data['status'] ?? '').toString().toLowerCase();
+    final bool concluido = status == 'concluído' || status == 'concluido';
+    final bool cancelado = status == 'cancelado';
 
+<<<<<<< HEAD
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -196,58 +149,146 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Nome do Serviço
-          Text(
-            item['loja'],
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 20),
+=======
+    final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
+    final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
+    
+    String pagamentoStr = "Crédito";
+    if (data['pagamento'] != null && data['pagamento']['metodo'] != null) {
+      pagamentoStr = data['pagamento']['metodo'];
+    } else if (data['pagamento'] is String) {
+      pagamentoStr = data['pagamento'];
+    }
 
-          // Valor
-          Text(
-            "R\$ ${item['total'].toStringAsFixed(2)}",
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 5),
+    String dataString = data['data'] ?? data['dia'] ?? "Sem data";
+    final dataCriacao = data['dataCriacao'] as Timestamp?;
+    if (dataCriacao != null) {
+      final date = dataCriacao.toDate();
+      dataString = "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    }
 
-          // Ícone e Pagamento
+    List<Map<String, dynamic>> itensList = [];
+    if (data['itens'] is Map) {
+      (data['itens'] as Map).forEach((key, val) {
+        itensList.add({
+          'nome': val['nome'] ?? 'Produto',
+          'quantidade': val['quantidade'] ?? 1,
+        });
+      });
+    } else if (data['itens'] is List) {
+      for (var item in data['itens']) {
+        itensList.add({
+          'nome': item['nome'] ?? 'Produto',
+          'quantidade': item['quantidade'] ?? 1,
+        });
+      }
+    }
+    
+    final bool avaliado = data['avaliado'] ?? false;
+    final prestadorId = data['lojistaId'] ?? data['prestadorId'] ?? "";
+
+    Color statusColor = concluido ? Colors.green : (cancelado ? Colors.red : Colors.grey);
+    String statusLabel = concluido ? "Pedido Concluído" : (cancelado ? "Cancelado" : "Finalizado");
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('lojistas').doc(prestadorId).get(),
+      builder: (context, snapshot) {
+        String nomeLojaExibicao = loja;
+        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+          final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
+          if (dadosLojista != null) {
+            nomeLojaExibicao = dadosLojista['razaoSocial'] ??
+                               dadosLojista['nome'] ??
+                               dadosLojista['dadosDoResponsavel']?['nome'] ??
+                               loja;
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(15),
+>>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      nomeLojaExibicao,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+          
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: itensList.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['nome'],
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                    ),
+                    Text(
+                      "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 10),
+
+          Text(
+            "R\$ ${valorTotal.toStringAsFixed(2).replaceAll('.', ',')}",
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          const SizedBox(height: 10),
+
           Row(
             children: [
               const Icon(Icons.credit_card, size: 18),
               const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Pagamento no ${item['pagamento']}",
-                    style: const TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                  Text(
-                    "(${item['data']})",
-                    style: const TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                ],
+              Text("Pagamento no $pagamentoStr"),
+            ],
+          ),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                dataString,
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
               ),
             ],
           ),
-
-          if (concluido && !(item['avaliado'] as bool)) ...[
+          
+          if (concluido && !avaliado) ...[
             const SizedBox(height: 20),
-            // Botão Avaliar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -256,102 +297,27 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => TelaAvaliacaoServico(
-                        pedidoId: item['id'],
-                        prestadorId: item['prestadorId'],
-                        nomePrestador: item['loja'],
+                        pedidoId: id,
+                        prestadorId: prestadorId,
+                        nomePrestador: nomeLojaExibicao,
                       ),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
+<<<<<<< HEAD
                   backgroundColor: const Color(
                     0xFF8B9467,
                   ), // Cor verde oliva da imagem
+=======
+                  backgroundColor: const Color(0xFF8B9467),
+>>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
-                  "AVALIAR SERVIÇO",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 20),
-          if (rejeitado)
-            const Center(
-              child: Text(
-                "Serviço Recusado",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            )
-          else if (concluido)
-            const Center(
-              child: Text(
-                "Serviço concluído!",
-                style: TextStyle(
-                  color: Color(0xFF4CAF50),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          const SizedBox(height: 12),
-
-          if (ehServico) ...[
-            // Botão Contato
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8E8E8E), // Cinza da imagem
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  "Entrar em contato com o prestador",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ],
-
-          // Botão Cancelar se pendente
-          if (pendente) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => _confirmarCancelamento(item['id']),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  "CANCELAR SOLICITAÇÃO",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  "AVALIAR LOJA",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -359,6 +325,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         ],
       ),
     );
+<<<<<<< HEAD
   }
 
   void _confirmarCancelamento(String id) {
@@ -404,6 +371,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           ),
         ],
       ),
+=======
+      },
+>>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
     );
   }
 }

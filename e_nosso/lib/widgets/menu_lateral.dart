@@ -164,25 +164,21 @@ class MenuLateral extends StatelessWidget {
                         );
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.notifications_none),
-                      title: const Text("Notificações"),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
-                          ),
-                        );
-                      },
-                    ),
-                    if (colecaoUsuario == 'usuarioComum') ...[
+                    if (colecaoUsuario != 'prestadorServicos')
                       ListTile(
-                        leading: const Icon(Icons.favorite_border),
-                        title: const Text("Favoritos"),
-                        onTap: () => _mostrarAvisoDesenvolvimento(context),
+                        leading: const Icon(Icons.notifications_none),
+                        title: const Text("Notificações"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
+                            ),
+                          );
+                        },
                       ),
+                    if (colecaoUsuario == 'usuarioComum') ...[
                       ListTile(
                         leading: const Icon(Icons.pending_actions),
                         title: const Text("Pedidos Pendentes"),
@@ -211,47 +207,7 @@ class MenuLateral extends StatelessWidget {
                       ),
 
                     ],
-                    if (colecaoUsuario == 'prestadorServicos') ...[
-                      ListTile(
-                        leading: const Icon(Icons.pending_actions),
-                        title: const Text("Serviços Pendentes"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TelaPedidosPendentesPrestador(),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.event_available),
-                        title: const Text("Serviços Agendados"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TelaServicosAgendadosPrestador(),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.history),
-                        title: const Text("Histórico de Serviços"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TelaHistoricoServicosPrestador(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+
                     if (colecaoUsuario == 'lojistas') ...[
                       ListTile(
                         leading: const Icon(Icons.history),

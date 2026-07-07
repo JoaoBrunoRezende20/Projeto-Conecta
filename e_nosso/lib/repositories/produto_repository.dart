@@ -28,4 +28,8 @@ class ProdutoRepository {
   Future<void> deletarProduto(String produtoId) async {
     await _firestore.collection('produtos').doc(produtoId).delete();
   }
+
+  Future<void> atualizarProduto(String produtoId, Map<String, dynamic> dados) async {
+    await _firestore.collection('produtos').doc(produtoId).update(dados);
+  }
 }
