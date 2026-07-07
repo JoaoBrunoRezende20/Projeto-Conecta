@@ -6,6 +6,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'tela_produtos_disponiveis.dart';
 import '../../utils/carrinho_util.dart';
 import '../../repositories/pedido_repository.dart';
+import '../../repositories/produto_repository.dart';
 
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -17,9 +18,10 @@ class TelaDadosEntrega extends StatefulWidget {
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
+  final ProdutoRepository _produtoRepository = ProdutoRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
-  
+
   // Dados do usuário
   String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
 
@@ -36,7 +38,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final _numeroController = TextEditingController();
   final _observacaoController = TextEditingController();
 
-  double get _subtotal => widget.valorTotal - 5.0; // Desconta a taxa padrão para exibir separadamente
+  double get _subtotal =>
+      widget.valorTotal -
+      5.0; // Desconta a taxa padrão para exibir separadamente
   double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
   double get _totalGeral => _subtotal + _taxaEntrega;
 
@@ -91,17 +95,28 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Subtotal", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text("R\$${_subtotal.toStringAsFixed(2).replaceAll('.', ',')}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text(
+                  "Subtotal",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                Text(
+                  "R\$${_subtotal.toStringAsFixed(2).replaceAll('.', ',')}",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Valor da entrega", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text(
+                  "Valor da entrega",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 Text(
-                  _taxaEntrega == 0 ? "Grátis" : "R\$ ${_taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')}",
+                  _taxaEntrega == 0
+                      ? "Grátis"
+                      : "R\$ ${_taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')}",
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
@@ -110,10 +125,16 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Total", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  "Total",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 Text(
                   "R\$ ${_totalGeral.toStringAsFixed(2).replaceAll('.', ',')}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),
@@ -157,7 +178,14 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text("ENTREGA", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "ENTREGA",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             _buildRadioOption(
@@ -232,7 +260,14 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text("NUMERO PARA CONTATO", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "NUMERO PARA CONTATO",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Row(
@@ -264,7 +299,14 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text("OPÇÕES DE PAGAMENTO", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "OPÇÕES DE PAGAMENTO",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             _buildRadioOption(
@@ -272,21 +314,24 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               value: "Cartão",
               groupValue: _metodoPagamento,
               icon: Icons.credit_card,
-              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) =>
+                  setState(() => _metodoPagamento = val.toString()),
             ),
             _buildRadioOption(
               title: "PIX",
               value: "PIX",
               groupValue: _metodoPagamento,
               icon: Icons.pix,
-              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) =>
+                  setState(() => _metodoPagamento = val.toString()),
             ),
             _buildRadioOption(
               title: "Dinheiro",
               value: "Dinheiro",
               groupValue: _metodoPagamento,
               icon: Icons.attach_money,
-              onChanged: (val) => setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) =>
+                  setState(() => _metodoPagamento = val.toString()),
             ),
             const SizedBox(height: 30),
 
@@ -298,11 +343,15 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[400],
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
-                  _observacao.isEmpty ? "Adicionar observação" : "Editar observação",
+                  _observacao.isEmpty
+                      ? "Adicionar observação"
+                      : "Editar observação",
                   style: const TextStyle(color: Colors.black54, fontSize: 16),
                 ),
               ),
@@ -315,7 +364,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4A4A4A),
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: 0,
                 ),
                 child: const Text(
@@ -365,8 +416,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     );
   }
 
-
-
   void _editarObservacao() {
     _observacaoController.text = _observacao;
     showDialog(
@@ -375,11 +424,16 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         title: const Text("Observação do Pedido"),
         content: TextField(
           controller: _observacaoController,
-          decoration: const InputDecoration(hintText: "Ex: Tirar cebola, troco para 50..."),
+          decoration: const InputDecoration(
+            hintText: "Ex: Tirar cebola, troco para 50...",
+          ),
           maxLines: 3,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () {
               setState(() {
@@ -397,7 +451,11 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   Future<void> _finalizarPedido() async {
     if (_telefoneController.text.trim().length < 14) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, insira um número de telefone válido com DDD.")),
+        const SnackBar(
+          content: Text(
+            "Por favor, insira um número de telefone válido com DDD.",
+          ),
+        ),
       );
       return;
     }
@@ -407,11 +465,16 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
           _numeroController.text.trim().isEmpty ||
           _bairroController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Por favor, preencha todos os campos do endereço de entrega.")),
+          const SnackBar(
+            content: Text(
+              "Por favor, preencha todos os campos do endereço de entrega.",
+            ),
+          ),
         );
         return;
       }
-      _enderecoCompleto = "${_enderecoController.text.trim()}, ${_numeroController.text.trim()}, ${_bairroController.text.trim()}";
+      _enderecoCompleto =
+          "${_enderecoController.text.trim()}, ${_numeroController.text.trim()}, ${_bairroController.text.trim()}";
     }
 
     showDialog(
@@ -421,11 +484,16 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     );
 
     try {
-      final clienteId = FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
+      final clienteId =
+          FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
       final itensCopia = <String, dynamic>{};
       carrinhoGlobal.forEach((key, value) {
         itensCopia[key] = Map<String, dynamic>.from(value);
       });
+
+      // --- CENÁRIO A: Validação prévia de estoque ---
+      // Bloqueia o pedido antes de qualquer gravação se o estoque for insuficiente.
+      await _produtoRepository.validarEstoqueItens(itensCopia);
 
       final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
@@ -442,14 +510,21 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
           'tipoEntrega': _tipoEntrega,
           'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
         },
-        'pagamento': <String, dynamic>{
-          'metodo': _metodoPagamento,
-        },
+        'pagamento': <String, dynamic>{'metodo': _metodoPagamento},
         'observacao': _observacao,
       };
 
-      // 3. Salva no banco de dados
+      // Salva no banco de dados
       await _pedidoRepository.criarPedido(pedidoData);
+
+      // --- CENÁRIO B: Dedução atômica (validação + update dentro da Transaction) ---
+      // Protege contra race condition: se dois clientes tentarem ao mesmo tempo,
+      // o segundo terá a transação abortada com exceção ao detectar estoque 0.
+      for (final entry in itensCopia.entries) {
+        final produtoId = entry.key;
+        final quantidade = (entry.value['quantidade'] as num).toInt();
+        await _produtoRepository.reduzirEstoqueProduto(produtoId, quantidade);
+      }
 
       carrinhoGlobal.clear();
       lojaIdDoCarrinho = null;
@@ -463,13 +538,21 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text("Sucesso!"),
-            content: const Text("Seu pedido foi enviado com sucesso para o lojista."),
+            content: const Text(
+              "Seu pedido foi enviado com sucesso para o lojista.",
+            ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: const Text("OK", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "OK",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -478,7 +561,25 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     } catch (e) {
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao salvar o pedido: $e")));
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              "Não foi possível finalizar o pedido",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Entendido",
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
       }
     }
   }
