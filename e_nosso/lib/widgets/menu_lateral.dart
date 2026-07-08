@@ -273,11 +273,7 @@ class MenuLateral extends StatelessWidget {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text("Configurações"),
-              onTap: () => _mostrarAvisoDesenvolvimento(context),
-            ),
+
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text("Ajuda"),

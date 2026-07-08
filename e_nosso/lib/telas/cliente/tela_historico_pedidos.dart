@@ -83,18 +83,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                 // Filtrar apenas finalizados: concluído, cancelado
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-<<<<<<< HEAD
-                  final status = (data['status'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  return status == 'concluído' || status == 'concluido';
-                }).toList();
-
-                if (docs.isEmpty) {
-                  return const Center(
-                    child: Text("Nenhum serviço no histórico."),
-                  );
-=======
                   final status = (data['status'] ?? '').toString().toLowerCase();
                   return status == 'concluído' ||
                       status == 'concluido' ||
@@ -103,7 +91,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
 
                 if (docs.isEmpty) {
                   return const Center(child: Text("Nenhum pedido no histórico."));
->>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
                 }
 
                 final sortedDocs = List.from(docs);
@@ -137,19 +124,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final bool concluido = status == 'concluído' || status == 'concluido';
     final bool cancelado = status == 'cancelado';
 
-<<<<<<< HEAD
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey[200], // Fundo cinza claro conforme imagem
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-=======
     final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
     
@@ -208,9 +182,15 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           margin: const EdgeInsets.only(bottom: 20),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: Colors.grey[200], // Fundo cinza claro conforme imagem
             borderRadius: BorderRadius.circular(15),
->>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,13 +285,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-<<<<<<< HEAD
-                  backgroundColor: const Color(
-                    0xFF8B9467,
-                  ), // Cor verde oliva da imagem
-=======
-                  backgroundColor: const Color(0xFF8B9467),
->>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
+                  backgroundColor: const Color(0xFF8B9467), // Cor verde oliva da imagem
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
@@ -325,7 +299,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         ],
       ),
     );
-<<<<<<< HEAD
+      },
+    );
   }
 
   void _confirmarCancelamento(String id) {
@@ -371,9 +346,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           ),
         ],
       ),
-=======
-      },
->>>>>>> 5ea570d8979a6345fd84ee586b6367510aa3c142
     );
   }
 }

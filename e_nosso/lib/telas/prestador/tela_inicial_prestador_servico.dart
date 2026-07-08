@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
-import 'tela_pedidos_pendentes_prestador.dart';
+import 'tela_cadastro_servico_prestador.dart';
+import 'tela_gerenciar_servicos_prestador.dart';
 import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados ---
@@ -174,7 +175,12 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
       body: _buildProfileContent(prestador),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          /* TODO: Adicionar ação principal */
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TelaCadastroServicoPrestador(),
+            ),
+          );
         },
         backgroundColor: Colors.red,
         child: const Icon(Icons.add, color: Colors.white),
@@ -304,36 +310,20 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
       runSpacing: 12,
       children: [
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TelaGerenciarServicosPrestador(),
+              ),
+            );
+          },
           icon: const Icon(Icons.edit, size: 16),
           label: const Text('Editar Itens'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF424242),
             foregroundColor: Colors.white,
           ),
-        ),
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF424242),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Serviços Agendados'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TelaPedidosPendentesPrestador(),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF424242),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Serviços Pendentes'),
         ),
       ],
     );
