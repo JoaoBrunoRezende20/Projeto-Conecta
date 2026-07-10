@@ -83,11 +83,7 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    "Selecione os serviços que deseja agendar:",
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 15),
+
 
                   // Grid de Serviços (3 colunas)
                   Expanded(
