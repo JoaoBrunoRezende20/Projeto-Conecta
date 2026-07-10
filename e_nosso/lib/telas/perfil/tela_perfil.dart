@@ -20,6 +20,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   final _areaAtuacaoController = TextEditingController();
   final _documentoController = TextEditingController();
   final _telefoneController = TextEditingController();
+  final _descricaoController = TextEditingController();
 
   final Map<String, String> _horariosSemanais = {};
   final List<String> _diasSemana = [
@@ -64,6 +65,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     _areaAtuacaoController.dispose();
     _documentoController.dispose();
     _telefoneController.dispose();
+    _descricaoController.dispose();
     super.dispose();
   }
 
@@ -95,6 +97,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
         if (_isPrestador) {
           _areaAtuacaoController.text = data['areaAtuacao'] ?? '';
+          _descricaoController.text = data['descricaoServicos'] ?? '';
           _parseDisponibilidade(data['disponibilidadeAtendimento']);
         }
       }
@@ -200,6 +203,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
       if (_isPrestador) {
         dadosAtualizados['areaAtuacao'] = _areaAtuacaoController.text.trim();
+        dadosAtualizados['descricaoServicos'] = _descricaoController.text.trim();
         dadosAtualizados['disponibilidadeAtendimento'] =
             _formatarDisponibilidadeParaSalvar();
       }
@@ -331,6 +335,24 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           hintText: "Ex: Encanador, Eletricista",
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? "Campo obrigatório"
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Descrição do Serviço:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _descricaoController,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "Descreva os serviços que você oferece...",
                         ),
                         validator: (value) =>
                             value == null || value.trim().isEmpty
