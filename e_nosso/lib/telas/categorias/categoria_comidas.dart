@@ -4,7 +4,14 @@ import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
 
 class CategoriaComidas extends StatefulWidget {
-  const CategoriaComidas({super.key});
+  final String? categoriaSelecionada;
+  final String tituloCategoria;
+
+  const CategoriaComidas({
+    super.key,
+    this.categoriaSelecionada,
+    this.tituloCategoria = "Produtos",
+  });
 
   @override
   State<CategoriaComidas> createState() => _CategoriaComidasState();
@@ -14,65 +21,23 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
   String pesquisa = "";
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
-  Widget _buildFiltro(String nomeCategoria) {
-    return Tab(
-      height: 35,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: Colors.grey.shade300, width: 1.5), 
-        ),
-        child: Align(
-          alignment: Alignment.center,
-          child: Text(
-            nomeCategoria,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
-          ),
-          centerTitle: true,
-          title: const Text("Produtos", style: TextStyle(color: Colors.black)),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(40),
-            child: TabBar(
-              isScrollable: true,
-              indicatorSize: TabBarIndicatorSize.label,
-              indicator: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                color: Colors.red,
-              ),
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey.shade700,
-              tabs: [
-                _buildFiltro("Todos"),
-                _buildFiltro("🛒 Feira Livre"),
-                _buildFiltro("🥖 Quitandas"),
-                _buildFiltro("🥤 Bebidas"),
-                _buildFiltro("📦 Outros"),
-              ],
-            ),
-          ),
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: Column(
-          children: [
-            // Barra de pesquisa
+        centerTitle: true,
+        title: Text(widget.tituloCategoria, style: const TextStyle(color: Colors.black)),
+      ),
+      body: Column(
+        children: [
+          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -94,19 +59,11 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
 
           // Lista
           Expanded(
-            child: TabBarView(
-              children: [
-                _buildLista(null),
-                _buildLista('Feira Livre'),
-                _buildLista('Comidas'),
-                _buildLista('Bebidas'),
-                _buildLista('Outros'),
-              ],
-            ),
+            child: _buildLista(widget.categoriaSelecionada),
           ),
         ],
       ),
-    ));
+    );
   }
 
   Widget _buildLista(String? categoria) {

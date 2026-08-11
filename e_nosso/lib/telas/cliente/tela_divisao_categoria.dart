@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 // Importe as telas das categorias que você já criou
 // Se ainda não criou alguma, comente o import correspondente
+import '../categorias/tela_filtros_comidas.dart';
 import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
@@ -95,7 +96,7 @@ class TelaDivisaoCategoria extends StatelessWidget {
               icon: Icons.local_grocery_store, // Ícone de carrinho/mercado
               label: "Produtos",
               destino:
-                  const CategoriaComidas(), // Manda para a tela de Comidas
+                  const TelaFiltrosComidas(), // Manda para a tela de Filtros
             ),
 
             // Card Serviços

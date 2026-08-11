@@ -4,6 +4,7 @@ import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import es
 import '../auth/tela_tipo_usuario.dart';
 
 // Imports das categorias
+import '../categorias/tela_filtros_comidas.dart';
 import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
@@ -98,7 +99,7 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                   _buildCategoryCard(
                     icon: Icons.local_grocery_store_outlined,
                     label: 'Produtos',
-                    onTap: () => _navegarPara(const CategoriaComidas()),
+                    onTap: () => _navegarPara(const TelaFiltrosComidas()),
                   ),
                   _buildCategoryCard(
                     icon: Icons.build_outlined,
