@@ -20,7 +20,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   final _areaAtuacaoController = TextEditingController();
   final _documentoController = TextEditingController();
   final _telefoneController = TextEditingController();
-  final _descricaoController = TextEditingController();
+  final _descricaoController = TextEditingController(); // Novo campo
+
 
   final Map<String, String> _horariosSemanais = {};
   final List<String> _diasSemana = [
@@ -66,6 +67,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     _documentoController.dispose();
     _telefoneController.dispose();
     _descricaoController.dispose();
+
     super.dispose();
   }
 
@@ -97,9 +99,10 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
         if (_isPrestador) {
           _areaAtuacaoController.text = data['areaAtuacao'] ?? '';
-          _descricaoController.text = data['descricaoServicos'] ?? '';
+          _descricaoController.text = data['descricaoServicos'] ?? data['descricao'] ?? '';
           _parseDisponibilidade(data['disponibilidadeAtendimento']);
         }
+
       }
     } catch (e) {
       debugPrint("Erro ao carregar perfil: $e");
@@ -207,6 +210,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         dadosAtualizados['disponibilidadeAtendimento'] =
             _formatarDisponibilidadeParaSalvar();
       }
+
 
       await _usuarioRepository.salvarDadosUsuario(
           _userId!, _colecaoUsuario, dadosAtualizados);
@@ -343,7 +347,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        "Descrição do Serviço:",
+                        "Descrição / Sobre você:",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -352,7 +356,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         maxLines: 4,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: "Descreva os serviços que você oferece...",
+                          hintText: "Descreva seus serviços, sua experiência, etc.",
                         ),
                         validator: (value) =>
                             value == null || value.trim().isEmpty
@@ -360,6 +364,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                             : null,
                       ),
                       const SizedBox(height: 16),
+
                       const Text(
                         "Disponibilidade de Atendimento:",
                         style: TextStyle(fontWeight: FontWeight.bold),
