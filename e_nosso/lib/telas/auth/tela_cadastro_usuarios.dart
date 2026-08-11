@@ -12,7 +12,13 @@ import '../../utils/formatadores.dart';
 
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
-  const TelaCadastro({super.key, required this.tipoUsuario});
+  final bool returnOnSuccess;
+
+  const TelaCadastro({
+    super.key, 
+    required this.tipoUsuario,
+    this.returnOnSuccess = false,
+  });
 
   @override
   State<TelaCadastro> createState() => _TelaCadastroState();
@@ -566,7 +572,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (widget.returnOnSuccess) {
+          Navigator.pop(context, true);
+        } else {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {

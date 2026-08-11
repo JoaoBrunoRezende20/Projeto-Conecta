@@ -6,7 +6,13 @@ import '../../utils/auth_wrapper.dart';
 
 class TelaLogin extends StatefulWidget {
   final String tipoUsuario;
-  const TelaLogin({super.key, required this.tipoUsuario});
+  final bool returnOnSuccess;
+  
+  const TelaLogin({
+    super.key, 
+    required this.tipoUsuario,
+    this.returnOnSuccess = false,
+  });
 
   @override
   State<TelaLogin> createState() => _TelaLoginState();
@@ -38,14 +44,19 @@ class _TelaLoginState extends State<TelaLogin> {
       );
       
       // >>> ALTERAÇÃO AQUI <<<
-      // Ao invés de usar popUntil (que volta pra tela inicial), 
-      // enviamos o usuário para o AuthWrapper, que vai ler o banco de dados e enviá-lo para a tela correta.
+      // Se returnOnSuccess for true, apenas fechamos a tela retornando sucesso
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => AuthWrapper()),
-          (route) => false, // Remove o histórico para não voltar ao login clicando em "Voltar"
-        );
+        if (widget.returnOnSuccess) {
+          Navigator.pop(context, true);
+        } else {
+          // Ao invés de usar popUntil (que volta pra tela inicial), 
+          // enviamos o usuário para o AuthWrapper, que vai ler o banco de dados e enviá-lo para a tela correta.
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => AuthWrapper()),
+            (route) => false, // Remove o histórico para não voltar ao login clicando em "Voltar"
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -254,9 +265,16 @@ class _TelaLoginState extends State<TelaLogin> {
                               MaterialPageRoute(
                                 builder: (_) => TelaCadastro(
                                   tipoUsuario: widget.tipoUsuario,
+                                  returnOnSuccess: widget.returnOnSuccess,
                                 ),
                               ),
-                            );
+                            ).then((sucesso) {
+                              // Se o cadastro foi bem sucedido e precisamos retornar sucesso, 
+                              // fechamos o login também propagando o sucesso.
+                              if (sucesso == true && widget.returnOnSuccess) {
+                                Navigator.pop(context, true);
+                              }
+                            });
                           },
                           child: const Text(
                             'Cadastre-se',
