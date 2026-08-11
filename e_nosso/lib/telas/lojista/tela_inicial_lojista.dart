@@ -648,6 +648,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     }
 
     final nomeCliente = dadosCliente['nome'] ?? 'Cliente';
+    final telefoneCliente = dadosCliente['telefone'] ?? 'Telefone não informado';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 25),
@@ -667,7 +668,23 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
+          Text(
+            telefoneCliente,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            entregaStr,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 15),
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -729,14 +746,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                         color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      entregaStr,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
-                      ),
-                    ),
+
                     const SizedBox(height: 2),
                     Text(
                       _formatarData(dataCriacao),
