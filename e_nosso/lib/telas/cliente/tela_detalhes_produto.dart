@@ -365,6 +365,12 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     final String? id = widget.produto['id'];
     if (id == null) return;
 
+    // Garante que o lojaIdDoCarrinho é atualizado com o lojista do produto
+    final String? lojistaId = widget.produto['lojistaId'];
+    if (lojistaId != null) {
+      lojaIdDoCarrinho = lojistaId;
+    }
+
     setState(() {
       if (carrinhoGlobal.containsKey(id)) {
         carrinhoGlobal[id]!['quantidade'] += quantidade;
