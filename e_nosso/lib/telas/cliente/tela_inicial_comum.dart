@@ -108,10 +108,6 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _buildOutrosButton(
-                onTap: () => _navegarPara(const CategoriaOutros()),
-              ),
             ],
           ),
         ),

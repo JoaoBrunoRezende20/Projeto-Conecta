@@ -49,9 +49,18 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         dadosSalvos['carrinho'] as Map<String, Map<String, dynamic>>?;
 
     if (carrinhoSalvo != null && carrinhoSalvo.isNotEmpty) {
-      carrinhoGlobal.clear();
-      carrinhoGlobal.addAll(carrinhoSalvo);
-      lojaIdDoCarrinho = lojaSalva;
+      if (lojaSalva == widget.lojaId) {
+        // Carrinho salvo pertence a esta loja — restaurar
+        carrinhoGlobal.clear();
+        carrinhoGlobal.addAll(carrinhoSalvo);
+        lojaIdDoCarrinho = lojaSalva;
+      } else {
+        // Carrinho salvo pertence a outra loja — manter em memória mas
+        // definir lojaIdDoCarrinho para a loja salva para não perder dados
+        carrinhoGlobal.clear();
+        carrinhoGlobal.addAll(carrinhoSalvo);
+        lojaIdDoCarrinho = lojaSalva;
+      }
     } else {
       lojaIdDoCarrinho = widget.lojaId;
     }
