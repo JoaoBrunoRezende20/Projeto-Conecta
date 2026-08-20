@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../auth/tela_login.dart';
 import 'tela_finalizacao_compra.dart';
 import '../../services/carrinho_service.dart';
 
@@ -282,12 +284,55 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
-                  ),
-                );
+                final user = FirebaseAuth.instance.currentUser;
+                final isVisitor = user == null || user.isAnonymous;
+
+                if (isVisitor) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text("Autenticação necessária"),
+                      content: const Text("Você precisa fazer login para finalizar o pedido."),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text("Voltar"),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TelaLogin(
+                                  tipoUsuario: 'comum',
+                                  returnOnSuccess: true,
+                                ),
+                              ),
+                            ).then((sucesso) {
+                              if (sucesso == true) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                                  ),
+                                );
+                              }
+                            });
+                          },
+                          child: const Text("Fazer Login"),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4A4A4A), // Cinza escuro como na imagem

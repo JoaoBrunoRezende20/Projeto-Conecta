@@ -14,7 +14,6 @@ class TelaHistoricoPedidos extends StatefulWidget {
 class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,17 +79,19 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
-                // Filtrar apenas finalizados: concluído, cancelado
+                // Filtrar apenas finalizados: concluído
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final status = (data['status'] ?? '').toString().toLowerCase();
-                  return status == 'concluído' ||
-                      status == 'concluido' ||
-                      status == 'cancelado';
+                  final status = (data['status'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return status == 'concluído' || status == 'concluido';
                 }).toList();
 
                 if (docs.isEmpty) {
-                  return const Center(child: Text("Nenhum pedido no histórico."));
+                  return const Center(
+                    child: Text("Nenhum serviço no histórico."),
+                  );
                 }
 
                 final sortedDocs = List.from(docs);
@@ -126,7 +127,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
 
     final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
-    
+
     String pagamentoStr = "Crédito";
     if (data['pagamento'] != null && data['pagamento']['metodo'] != null) {
       pagamentoStr = data['pagamento']['metodo'];
@@ -138,7 +139,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final dataCriacao = data['dataCriacao'] as Timestamp?;
     if (dataCriacao != null) {
       final date = dataCriacao.toDate();
-      dataString = "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+      dataString =
+          "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
     }
 
     List<Map<String, dynamic>> itensList = [];
@@ -157,69 +159,66 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         });
       }
     }
-    
+
     final bool avaliado = data['avaliado'] ?? false;
     final prestadorId = data['lojistaId'] ?? data['prestadorId'] ?? "";
 
-    Color statusColor = concluido ? Colors.green : (cancelado ? Colors.red : Colors.grey);
-    String statusLabel = concluido ? "Pedido Concluído" : (cancelado ? "Cancelado" : "Finalizado");
+    Color statusColor =
+        concluido ? Colors.green : (cancelado ? Colors.red : Colors.grey);
+    String statusLabel = concluido
+        ? "Pedido Concluído"
+        : (cancelado ? "Cancelado" : "Finalizado");
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('lojistas').doc(prestadorId).get(),
-      builder: (context, snapshot) {
-        String nomeLojaExibicao = loja;
-        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-          final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
-          if (dadosLojista != null) {
-            nomeLojaExibicao = dadosLojista['razaoSocial'] ??
-                               dadosLojista['nome'] ??
-                               dadosLojista['dadosDoResponsavel']?['nome'] ??
-                               loja;
-          }
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.grey[200], // Fundo cinza claro conforme imagem
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[200], // Fundo cinza claro conforme imagem
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  loja,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      nomeLojaExibicao,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-          
+          const SizedBox(height: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: itensList.map((item) {
@@ -230,11 +229,16 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   children: [
                     Text(
                       item['nome'],
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
                     ),
                     Text(
                       "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      style:
+                          const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -242,13 +246,15 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             }).toList(),
           ),
           const SizedBox(height: 10),
-
           Text(
             "R\$ ${valorTotal.toStringAsFixed(2).replaceAll('.', ',')}",
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
           const SizedBox(height: 10),
-
           Row(
             children: [
               const Icon(Icons.credit_card, size: 18),
@@ -266,7 +272,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               ),
             ],
           ),
-          
           if (concluido && !avaliado) ...[
             const SizedBox(height: 20),
             SizedBox(
@@ -279,27 +284,32 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                       builder: (_) => TelaAvaliacaoServico(
                         pedidoId: id,
                         prestadorId: prestadorId,
-                        nomePrestador: nomeLojaExibicao,
+                        nomePrestador: loja,
                       ),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B9467), // Cor verde oliva da imagem
+                  backgroundColor: const Color(
+                    0xFF8B9467,
+                  ), // Cor verde oliva da imagem
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text(
                   "AVALIAR LOJA",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ],
         ],
       ),
-    );
-      },
     );
   }
 

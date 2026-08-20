@@ -362,25 +362,8 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
   }
 
   Future<void> _adicionarNaSacola() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final isVisitor = user == null || user.isAnonymous;
-
-    if (isVisitor) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Autenticação necessária"),
-          content: const Text("Por favor, faça login ou crie uma conta para adicionar produtos ao carrinho."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+    // Visitantes agora podem adicionar à sacola normalmente.
+    // A validação será feita apenas no checkout (tela_carrinho.dart).
 
     final String? id = widget.produto['id'];
     if (id == null) return;

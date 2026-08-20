@@ -21,10 +21,7 @@ class ProdutoRepository {
     });
   }
 
-  Future<void> atualizarProduto(
-    String produtoId,
-    Map<String, dynamic> dados,
-  ) async {
+  Future<void> atualizarProduto(String produtoId, Map<String, dynamic> dados) async {
     await _firestore.collection('produtos').doc(produtoId).update(dados);
   }
 
