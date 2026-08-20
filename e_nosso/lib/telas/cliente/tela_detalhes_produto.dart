@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'tela_produtos_disponiveis.dart';
-import '../../utils/carrinho_util.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import '../../services/carrinho_service.dart';
 
 // Este widget é Stateful porque precisamos que a quantidade mude na tela
 class TelaDetalhesProduto extends StatefulWidget {
   final Map<String, dynamic> produto; // Dados vindo do Firebase
+  final String lojaId;
 
-  const TelaDetalhesProduto({super.key, required this.produto});
+  const TelaDetalhesProduto({super.key, required this.produto, required this.lojaId});
 
   @override
   State<TelaDetalhesProduto> createState() => _TelaDetalhesProdutoState();
 }
 
 class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
+  final CarrinhoService _carrinhoService = CarrinhoService();
   int quantidade = 1;
 
   @override
@@ -293,6 +295,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                             MaterialPageRoute(
                               builder: (context) => TelaDetalhesProduto(
                                 produto: {...semelhandoData, 'id': semelhandoId},
+                                lojaId: widget.lojaId,
                               ),
                             ),
                           );
@@ -358,7 +361,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     );
   }
 
-  void _adicionarNaSacola() {
+  Future<void> _adicionarNaSacola() async {
     final user = FirebaseAuth.instance.currentUser;
     final isVisitor = user == null || user.isAnonymous;
 
@@ -382,20 +385,15 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     final String? id = widget.produto['id'];
     if (id == null) return;
 
-    setState(() {
-      if (carrinhoGlobal.containsKey(id)) {
-        carrinhoGlobal[id]!['quantidade'] += quantidade;
-      } else {
-        carrinhoGlobal[id] = {
-          'nome': widget.produto['nome'],
-          'preco': widget.produto['preco'],
-          'quantidade': quantidade,
-        };
-      }
-    });
+    final itemAdicionado = {
+      'nome': widget.produto['nome'],
+      'preco': widget.produto['preco'],
+      'quantidade': quantidade,
+    };
 
-    CarrinhoUtil.salvarCarrinho(carrinhoGlobal, lojaIdDoCarrinho);
+    await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Adicionado: $quantidade x ${widget.produto['nome'] ?? 'Produto'}"),
