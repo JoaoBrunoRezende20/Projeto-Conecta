@@ -5,7 +5,7 @@ import '/widgets/botao_notificacao.dart';
 import 'package:e_nosso/widgets/menu_lateral.dart';
 import '../../repositories/produto_repository.dart';
 import '../../repositories/pedido_repository.dart';
-import '../../repositories/categoria_repository.dart';
+
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -49,7 +49,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   final String? lojistaId = FirebaseAuth.instance.currentUser?.uid;
   final ProdutoRepository _produtoRepository = ProdutoRepository();
   final PedidoRepository _pedidoRepository = PedidoRepository();
-  final CategoriaRepository _categoriaRepository = CategoriaRepository();
+
 
   // Controle de Abas: 0 (Produtos), 1 (Pedidos), 2 (Serviços)
   int _indiceAbaAtual = 0;
@@ -113,6 +113,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   'estoque': estoque,
                   'ativo': estoque > 0,
                 });
+                if (!context.mounted) return;
                 Navigator.pop(context);
               }
             },
@@ -173,8 +174,9 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   // --- TRAVA DE ACESSO PARCIAL (StreamBuilder Principal) ---
   @override
   Widget build(BuildContext context) {
-    if (lojistaId == null)
+    if (lojistaId == null) {
       return const Scaffold(body: Center(child: Text("Erro de ID")));
+    }
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -182,16 +184,18 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           .doc(lojistaId)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
+        }
 
         final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
-        if (dadosLojista == null)
+        if (dadosLojista == null) {
           return const Scaffold(
             body: Center(child: Text("Cadastro não encontrado.")),
           );
+        }
 
         final statusCadastro = dadosLojista['statusCadastro'] ?? 'pendente';
         final motivosRejeicao = dadosLojista['motivosRejeicao'] ?? '';
@@ -281,25 +285,23 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                   try {
                     await FirebaseAuth.instance.currentUser
                         ?.sendEmailVerification();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.',
-                          ),
-                          backgroundColor: Colors.green,
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.',
                         ),
-                      );
-                    }
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Erro ao reenviar: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao reenviar: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 },
                 icon: const Icon(Icons.mark_email_read),
@@ -417,18 +419,20 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     return StreamBuilder<QuerySnapshot>(
       stream: _produtoRepository.getProdutosPorLojista(lojistaId!),
       builder: (_, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         final produtos = snapshot.data!.docs
             .map((doc) => Produto.fromFirestore(doc))
             .toList();
-        if (produtos.isEmpty)
+        if (produtos.isEmpty) {
           return const Center(
             child: Text(
               "Nenhum produto cadastrado.",
               style: TextStyle(color: Colors.grey),
             ),
           );
+        }
         return ListView.builder(
           itemCount: produtos.length,
           itemBuilder: (_, i) => _buildProductTile(produtos[i]),
@@ -570,16 +574,17 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             return tB.compareTo(tA);
           });
         } catch (e) {
-          print("Erro ao ordenar pedidos: $e");
+          // ignore error
         }
 
-        if (docs.isEmpty)
+        if (docs.isEmpty) {
           return const Center(
             child: Text(
               "Você ainda não recebeu nenhum pedido.",
               style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
           );
+        }
         return ListView.builder(
           padding: const EdgeInsets.all(12),
           itemCount: docs.length,
@@ -896,182 +901,4 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     );
   }
 
-  // --- NOVA ABA 3: CATÁLOGO DE SERVIÇOS ---
-  Widget _buildAbaServicos() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            "Precisa de manutenção na sua loja? Encontre profissionais qualificados aprovados pela plataforma.",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ),
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            // Consulta APENAS os prestadores que foram APROVADOS (status == true)
-            stream: _categoriaRepository.getTodosPrestadoresAtivos(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData)
-                return const Center(child: CircularProgressIndicator());
-
-              final prestadores = snapshot.data!.docs;
-
-              if (prestadores.isEmpty) {
-                return const Center(
-                  child: Text(
-                    "Nenhum profissional disponível no momento.",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: prestadores.length,
-                itemBuilder: (context, index) {
-                  final prestador =
-                      prestadores[index].data() as Map<String, dynamic>;
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.blue.shade50,
-                        child: const Icon(
-                          Icons.engineering,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      title: Text(
-                        "${prestador['nome']} ${prestador['sobrenome']}",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            prestador['areaAtuacao'] ?? 'Serviços Gerais',
-                            style: const TextStyle(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Contato: ${prestador['telefone'] ?? 'Não informado'}",
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _mostrarDetalhesPrestador(prestador),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _mostrarDetalhesPrestador(Map<String, dynamic> prestador) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("${prestador['nome']} ${prestador['sobrenome']}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                "Profissão: ${prestador['areaAtuacao']}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "Descrição dos Serviços:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            Text("${prestador['descricaoServicos'] ?? 'Não informada'}"),
-            const SizedBox(height: 12),
-            const Text(
-              "Telefone:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            Text(
-              "${prestador['telefone']}",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "Preço Médio:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            Text("R\$ ${prestador['faixaPrecos']?.toString() ?? 'A combinar'}"),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Ligue ou chame no WhatsApp usando o número acima.',
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.phone, color: Colors.white, size: 18),
-            label: const Text(
-              'Contatar',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

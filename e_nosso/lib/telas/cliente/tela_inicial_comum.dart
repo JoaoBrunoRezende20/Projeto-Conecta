@@ -5,7 +5,6 @@ import '../auth/tela_tipo_usuario.dart';
 
 // Imports das categorias
 import '../categorias/tela_filtros_comidas.dart';
-import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
 

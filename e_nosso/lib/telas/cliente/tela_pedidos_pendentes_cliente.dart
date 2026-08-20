@@ -42,18 +42,16 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
             onPressed: () async {
               try {
                 await _pedidoRepository.atualizarStatusPedido(id, 'cancelado');
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Pedido cancelado com sucesso.")),
-                  );
-                }
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Pedido cancelado com sucesso.")),
+                );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Erro ao cancelar: $e")),
-                  );
-                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Erro ao cancelar: $e")),
+                );
               }
             },
             child: const Text("Sim, Cancelar", style: TextStyle(color: Colors.white)),

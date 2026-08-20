@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 // IMPORTANTE: Importando o seu arquivo externo de carrinho
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
 import '../../utils/carrinho_util.dart';
 import '../../repositories/produto_repository.dart';
-import '../../repositories/pedido_repository.dart';
+
 
 // --- VARIÁVEIS GLOBAIS DE CARRINHO ---
 // Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
@@ -33,7 +32,6 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   final ProdutoRepository _produtoRepository = ProdutoRepository();
-  final PedidoRepository _pedidoRepository = PedidoRepository();
 
   @override
   void initState() {
@@ -204,7 +202,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    (descricao == null || descricao.trim().isEmpty)
+                    descricao.trim().isEmpty
                         ? "Descrição do produto"
                         : descricao,
                     style: TextStyle(
