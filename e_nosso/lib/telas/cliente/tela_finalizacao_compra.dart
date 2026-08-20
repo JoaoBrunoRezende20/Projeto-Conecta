@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'tela_produtos_disponiveis.dart';
-import '../../utils/carrinho_util.dart';
+import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
 
@@ -396,7 +395,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         children: [
           Radio<String>(
             value: value,
+            // ignore: deprecated_member_use
             groupValue: groupValue,
+            // ignore: deprecated_member_use
             onChanged: onChanged,
             activeColor: Colors.grey[800],
           ),
@@ -487,7 +488,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       final clienteId =
           FirebaseAuth.instance.currentUser?.uid ?? 'cliente_desconhecido';
       final itensCopia = <String, dynamic>{};
-      carrinhoGlobal.forEach((key, value) {
+      final carrinhoService = CarrinhoService();
+      carrinhoService.itens.forEach((key, value) {
         itensCopia[key] = Map<String, dynamic>.from(value);
       });
 
@@ -497,7 +499,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
       final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
-        'lojistaId': lojaIdDoCarrinho ?? 'desconhecido',
+        'lojistaId': carrinhoService.lojaId ?? 'desconhecido',
         'itens': itensCopia,
         'valorTotal': _totalGeral,
         'status': 'pendente',
@@ -526,9 +528,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         await _produtoRepository.reduzirEstoqueProduto(produtoId, quantidade);
       }
 
-      carrinhoGlobal.clear();
-      lojaIdDoCarrinho = null;
-      await CarrinhoUtil.limparCarrinho();
+      await carrinhoService.limparCarrinho();
 
       if (mounted) Navigator.pop(context);
 

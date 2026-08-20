@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 // Importe as telas das categorias que você já criou
 // Se ainda não criou alguma, comente o import correspondente
 import '../categorias/tela_filtros_comidas.dart';
-import '../categorias/categoria_comidas.dart';
 import '../categorias/categoria_servicos.dart';
 import '../categorias/categoria_outros.dart';
 

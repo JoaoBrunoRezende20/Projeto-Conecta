@@ -1,17 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-// IMPORTANTE: Importando o seu arquivo externo de carrinho
+import '../../services/carrinho_service.dart';
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
-import '../../utils/carrinho_util.dart';
 import '../../repositories/produto_repository.dart';
-import '../../repositories/pedido_repository.dart';
-
-// --- VARIÁVEIS GLOBAIS DE CARRINHO ---
-// Ficam fora da classe para sobreviverem quando o utilizador sai do ecrã
-final Map<String, Map<String, dynamic>> carrinhoGlobal = {};
-String? lojaIdDoCarrinho;
 
 // --- TELA DE PRODUTOS DISPONÍVEIS ---
 class TelaProdutosDisponiveis extends StatefulWidget {
@@ -33,91 +25,69 @@ class TelaProdutosDisponiveis extends StatefulWidget {
 
 class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   final ProdutoRepository _produtoRepository = ProdutoRepository();
-  final PedidoRepository _pedidoRepository = PedidoRepository();
+  final CarrinhoService _carrinhoService = CarrinhoService();
 
   @override
   void initState() {
     super.initState();
-    _carregarCarrinhoSalvo();
-  }
-
-  Future<void> _carregarCarrinhoSalvo() async {
-    final dadosSalvos = await CarrinhoUtil.carregarCarrinho();
-
-    final lojaSalva = dadosSalvos['lojaId'] as String?;
-    final carrinhoSalvo =
-        dadosSalvos['carrinho'] as Map<String, Map<String, dynamic>>?;
-
-    if (carrinhoSalvo != null && carrinhoSalvo.isNotEmpty) {
-      if (lojaSalva == widget.lojaId) {
-        // Carrinho salvo pertence a esta loja — restaurar
-        carrinhoGlobal.clear();
-        carrinhoGlobal.addAll(carrinhoSalvo);
-        lojaIdDoCarrinho = lojaSalva;
-      } else {
-        // Carrinho salvo pertence a outra loja — manter em memória mas
-        // definir lojaIdDoCarrinho para a loja salva para não perder dados
-        carrinhoGlobal.clear();
-        carrinhoGlobal.addAll(carrinhoSalvo);
-        lojaIdDoCarrinho = lojaSalva;
-      }
-    } else {
-      lojaIdDoCarrinho = widget.lojaId;
-    }
-
-    // Atualiza a tela se necessário
-    if (mounted) setState(() {});
+    // Garante que o serviço do carrinho foi inicializado com dados locais
+    _carrinhoService.inicializar();
   }
 
   double get _totalCarrinho {
     double total = 0.0;
-    carrinhoGlobal.forEach((id, dados) {
-      total += (dados['preco'] ?? 0) * dados['quantidade'];
+    _carrinhoService.itens.forEach((id, dados) {
+      total += ((dados['preco'] ?? 0) as num).toDouble() * ((dados['quantidade'] ?? 0) as num).toInt();
     });
     return total;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          children: [
-            Text(
-              widget.storeName,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+    return ListenableBuilder(
+      listenable: _carrinhoService,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: AppBar(
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            title: Column(
               children: [
-                const Icon(Icons.star, color: Colors.amber, size: 16),
-                const SizedBox(width: 4),
                 Text(
-                  widget.rating.toStringAsFixed(1),
-                  style: const TextStyle(color: Colors.black, fontSize: 14),
+                  widget.storeName,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.rating.toStringAsFixed(1),
+                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-      body: _buildListaProdutos(),
-      bottomNavigationBar:
-          (carrinhoGlobal.isNotEmpty && lojaIdDoCarrinho == widget.lojaId)
-          ? _buildBarraCarrinho()
-          : null,
+          ),
+          body: _buildListaProdutos(),
+          bottomNavigationBar:
+              (_carrinhoService.isNotEmpty && _carrinhoService.lojaId == widget.lojaId)
+              ? _buildBarraCarrinho()
+              : null,
+        );
+      }
     );
   }
 
@@ -174,31 +144,29 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                TelaDetalhesProduto(produto: {...produto, 'id': id}),
+                TelaDetalhesProduto(produto: {...produto, 'id': id}, lojaId: widget.lojaId),
           ),
-        ).then((_) => setState(() {})); // Atualiza a lista ao voltar
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F2), // Fundo cinza claro como na imagem
+          color: const Color(0xFFF2F2F2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagem placeholder
             Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: const Color(0xFFDFDFDF), // Cinza do box de imagem
+                color: const Color(0xFFDFDFDF),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             const SizedBox(width: 12),
-            // Informações do produto
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +181,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    (descricao == null || descricao.trim().isEmpty)
+                    descricao.trim().isEmpty
                         ? "Descrição do produto"
                         : descricao,
                     style: TextStyle(
@@ -258,7 +226,6 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
               ),
             ),
             const SizedBox(width: 8),
-            // Preço
             Text(
               "R\$${preco.toStringAsFixed(2).replaceAll('.', ',')}",
               style: const TextStyle(
@@ -320,14 +287,10 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => TelaRevisaoCarrinho(
-                      itens: carrinhoGlobal, // Passamos o carrinho global
                       lojaName: widget.storeName,
                     ),
                   ),
-                ).then((_) {
-                  // Atualiza a tela quando o utilizador volta do carrinho
-                  setState(() {});
-                });
+                );
               },
               child: const Text(
                 "Ver Carrinho",

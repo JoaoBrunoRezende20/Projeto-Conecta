@@ -313,49 +313,5 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     );
   }
 
-  void _confirmarCancelamento(String id) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text("Confirmar Cancelamento"),
-        content: const Text("Tem certeza que deseja cancelar este pedido?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Voltar"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              try {
-                await _pedidoRepository.atualizarStatusPedido(id, 'Cancelado');
 
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Solicitação cancelada com sucesso."),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Erro ao cancelar: $e")),
-                  );
-                }
-              }
-            },
-            child: const Text(
-              "Sim, Cancelar",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
