@@ -4,7 +4,6 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white)
 
 ---
 
@@ -16,7 +15,7 @@ De forma simples e intuitiva, o aplicativo permite que você encontre o que prec
 
 **O grande diferencial do Conecta é o foco na comunidade e na facilidade de contato**, oferecendo atalhos rápidos para comunicação direta via WhatsApp e gestão de pedidos em tempo real.
 
-### 👥 Para quem é o aplicativo? (Tipos de Perfis)
+###  Para quem é o aplicativo? (Tipos de Perfis)
 O sistema adapta sua interface e suas funcionalidades dependendo de quem está fazendo o login:
 1. **Consumidores:** Pessoas em busca de produtos frescos, itens de supermercado, ou profissionais para serviços variados. Podem montar carrinhos de compra e realizar agendamentos.
 2. **Lojistas e Quitandas:** Comerciantes que desejam digitalizar seu negócio. Têm acesso a um painel de gestão de produtos, controle de estoque, definição de categorias (CNAE) e recebimento de pedidos.
@@ -85,7 +84,7 @@ O código fonte está localizado dentro da pasta `e_nosso/lib/`, seguindo uma se
 
 ### 1. Pré-requisitos
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) versão `>= 3.9.0` instalado e configurado no `PATH`.
-- **Android Studio** (para rodar o emulador Android) ou **Xcode** (para simulador iOS).
+- **Android Studio** (para rodar o emulador Android).
 - Conta no Firebase configurada (o arquivo `google-services.json` deve estar em `android/app/`).
 
 ### 2. Passo a Passo para Desenvolvimento
