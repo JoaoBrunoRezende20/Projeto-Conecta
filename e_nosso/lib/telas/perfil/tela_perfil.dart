@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../repositories/auth_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
@@ -17,11 +16,16 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
+  final _emailController = TextEditingController();
   final _areaAtuacaoController = TextEditingController();
   final _documentoController = TextEditingController();
   final _telefoneController = TextEditingController();
-  final _descricaoController = TextEditingController(); // Novo campo
+  final _descricaoController = TextEditingController();
 
+  final _ruaController = TextEditingController();
+  final _numeroController = TextEditingController();
+  final _complementoController = TextEditingController();
+  final _bairroController = TextEditingController();
 
   final Map<String, String> _horariosSemanais = {};
   final List<String> _diasSemana = [
@@ -63,10 +67,15 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   @override
   void dispose() {
     _nomeController.dispose();
+    _emailController.dispose();
     _areaAtuacaoController.dispose();
     _documentoController.dispose();
     _telefoneController.dispose();
     _descricaoController.dispose();
+    _ruaController.dispose();
+    _numeroController.dispose();
+    _complementoController.dispose();
+    _bairroController.dispose();
 
     super.dispose();
   }
@@ -78,13 +87,16 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
     try {
       final colecao = await _usuarioRepository.descobrirPerfilUsuario(_userId!);
-      
+
       if (colecao != null) {
         _colecaoUsuario = colecao;
         _isPrestador = colecao == 'prestadorServicos';
-        
+
         final doc = await _usuarioRepository.getUsuario(_userId!, colecao);
         final data = doc.data() as Map<String, dynamic>;
+
+        _emailController.text =
+            data['email'] ?? data['emailComercial'] ?? user.email ?? '';
 
         if (_colecaoUsuario == 'lojistas') {
           _nomeController.text = data['razaoSocial'] ?? '';
@@ -97,12 +109,26 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           _telefoneController.text = data['telefone'] ?? '';
         }
 
-        if (_isPrestador) {
-          _areaAtuacaoController.text = data['areaAtuacao'] ?? '';
-          _descricaoController.text = data['descricaoServicos'] ?? data['descricao'] ?? '';
-          _parseDisponibilidade(data['disponibilidadeAtendimento']);
+        // Carrega o endereço
+        final endereco = data['endereco'] as Map<String, dynamic>?;
+        if (endereco != null) {
+          _ruaController.text = endereco['rua'] ?? '';
+          _numeroController.text = endereco['numero'] ?? '';
+          _complementoController.text = endereco['complemento'] ?? '';
+          _bairroController.text = endereco['bairro'] ?? '';
+        } else {
+          _ruaController.text = data['rua'] ?? '';
+          _numeroController.text = data['numero'] ?? '';
+          _complementoController.text = data['complemento'] ?? '';
+          _bairroController.text = data['bairro'] ?? '';
         }
 
+        if (_isPrestador) {
+          _areaAtuacaoController.text = data['areaAtuacao'] ?? '';
+          _descricaoController.text =
+              data['descricaoServicos'] ?? data['descricao'] ?? '';
+          _parseDisponibilidade(data['disponibilidadeAtendimento']);
+        }
       }
     } catch (e) {
       debugPrint("Erro ao carregar perfil: $e");
@@ -189,19 +215,32 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     try {
       final Map<String, dynamic> dadosAtualizados = {};
 
-      // Salva o nome na chave correta dependendo da coleção
+      final enderecoMap = {
+        'rua': _ruaController.text.trim(),
+        'numero': _numeroController.text.trim(),
+        'bairro': _bairroController.text.trim(),
+        'complemento': _complementoController.text.trim(),
+      };
+
+      // Salva os dados dependendo da coleção
       if (_colecaoUsuario == 'lojistas') {
         dadosAtualizados['razaoSocial'] = _nomeController.text.trim();
         dadosAtualizados['cnpj'] = _documentoController.text.trim();
         dadosAtualizados['telefoneComercial'] = _telefoneController.text.trim();
+        dadosAtualizados['emailComercial'] = _emailController.text.trim();
+        dadosAtualizados['endereco'] = enderecoMap;
       } else if (_colecaoUsuario == 'usuarioComum') {
         dadosAtualizados['nomeCompleto'] = _nomeController.text.trim();
         dadosAtualizados['cpf'] = _documentoController.text.trim();
         dadosAtualizados['telefone'] = _telefoneController.text.trim();
+        dadosAtualizados['email'] = _emailController.text.trim();
+        dadosAtualizados['endereco'] = enderecoMap;
       } else {
         dadosAtualizados['nome'] = _nomeController.text.trim();
         dadosAtualizados['cpf'] = _documentoController.text.trim();
         dadosAtualizados['telefone'] = _telefoneController.text.trim();
+        dadosAtualizados['email'] = _emailController.text.trim();
+        dadosAtualizados['endereco'] = enderecoMap;
       }
 
       if (_isPrestador) {
@@ -211,9 +250,22 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             _formatarDisponibilidadeParaSalvar();
       }
 
-
       await _usuarioRepository.salvarDadosUsuario(
-          _userId!, _colecaoUsuario, dadosAtualizados);
+        _userId!,
+        _colecaoUsuario,
+        dadosAtualizados,
+      );
+
+      // Tenta sincronizar o e-mail no FirebaseAuth se alterado
+      final user = _authRepository.usuarioAtual;
+      final novoEmail = _emailController.text.trim();
+      if (user != null && novoEmail.isNotEmpty && novoEmail != user.email) {
+        try {
+          await user.verifyBeforeUpdateEmail(novoEmail);
+        } catch (e) {
+          debugPrint("Aviso ao atualizar e-mail no Auth: $e");
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -266,6 +318,29 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                           value == null || value.trim().isEmpty
                           ? "Campo obrigatório"
                           : null,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "E-mail (Gmail):",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "seuemail@gmail.com",
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Campo obrigatório";
+                        }
+                        if (!value.contains('@') || !value.contains('.')) {
+                          return "E-mail inválido";
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -327,7 +402,67 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       ),
                       const SizedBox(height: 16),
                     ],
+                    const Divider(height: 32),
+                    const Text(
+                      "Endereço",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 16),
+                    const Text(
+                      "Rua / Avenida:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _ruaController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Nome da rua ou avenida",
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Número:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _numeroController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Número",
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Bairro:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _bairroController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Digite seu bairro",
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Complemento (Opcional):",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _complementoController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Apto, Bloco, etc.",
+                      ),
+                    ),
+                    const Divider(height: 32),
                     if (_isPrestador) ...[
                       const Text(
                         "Área de atuação:",
@@ -356,7 +491,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         maxLines: 4,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: "Descreva seus serviços, sua experiência, etc.",
+                          hintText:
+                              "Descreva seus serviços, sua experiência, etc.",
                         ),
                         validator: (value) =>
                             value == null || value.trim().isEmpty

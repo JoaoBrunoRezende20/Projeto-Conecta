@@ -692,6 +692,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
               'cpf': _cpfController.text.trim(),
               'email': _emailController.text.trim(),
               'telefone': _telefoneController.text.trim(),
+              'endereco': {
+                'rua': _ruaController.text.trim(),
+                'numero': _numeroController.text.trim(),
+                'bairro': _bairroController.text.trim(),
+                'complemento': _complementoController.text.trim(),
+              },
               'status': true,
               'tipo': 'comum',
               'dataCriacao': FieldValue.serverTimestamp(),
@@ -1133,7 +1139,44 @@ class _TelaCadastroState extends State<TelaCadastro> {
         ),
       ];
     } else {
-      return [];
+      return [
+        const SizedBox(height: 24),
+        const Text(
+          'Endereço',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _ruaController,
+          decoration: const InputDecoration(labelText: 'Rua / Avenida'),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _numeroController,
+          decoration: const InputDecoration(
+            labelText: 'Número',
+            hintText: 'Número',
+          ),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _bairroController,
+          decoration: const InputDecoration(
+            labelText: 'Bairro',
+            hintText: 'Digite seu bairro',
+          ),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _complementoController,
+          decoration: const InputDecoration(
+            labelText: 'Complemento (Opcional)',
+          ),
+        ),
+      ];
     }
   }
 
