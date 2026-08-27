@@ -5,7 +5,7 @@ import '../repositories/usuario_repository.dart';
 
 // Ajuste os imports abaixo de acordo com o caminho das suas telas
 import '../telas/auth/tela_tipo_usuario.dart';
-import '../telas/cliente/tela_inicial_comum.dart';
+import '../telas/cliente/tela_base_cliente.dart';
 import '../telas/lojista/tela_inicial_lojista.dart';
 import '../telas/prestador/tela_inicial_prestador_servico.dart';
 import '../telas/admin/tela_inicial_administrador.dart';
@@ -55,19 +55,18 @@ class AuthWrapper extends StatelessWidget {
   // --- LÓGICA DE VERIFICAÇÃO DE PERFIL ---
   Future<Widget> _redirecionarPorPerfil(String uid) async {
     try {
-      final colecao = await _usuarioRepository.descobrirPerfilUsuario(uid);
+      final perfil = await _usuarioRepository.descobrirPerfilUsuario(uid);
       
-      switch (colecao) {
-        case 'admins':
-          return const TelaInicialAdministrador();
-        case 'lojistas':
-          return const TelaInicialLojista();
-        case 'prestadorServicos':
-          return const TelaInicialPrestador();
-        case 'usuarioComum':
-          return const TelaInicialComum();
-        default:
-          return const TelaTipoUsuario();
+      if (perfil == 'admins') {
+        return const TelaInicialAdministrador();
+      } else if (perfil == 'lojistas') {
+        return const TelaInicialLojista();
+      } else if (perfil == 'prestadorServicos') {
+        return const TelaInicialPrestador();
+      } else if (perfil == 'usuarioComum') {
+        return const TelaBaseCliente();
+      } else {
+        return const TelaTipoUsuario();
       }
     } catch (e) {
       debugPrint('Erro ao redirecionar: $e');

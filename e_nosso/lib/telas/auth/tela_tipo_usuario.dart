@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_login.dart';
-import '../cliente/tela_inicial_comum.dart';
+import '../cliente/tela_base_cliente.dart';
 import '../suporte/tela_faq.dart';
 
 class TelaTipoUsuario extends StatelessWidget {
@@ -84,11 +85,14 @@ class TelaTipoUsuario extends StatelessWidget {
               // Botão Visitante
               ElevatedButton.icon(
                 style: estiloBotao,
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TelaInicialComum()),
-                  );
+                onPressed: () async {
+                  await FirebaseAuth.instance.signInAnonymously();
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TelaBaseCliente()),
+                    );
+                  }
                 },
                 icon: const Icon(
                   Icons.visibility,

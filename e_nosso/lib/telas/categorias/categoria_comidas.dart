@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
+import '../../repositories/usuario_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CategoriaComidas extends StatefulWidget {
   final String? categoriaSelecionada;
@@ -20,6 +22,8 @@ class CategoriaComidas extends StatefulWidget {
 class _CategoriaComidasState extends State<CategoriaComidas> {
   String pesquisa = "";
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
+  final String? _uid = FirebaseAuth.instance.currentUser?.uid;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +104,38 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
           return const Center(child: Text("Nenhuma loja encontrada."));
         }
 
+        // Se o usuário estiver logado, precisamos escutar os favoritos para atualizar as estrelas
+        if (_uid != null) {
+          return StreamBuilder<DocumentSnapshot>(
+            stream: _usuarioRepository.getUsuarioStream(_uid, 'usuarioComum'),
+            builder: (context, userSnapshot) {
+              final userData = userSnapshot.data?.data() as Map<String, dynamic>?;
+              final List<String> lojasFavoritas = List<String>.from(userData?['lojasFavoritas'] ?? []);
+
+              return ListView.builder(
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
+                  final descricao = (data['descricao'] ?? 'Sem descrição').toString();
+                  final lojaId = docs[index].id;
+
+                  return _buildLojaCard(
+                    context: context,
+                    lojaId: lojaId,
+                    nome: nome,
+                    categoriaTexto: categoria ?? "Loja",
+                    descricaoExtra: descricao,
+                    avaliacao: 5.0,
+                    isFavorita: lojasFavoritas.contains(lojaId),
+                  );
+                },
+              );
+            },
+          );
+        }
+
+        // Se for visitante
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, index) {
@@ -114,6 +150,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
               categoriaTexto: categoria ?? "Loja",
               descricaoExtra: descricao,
               avaliacao: 5.0,
+              isFavorita: false,
             );
           },
         );
@@ -128,6 +165,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
     required String categoriaTexto,
     required String descricaoExtra,
     required double avaliacao,
+    required bool isFavorita,
   }) {
     return GestureDetector(
       onTap: () {
@@ -173,7 +211,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                     ),
                   ),
                   Text("⭐ $avaliacao  •  $categoriaTexto"),
-                  Text("50–60 min  •  R\$ 5,00"),
+                  const Text("50–60 min  •  R\$ 5,00"),
                   Text(
                     descricaoExtra,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
@@ -182,7 +220,25 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
               ),
             ),
 
-            const Icon(Icons.arrow_forward_ios, size: 18),
+            IconButton(
+              icon: Icon(
+                isFavorita ? Icons.star : Icons.star_border,
+                color: isFavorita ? Colors.amber : Colors.grey,
+              ),
+              onPressed: () {
+                if (_uid != null) {
+                  if (isFavorita) {
+                    _usuarioRepository.removerLojaFavorita(_uid, lojaId);
+                  } else {
+                    _usuarioRepository.adicionarLojaFavorita(_uid, lojaId);
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Faça login para favoritar lojas.")),
+                  );
+                }
+              },
+            ),
           ],
         ),
       ),

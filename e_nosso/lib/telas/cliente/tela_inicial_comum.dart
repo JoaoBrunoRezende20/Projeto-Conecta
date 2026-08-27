@@ -6,7 +6,6 @@ import '../auth/tela_tipo_usuario.dart';
 // Imports das categorias
 import '../categorias/tela_filtros_comidas.dart';
 import '../categorias/categoria_servicos.dart';
-import '../categorias/categoria_outros.dart';
 
 class TelaInicialComum extends StatefulWidget {
   const TelaInicialComum({super.key});
@@ -143,43 +142,6 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOutrosButton({required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.2),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add, size: 24, color: Colors.black87),
-            SizedBox(width: 8),
-            Text(
-              'Outros',
-              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
