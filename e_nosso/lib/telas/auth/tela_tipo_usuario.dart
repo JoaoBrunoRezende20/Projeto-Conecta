@@ -86,12 +86,23 @@ class TelaTipoUsuario extends StatelessWidget {
               ElevatedButton.icon(
                 style: estiloBotao,
                 onPressed: () async {
-                  await FirebaseAuth.instance.signInAnonymously();
-                  if (context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TelaBaseCliente()),
-                    );
+                  try {
+                    await FirebaseAuth.instance.signInAnonymously();
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const TelaBaseCliente()),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro ao entrar como visitante. Verifique se o login Anônimo está ativado no Firebase. Erro: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
                 icon: const Icon(

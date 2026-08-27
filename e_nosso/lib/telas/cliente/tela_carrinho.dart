@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/tela_login.dart';
+import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
 import '../../services/carrinho_service.dart';
 
@@ -61,30 +62,9 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
             elevation: 0,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black),
-              onPressed: () {}, // Ação do menu se necessário
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 15.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 1.5),
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                      size: 18,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ),
-            ],
           ),
           body: _carrinhoService.isEmpty
               ? const Center(child: Text("Sua sacola está vazia"))
@@ -292,11 +272,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text("Autenticação necessária"),
-                      content: const Text("Você precisa fazer login para finalizar o pedido."),
+                      content: const Text("Você precisa ter uma conta para finalizar o pedido. Deseja realizar o cadastro?"),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text("Voltar"),
+                          child: const Text("Não"),
                         ),
                         ElevatedButton(
                           onPressed: () {
@@ -304,7 +284,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const TelaLogin(
+                                builder: (context) => const TelaCadastro(
                                   tipoUsuario: 'comum',
                                   returnOnSuccess: true,
                                 ),
@@ -320,7 +300,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                               }
                             });
                           },
-                          child: const Text("Fazer Login"),
+                          child: const Text("Sim, Cadastrar"),
                         ),
                       ],
                     ),
