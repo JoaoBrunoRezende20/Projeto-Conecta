@@ -25,36 +25,15 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.menu, color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           "Sabor da roça", // Nome da Loja
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [
-          // Ícone de voltar circular à direita (como no Figma)
-          Padding(
-            padding: const EdgeInsets.only(right: 15.0),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black, width: 1.5),
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.black,
-                  size: 18,
-                ),
-                padding: const EdgeInsets.only(
-                  left: 6,
-                ), // Ajuste para centralizar
-                constraints: const BoxConstraints(),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),

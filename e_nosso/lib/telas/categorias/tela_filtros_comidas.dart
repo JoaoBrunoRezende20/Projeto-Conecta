@@ -67,18 +67,11 @@ class TelaFiltrosComidas extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            // Se houver menu lateral, pode abrir aqui, ou trocar por botão de voltar se preferir
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Center(
         child: ConstrainedBox(

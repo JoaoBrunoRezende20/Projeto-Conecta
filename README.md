@@ -18,8 +18,8 @@ De forma simples e intuitiva, o aplicativo permite que você encontre o que prec
 ###  Para quem é o aplicativo? (Tipos de Perfis)
 O sistema adapta sua interface e suas funcionalidades dependendo de quem está fazendo o login:
 1. **Consumidores:** Pessoas em busca de produtos frescos, itens de supermercado, ou profissionais para serviços variados. Podem montar carrinhos de compra e realizar agendamentos.
-2. **Lojistas e Quitandas:** Comerciantes que desejam digitalizar seu negócio. Têm acesso a um painel de gestão de produtos, controle de estoque, definição de categorias (CNAE) e recebimento de pedidos.
-3. **Prestadores de Serviço:** Profissionais liberais (como eletricistas, diaristas, pedreiros) que oferecem seus serviços, definem sua disponibilidade e gerenciam agendamentos e histórico de clientes.
+2. **Lojistas:** Comerciantes que desejam digitalizar seu negócio. Têm acesso a um painel de gestão de produtos, controle de estoque, definição de categorias (CNAE) e recebimento de pedidos.
+3. **Prestadores de Serviço:** Profissionais autônomos, tais como eletricistas, diaristas e pedreiros, disponibilizam seus serviços com perfis que incluem fotografia e descrição detalhada, além de gerenciarem agendamentos e o histórico de seus clientes. Através de suas informações de contato, o consumidor pode entrar em contato direto com o prestador de serviço para combinar detalhes e valores.
 4. **Administradores:** Equipe responsável pela moderação da plataforma.
 
 ---
@@ -123,3 +123,7 @@ Projeto acadêmico e de inovação desenvolvido por:
 * **João Bruno Faria Rezende**
 * **Laís de Paula Oliveira**
 * **Rafael Gonçalves Oliveira**
+* **Luiz Felipe Gonçalves Pereira**
+* **Marcus Vinícius Monteiro Macedo Silva**
+* **Markenil Gomes Dos Santos**
+* **Rayssa Mendes Da Silva**
