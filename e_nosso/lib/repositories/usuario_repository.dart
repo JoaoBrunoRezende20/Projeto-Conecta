@@ -64,4 +64,23 @@ class UsuarioRepository {
         .doc(idNotificacao)
         .update({'lida': true});
   }
+
+  /// Adiciona uma loja aos favoritos do usuário
+  Future<void> adicionarLojaFavorita(String uid, String lojaId) async {
+    await _firestore.collection('usuarioComum').doc(uid).update({
+      'lojasFavoritas': FieldValue.arrayUnion([lojaId])
+    }).catchError((error) {
+      // Se o campo ainda não existir ou o doc não estiver formatado corretamente
+      return _firestore.collection('usuarioComum').doc(uid).set({
+        'lojasFavoritas': [lojaId]
+      }, SetOptions(merge: true));
+    });
+  }
+
+  /// Remove uma loja dos favoritos do usuário
+  Future<void> removerLojaFavorita(String uid, String lojaId) async {
+    await _firestore.collection('usuarioComum').doc(uid).update({
+      'lojasFavoritas': FieldValue.arrayRemove([lojaId])
+    }).catchError((error) => null);
+  }
 }

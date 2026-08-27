@@ -35,6 +35,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // NOVO: Estado para controlar a visibilidade da senha
   bool _isPasswordVisible = false;
 
+  // NOVO: Estado LGPD
+  bool _aceitouLGPD = false;
+
   // --- VARIÁVEIS PARA OS DROPDOWNS E SELETORES ---
   String? _categoriaSelecionadaCnae;
   String? _estadoSelecionado;
@@ -455,6 +458,20 @@ class _TelaCadastroState extends State<TelaCadastro> {
       return;
     }
 
+    if (!_aceitouLGPD) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Você deve aceitar os Termos de Uso e Política de Privacidade (LGPD) para continuar.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     if (widget.tipoUsuario == 'prestador') {
       if (_categoriaPrestadorSelecionada == null) {
         if (mounted) {
@@ -690,6 +707,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
               'cpf': _cpfController.text.trim(),
               'email': _emailController.text.trim(),
               'telefone': _telefoneController.text.trim(),
+              'endereco': {
+                'rua': _ruaController.text.trim(),
+                'numero': _numeroController.text.trim(),
+                'bairro': _bairroController.text.trim(),
+                'complemento': _complementoController.text.trim(),
+              },
               'status': true,
               'tipo': 'comum',
               'dataCriacao': FieldValue.serverTimestamp(),
@@ -1131,8 +1154,76 @@ class _TelaCadastroState extends State<TelaCadastro> {
         ),
       ];
     } else {
-      return [];
+      return [
+        const SizedBox(height: 24),
+        const Text(
+          'Endereço',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _ruaController,
+          decoration: const InputDecoration(labelText: 'Rua / Avenida'),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _numeroController,
+          decoration: const InputDecoration(
+            labelText: 'Número',
+            hintText: 'Número',
+          ),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _bairroController,
+          decoration: const InputDecoration(
+            labelText: 'Bairro',
+            hintText: 'Digite seu bairro',
+          ),
+          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _complementoController,
+          decoration: const InputDecoration(
+            labelText: 'Complemento (Opcional)',
+          ),
+        ),
+      ];
     }
+  }
+
+  void _mostrarTermosLGPD() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Termos de Uso e Política de Privacidade'),
+          content: const SingleChildScrollView(
+            child: Text(
+              'Em conformidade com a Lei Geral de Proteção de Dados (LGPD) - Lei nº 13.709/2018, '
+              'informamos que os dados pessoais coletados neste formulário serão utilizados '
+              'exclusivamente para a prestação dos serviços oferecidos por este aplicativo, '
+              'garantindo a sua segurança e privacidade.\n\n'
+              'Ao aceitar estes termos, você concorda com a coleta, armazenamento e tratamento '
+              'dos seus dados pessoais para os fins descritos, sendo vedado o seu compartilhamento '
+              'com terceiros sem a sua prévia autorização, exceto por determinação legal.\n\n'
+              'Você tem o direito de solicitar a qualquer momento o acesso, correção ou exclusão '
+              'dos seus dados em nossa plataforma.',
+              textAlign: TextAlign.justify,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1254,7 +1345,40 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                 ..._buildSpecificFields(),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                // --- TERMOS DE USO / LGPD ---
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _aceitouLGPD,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _aceitouLGPD = value ?? false;
+                        });
+                      },
+                      activeColor: Colors.deepPurple,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _mostrarTermosLGPD();
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.only(top: 12.0),
+                          child: Text(
+                            'Li e concordo com os Termos de Uso e Política de Privacidade (LGPD).',
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: _isLoading
