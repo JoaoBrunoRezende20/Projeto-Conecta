@@ -1,4 +1,4 @@
-import 'package:e_nosso/telas/perfil/tela_perfil.dart';
+﻿import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -271,12 +271,6 @@ class MenuLateral extends StatelessWidget {
               },
             ),
 
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text("Ajuda"),
-              onTap: () => _mostrarAvisoDesenvolvimento(context),
-            ),
-
             // 4. BOTÃO DE SAIR/ENTRAR (RODAPÉ)
             const Divider(height: 1),
             ListTile(
@@ -311,3 +305,4 @@ class MenuLateral extends StatelessWidget {
     );
   }
 }
+
