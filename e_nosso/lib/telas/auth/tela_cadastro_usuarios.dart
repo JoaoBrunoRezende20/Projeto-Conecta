@@ -35,6 +35,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // NOVO: Estado para controlar a visibilidade da senha
   bool _isPasswordVisible = false;
 
+  // NOVO: Estado LGPD
+  bool _aceitouLGPD = false;
+
   // --- VARIÁVEIS PARA OS DROPDOWNS E SELETORES ---
   String? _categoriaSelecionadaCnae;
   String? _estadoSelecionado;
@@ -447,6 +450,20 @@ class _TelaCadastroState extends State<TelaCadastro> {
           const SnackBar(
             content: Text(
               'Sua senha é muito fraca. Verifique os requisitos em vermelho.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!_aceitouLGPD) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Você deve aceitar os Termos de Uso e Política de Privacidade (LGPD) para continuar.',
             ),
             backgroundColor: Colors.red,
           ),
@@ -1120,6 +1137,37 @@ class _TelaCadastroState extends State<TelaCadastro> {
     }
   }
 
+  void _mostrarTermosLGPD() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Termos de Uso e Política de Privacidade'),
+          content: const SingleChildScrollView(
+            child: Text(
+              'Em conformidade com a Lei Geral de Proteção de Dados (LGPD) - Lei nº 13.709/2018, '
+              'informamos que os dados pessoais coletados neste formulário serão utilizados '
+              'exclusivamente para a prestação dos serviços oferecidos por este aplicativo, '
+              'garantindo a sua segurança e privacidade.\n\n'
+              'Ao aceitar estes termos, você concorda com a coleta, armazenamento e tratamento '
+              'dos seus dados pessoais para os fins descritos, sendo vedado o seu compartilhamento '
+              'com terceiros sem a sua prévia autorização, exceto por determinação legal.\n\n'
+              'Você tem o direito de solicitar a qualquer momento o acesso, correção ou exclusão '
+              'dos seus dados em nossa plataforma.',
+              textAlign: TextAlign.justify,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1239,7 +1287,40 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                 ..._buildSpecificFields(),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                // --- TERMOS DE USO / LGPD ---
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _aceitouLGPD,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _aceitouLGPD = value ?? false;
+                        });
+                      },
+                      activeColor: Colors.deepPurple,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _mostrarTermosLGPD();
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.only(top: 12.0),
+                          child: Text(
+                            'Li e concordo com os Termos de Uso e Política de Privacidade (LGPD).',
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: _isLoading
