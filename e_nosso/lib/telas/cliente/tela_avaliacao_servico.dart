@@ -37,7 +37,10 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.menu, color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Avaliar serviço',
           style: TextStyle(
@@ -47,26 +50,6 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 15.0),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black, width: 1.5),
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_rounded,
-                  color: Colors.black,
-                  size: 18,
-                ),
-                padding: const EdgeInsets.only(left: 6),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ],
       ),
       body: Stack(
         children: [
