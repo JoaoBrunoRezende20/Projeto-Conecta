@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/usuario_repository.dart';
@@ -28,6 +28,11 @@ class AuthWrapper extends StatelessWidget {
 
         // 2. Se o utilizador está logado, vamos descobrir o seu perfil no Firestore
         if (snapshot.hasData && snapshot.data != null) {
+          final user = snapshot.data!;
+          // Se for visitante (anônimo), vai direto para a base do cliente
+          if (user.isAnonymous) {
+            return const TelaBaseCliente();
+          }
           return FutureBuilder<Widget>(
             // Envia o UID do utilizador logado para a função de verificação
             future: _redirecionarPorPerfil(snapshot.data!.uid),

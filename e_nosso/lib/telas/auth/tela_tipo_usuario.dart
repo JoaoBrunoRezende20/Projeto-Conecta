@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_login.dart';
 import '../cliente/tela_base_cliente.dart';
@@ -88,12 +88,8 @@ class TelaTipoUsuario extends StatelessWidget {
                 onPressed: () async {
                   try {
                     await FirebaseAuth.instance.signInAnonymously();
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TelaBaseCliente()),
-                      );
-                    }
+                      // Removido o Navigator.push porque o AuthWrapper agora escuta o login
+                      // anônimo e redirecionar automaticamente limpando a arvore correta.
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,3 +145,4 @@ GestureDetector(
     );
   }
 }
+

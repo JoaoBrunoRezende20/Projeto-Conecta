@@ -1,6 +1,7 @@
 ﻿import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
 import 'package:flutter/material.dart';
+import '../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../telas/suporte/tela_faq.dart';
 import '../telas/perfil/tela_notificacoes.dart';
@@ -72,7 +73,7 @@ class MenuLateral extends StatelessWidget {
                           if (context.mounted) {
                             Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                               MaterialPageRoute(
-                                builder: (_) => const TelaTipoUsuario(),
+                                builder: (_) => AuthWrapper(),
                               ),
                               (route) => false,
                             );
@@ -289,7 +290,7 @@ class MenuLateral extends StatelessWidget {
                 if (isVisitante) {
                     FirebaseAuth.instance.signOut();
                     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
+                      MaterialPageRoute(builder: (_) => AuthWrapper()),
                       (route) => false,
                     );
                   } else {
@@ -304,6 +305,8 @@ class MenuLateral extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
