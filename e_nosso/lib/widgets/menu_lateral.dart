@@ -69,15 +69,14 @@ class MenuLateral extends StatelessWidget {
                       ),
                       onPressed: () async {
                         await FirebaseAuth.instance.signOut();
-                        if (context.mounted) {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TelaTipoUsuario(),
-                            ),
-                            (route) => false,
-                          );
-                        }
+                          if (context.mounted) {
+                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const TelaTipoUsuario(),
+                              ),
+                              (route) => false,
+                            );
+                          }
                       },
                       child: const Text(
                         "SAIR",
@@ -288,12 +287,12 @@ class MenuLateral extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 if (isVisitante) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
-                    (route) => false,
-                  );
-                } else {
+                    FirebaseAuth.instance.signOut();
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const TelaTipoUsuario()),
+                      (route) => false,
+                    );
+                  } else {
                   _confirmarSaida(context);
                 }
               },
@@ -305,4 +304,6 @@ class MenuLateral extends StatelessWidget {
     );
   }
 }
+
+
 
