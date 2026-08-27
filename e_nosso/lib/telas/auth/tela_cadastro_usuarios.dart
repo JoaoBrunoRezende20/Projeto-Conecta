@@ -1,4 +1,4 @@
-
+﻿
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -557,6 +557,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
         // 3. Salva todos os dados e as URLs no Firestore
         await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio);
+        // --- NOVO: DOUBLE OPT-IN ---
+        await credencial.user!.sendEmailVerification();
+        await FirebaseAuth.instance.signOut();
       } catch (e) {
         // Se qualquer coisa falhar após a criação do Auth, deletamos o usuário para não deixá-lo órfão.
         await credencial.user!.delete();
@@ -566,17 +569,29 @@ class _TelaCadastroState extends State<TelaCadastro> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cadastro realizado com sucesso!'),
-            backgroundColor: Colors.green,
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Confirme seu E-mail', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Text(
+              'Cadastro realizado com sucesso!\n\nEnviamos um link de confirmação para o e-mail:\n${_emailController.text.trim()}.\n\nVocê precisa verificar seu e-mail antes de fazer login.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (widget.returnOnSuccess) {
+                    Navigator.pop(context, true);
+                  } else {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
+                },
+                child: const Text('OK, ENTENDI'),
+              ),
+            ],
           ),
         );
-        if (widget.returnOnSuccess) {
-          Navigator.pop(context, true);
-        } else {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -1272,3 +1287,5 @@ class _TelaCadastroState extends State<TelaCadastro> {
     );
   }
 }
+
+

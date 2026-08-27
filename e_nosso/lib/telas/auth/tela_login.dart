@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../repositories/usuario_repository.dart';
 import 'tela_cadastro_usuarios.dart';
 import 'tela_tipo_usuario.dart'; // Importe a tela para onde vamos voltar
 import '../../utils/auth_wrapper.dart';
@@ -38,10 +40,71 @@ class _TelaLoginState extends State<TelaLogin> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _senhaController.text.trim(),
-      );
+      final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _senhaController.text.trim(),
+        );
+
+        // --- DOUBLE OPT-IN: VERIFICAÇÃO DE E-MAIL ---
+        if (credencial.user != null && !credencial.user!.emailVerified) {
+          await FirebaseAuth.instance.signOut();
+          
+          if (mounted) {
+            setState(() => _isLoading = false);
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('E-mail nǜo verificado'),
+                content: const Text('VocǸ precisa confirmar seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada ou pasta de spam.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('CANCELAR'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      try {
+                        final tempCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+                          email: _emailController.text.trim(),
+                          password: _senhaController.text.trim(),
+                        );
+                        await tempCred.user!.sendEmailVerification();
+                        await FirebaseAuth.instance.signOut();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('E-mail reenviado com sucesso! Verifique sua caixa de entrada.'), backgroundColor: Colors.green),
+                          );
+                        }
+                      } catch (e) {
+                         if (mounted) {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(content: Text('Erro ao reenviar e-mail. Tente novamente mais tarde.'), backgroundColor: Colors.red),
+                           );
+                         }
+                      }
+                    },
+                    child: const Text('REENVIAR E-MAIL'),
+                  )
+                ]
+              )
+            );
+          }
+          return; // Interrompe o fluxo de login
+        }
+
+        // --- ATUALIZA A FLAG NO BANCO DE DADOS ---
+        if (credencial.user != null && credencial.user!.emailVerified) {
+           try {
+             final colecao = await UsuarioRepository().descobrirPerfilUsuario(credencial.user!.uid);
+             if (colecao != null) {
+                await FirebaseFirestore.instance.collection(colecao).doc(credencial.user!.uid).update({'email_verified': true});
+             }
+           } catch (e) {
+             debugPrint('Erro ao atualizar flag de email: $e');
+           }
+        }
       
       // >>> ALTERAÇÃO AQUI <<<
       // Se returnOnSuccess for true, apenas fechamos a tela retornando sucesso
@@ -457,3 +520,8 @@ class WaveClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
+
+
+
+
+
