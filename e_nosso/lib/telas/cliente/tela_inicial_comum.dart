@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import está correto
 import '../auth/tela_tipo_usuario.dart';
@@ -19,11 +20,14 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     await FirebaseAuth.instance.signOut();
   }
 
-  void _exitVisitorMode() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const TelaTipoUsuario()),
-      (route) => false,
-    );
+  void _exitVisitorMode() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AuthWrapper()),
+        (route) => false,
+      );
+    }
   }
 
   void _navegarPara(Widget pagina) {
@@ -153,3 +157,6 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 }
+
+
+
