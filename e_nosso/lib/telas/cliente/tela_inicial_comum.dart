@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import está correto
@@ -157,6 +157,3 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
     );
   }
 }
-
-
-

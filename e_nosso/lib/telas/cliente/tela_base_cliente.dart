@@ -36,9 +36,7 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
     return Navigator(
       key: _navigatorKeys[index],
       onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) => rootPage,
-        );
+        return MaterialPageRoute(builder: (context) => rootPage);
       },
     );
   }
@@ -49,7 +47,8 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        final currentNavigatorState = _navigatorKeys[_currentIndex].currentState;
+        final currentNavigatorState =
+            _navigatorKeys[_currentIndex].currentState;
         if (currentNavigatorState != null && currentNavigatorState.canPop()) {
           currentNavigatorState.pop();
         } else if (_currentIndex != 0) {
@@ -65,7 +64,10 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
             _buildTabNavigator(0, const TelaInicialComum()),
             _buildTabNavigator(1, const TelaLojasFavoritas()),
             _buildTabNavigator(2, const TelaPedidosPendentesCliente()),
-            _buildTabNavigator(3, const TelaRevisaoCarrinho(lojaName: "Sua Sacola")),
+            _buildTabNavigator(
+              3,
+              const TelaRevisaoCarrinho(lojaName: "Sua Sacola"),
+            ),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -76,10 +78,7 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
           unselectedItemColor: Colors.grey,
           showUnselectedLabels: true,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Início',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
             BottomNavigationBarItem(
               icon: Icon(Icons.star_border),
               activeIcon: Icon(Icons.star),

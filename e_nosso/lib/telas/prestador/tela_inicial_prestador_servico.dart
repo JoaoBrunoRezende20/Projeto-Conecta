@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../utils/auth_wrapper.dart';
+import '../auth/tela_cadastro_usuarios.dart';
 import '/widgets/menu_lateral.dart';
 import '/widgets/botao_notificacao.dart';
 import 'tela_cadastro_servico_prestador.dart';
@@ -24,23 +27,38 @@ class TelaInicialPrestador extends StatefulWidget {
 }
 
 class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
-
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AuthWrapper()),
+        (route) => false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const Scaffold(body: Center(child: Text("Erro de ID")));
+    if (user == null)
+      return const Scaffold(body: Center(child: Text("Erro de ID")));
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('prestadorServicos').doc(user.uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('prestadorServicos')
+          .doc(user.uid)
+          .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (!snapshot.hasData)
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
 
         final data = snapshot.data!.data() as Map<String, dynamic>?;
-        if (data == null) return const Scaffold(body: Center(child: Text("Cadastro não encontrado.")));
+        if (data == null)
+          return const Scaffold(
+            body: Center(child: Text("Cadastro não encontrado.")),
+          );
 
         // 1. LÓGICA DE VALIDAÇÃO (TRAVA DE ACESSO)
         final statusCadastro = data['statusCadastro'] ?? 'pendente';
@@ -49,28 +67,38 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
         if (statusCadastro == 'pendente') {
           return _buildTelaBloqueio(
             titulo: "Cadastro em Análise",
-            mensagem: "Sua conta está em análise. Aguarde a aprovação do Administrador.",
+            mensagem:
+                "Sua conta está em análise. Aguarde a aprovação do Administrador.",
             icone: Icons.hourglass_top,
             cor: Colors.orange,
-            mostrarBotaoReenvio: true,
+            statusCadastro: statusCadastro,
+            dadosCadastro: data,
           );
         }
 
         if (statusCadastro == 'rejeitado') {
           return _buildTelaBloqueio(
             titulo: "Cadastro Não Aprovado",
-            mensagem: "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte.",
+            mensagem:
+                "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, envie novos documentos para nova análise ou entre em contato com o suporte.",
             icone: Icons.error_outline,
             cor: Colors.red,
-            mostrarBotaoReenvio: false,
+            statusCadastro: statusCadastro,
+            dadosCadastro: data,
           );
         }
 
         // 2. SE APROVADO, CARREGA OS DADOS E MOSTRA O PERFIL
-        final nomeFormatado = UsuarioUtil.getNomeCompleto(data, colecao: 'prestadorServicos');
+        final nomeFormatado = UsuarioUtil.getNomeCompleto(
+          data,
+          colecao: 'prestadorServicos',
+        );
         final areaAtuacao = data['areaAtuacao'] ?? "Profissão não definida";
-        
-        final prestador = PrestadorProfile(nome: nomeFormatado, areaAtuacao: areaAtuacao);
+
+        final prestador = PrestadorProfile(
+          nome: nomeFormatado,
+          areaAtuacao: areaAtuacao,
+        );
 
         return _buildTelaAprovada(prestador);
       },
@@ -79,62 +107,106 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
 
   // --- TELA DE BLOQUEIO (PENDENTE / REJEITADO) ---
   Widget _buildTelaBloqueio({
-    required String titulo, 
-    required String mensagem, 
-    required IconData icone, 
+    required String titulo,
+    required String mensagem,
+    required IconData icone,
     required Color cor,
-    bool mostrarBotaoReenvio = false,
+    required String statusCadastro,
+    Map<String, dynamic>? dadosCadastro,
   }) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white, 
-        elevation: 0, 
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.logout, color: Colors.black), onPressed: _signOut)
-        ]
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: _signOut,
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(icone, size: 80, color: cor),
-            const SizedBox(height: 24),
-            Text(titulo, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cor), textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            Text(mensagem, style: const TextStyle(fontSize: 16, color: Colors.black54, height: 1.5), textAlign: TextAlign.center),
-            
-            if (mostrarBotaoReenvio) ...[
-              const SizedBox(height: 40),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icone, size: 80, color: cor),
+              const SizedBox(height: 24),
+              Text(
+                titulo,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: cor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                mensagem,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Se o status for REJEITADO, exibe a opção de reenviar documentos abrindo a aba de cadastro preenchida
+              if (statusCadastro == 'rejeitado') ...[
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TelaCadastro(
+                          tipoUsuario: 'prestador',
+                          isReenvio: true,
+                          dadosIniciais: dadosCadastro,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_document),
+                  label: const Text('Reenviar Documentos para Análise'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Botão para voltar para a tela inicial de login
               OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.'), backgroundColor: Colors.green),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Erro ao reenviar: $e'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.mark_email_read),
-                label: const Text('Reenviar E-mail de Confirmação'),
+                onPressed: _signOut,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Voltar para a Tela Inicial'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: cor,
-                  side: BorderSide(color: cor),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  foregroundColor: Colors.grey[800],
+                  side: BorderSide(color: Colors.grey[400]!),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
               ),
-            ]
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -207,7 +279,10 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('servicos')
-                  .where('prestadorId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                  .where(
+                    'prestadorId',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                  )
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -236,7 +311,8 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
-                    final data = servicosDocs[index].data() as Map<String, dynamic>;
+                    final data =
+                        servicosDocs[index].data() as Map<String, dynamic>;
                     return _buildServiceCard(data);
                   },
                 );
@@ -272,10 +348,7 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: imagem != null && imagem.isNotEmpty
-                    ? UsuarioUtil.buildImageWidget(
-                        imagem,
-                        fit: BoxFit.cover,
-                      )
+                    ? UsuarioUtil.buildImageWidget(imagem, fit: BoxFit.cover)
                     : const Center(
                         child: Text(
                           '*Sem imagem*',
@@ -288,7 +361,12 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(nome, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              nome,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),

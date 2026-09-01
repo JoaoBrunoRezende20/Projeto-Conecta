@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../utils/auth_wrapper.dart';
+import '../auth/tela_cadastro_usuarios.dart';
 import '/widgets/botao_notificacao.dart';
 import 'package:e_nosso/widgets/menu_lateral.dart';
 import 'abas/aba_produtos_lojista.dart';
 import 'abas/aba_pedidos_lojista.dart';
-
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -53,6 +55,12 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AuthWrapper()),
+        (route) => false,
+      );
+    }
   }
 
   // --- TRAVA DE ACESSO PARCIAL (StreamBuilder Principal) ---
@@ -91,7 +99,8 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
                 "Sua conta está em análise. Aguarde a aprovação do Administrador.",
             icone: Icons.hourglass_top,
             cor: Colors.orange,
-            mostrarBotaoReenvio: true,
+            statusCadastro: statusCadastro,
+            dadosCadastro: dadosLojista,
           );
         }
 
@@ -99,10 +108,11 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           return _buildTelaBloqueio(
             titulo: "Cadastro Não Aprovado",
             mensagem:
-                "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, entre em contato com o suporte.",
+                "Infelizmente seu cadastro não foi aprovado neste momento.\n\nMotivo:\n$motivosRejeicao\n\nPor favor, envie novos documentos para nova análise ou entre em contato com o suporte.",
             icone: Icons.error_outline,
             cor: Colors.red,
-            mostrarBotaoReenvio: false,
+            statusCadastro: statusCadastro,
+            dadosCadastro: dadosLojista,
           );
         }
 
@@ -118,7 +128,8 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
     required String mensagem,
     required IconData icone,
     required Color cor,
-    bool mostrarBotaoReenvio = false,
+    required String statusCadastro,
+    Map<String, dynamic>? dadosCadastro,
   }) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -132,74 +143,87 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(icone, size: 80, color: cor),
-            const SizedBox(height: 24),
-            Text(
-              titulo,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: cor,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icone, size: 80, color: cor),
+              const SizedBox(height: 24),
+              Text(
+                titulo,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: cor,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              mensagem,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-                height: 1.5,
+              const SizedBox(height: 16),
+              Text(
+                mensagem,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
+              const SizedBox(height: 30),
 
-            // Requisito Opcional: Botão de Reenvio de Confirmação
-            if (mostrarBotaoReenvio) ...[
-              const SizedBox(height: 40),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    await FirebaseAuth.instance.currentUser
-                        ?.sendEmailVerification();
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'E-mail de verificação reenviado com sucesso! Verifique a sua caixa de entrada e spam.',
+              // Se o status for REJEITADO, exibe a opção de reenviar documentos abrindo a aba de cadastro preenchida
+              if (statusCadastro == 'rejeitado') ...[
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TelaCadastro(
+                          tipoUsuario: 'lojista',
+                          isReenvio: true,
+                          dadosIniciais: dadosCadastro,
                         ),
-                        backgroundColor: Colors.green,
                       ),
                     );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Erro ao reenviar: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.mark_email_read),
-                label: const Text('Reenviar E-mail de Confirmação'),
+                  },
+                  icon: const Icon(Icons.edit_document),
+                  label: const Text('Reenviar Documentos para Análise'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Botão para voltar para a tela inicial de login
+              OutlinedButton.icon(
+                onPressed: _signOut,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Voltar para a Tela Inicial'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: cor,
-                  side: BorderSide(color: cor),
+                  foregroundColor: Colors.grey[800],
+                  side: BorderSide(color: Colors.grey[400]!),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,
                   ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -248,9 +272,9 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
           const SizedBox(width: 10),
         ],
       ),
-      
+
       // Alternância de Abas usando Widgets extraídos
-      body: _indiceAbaAtual == 0 
+      body: _indiceAbaAtual == 0
           ? AbaProdutosLojista(lojistaId: lojistaId!)
           : AbaPedidosLojista(lojistaId: lojistaId!),
 

@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,11 +12,15 @@ import '../../utils/formatadores.dart';
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
   final bool returnOnSuccess;
+  final bool isReenvio;
+  final Map<String, dynamic>? dadosIniciais;
 
   const TelaCadastro({
-    super.key, 
+    super.key,
     required this.tipoUsuario,
     this.returnOnSuccess = false,
+    this.isReenvio = false,
+    this.dadosIniciais,
   });
 
   @override
@@ -50,6 +53,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
   // --- LISTAS DE IMAGENS (BYTES - CORRIGIDO PARA NÃO USAR BASE64) ---
   final List<Uint8List> _imagensPortfolioBytes = [];
   final List<Uint8List> _imagensDocumentosBytes = [];
+  final List<String> _documentosUrlsExistentes = [];
+  final List<String> _portfolioUrlsExistentes = [];
 
   // --- VALIDAÇÃO DE SENHA ---
   bool _temMinimoCaracteres = false;
@@ -203,6 +208,119 @@ class _TelaCadastroState extends State<TelaCadastro> {
       'Vidraceiro',
       'Outros',
     ]..sort();
+
+    if (widget.dadosIniciais != null) {
+      _preencherDadosIniciais(widget.dadosIniciais!);
+    }
+  }
+
+  void _preencherDadosIniciais(Map<String, dynamic> data) {
+    _aceitouLGPD = true;
+
+    // Dados de endereço (comum / lojista)
+    if (data['endereco'] is Map) {
+      final end = Map<String, dynamic>.from(data['endereco']);
+      _ruaController.text = end['rua']?.toString() ?? '';
+      _numeroController.text = end['numero']?.toString() ?? '';
+      _bairroController.text = end['bairro']?.toString() ?? '';
+      _bairroLojistaSelecionado = end['bairro']?.toString();
+      _estadoSelecionado = end['estado']?.toString();
+      _cepController.text = end['cep']?.toString() ?? '';
+      _complementoController.text = end['complemento']?.toString() ?? '';
+    }
+
+    if (widget.tipoUsuario == 'lojista') {
+      // Dados do responsável
+      if (data['dadosDoResponsavel'] is Map) {
+        final resp = Map<String, dynamic>.from(data['dadosDoResponsavel']);
+        _nomeController.text = resp['nome']?.toString() ?? '';
+        _sobrenomeController.text = resp['sobrenome']?.toString() ?? '';
+        _cpfController.text = resp['cpf']?.toString() ?? '';
+        _emailController.text = resp['email']?.toString() ?? '';
+        _telefoneController.text = resp['telefone']?.toString() ?? '';
+      } else {
+        _nomeController.text = data['nome']?.toString() ?? '';
+        _sobrenomeController.text = data['sobrenome']?.toString() ?? '';
+        _cpfController.text = data['cpf']?.toString() ?? '';
+        _emailController.text = data['email']?.toString() ?? '';
+        _telefoneController.text = data['telefone']?.toString() ?? '';
+      }
+
+      _razaoSocialController.text = data['razaoSocial']?.toString() ?? '';
+      _cnpjController.text = data['cnpj']?.toString() ?? '';
+      _emailComercialController.text = data['emailComercial']?.toString() ?? '';
+      _telefoneComercialController.text =
+          data['telefoneComercial']?.toString() ?? '';
+
+      final cnae = (data['cnae'] ?? data['categoria'])?.toString();
+      if (cnae != null && categoriasLojista.contains(cnae)) {
+        _categoriaSelecionadaCnae = cnae;
+      }
+
+      if (data['documentosUrl'] is List) {
+        _documentosUrlsExistentes.addAll(
+          List<String>.from(data['documentosUrl']),
+        );
+      }
+    } else if (widget.tipoUsuario == 'prestador') {
+      _nomeController.text = data['nome']?.toString() ?? '';
+      _sobrenomeController.text = data['sobrenome']?.toString() ?? '';
+      _cpfController.text = data['cpf']?.toString() ?? '';
+      _emailController.text = data['email']?.toString() ?? '';
+      _telefoneController.text = data['telefone']?.toString() ?? '';
+
+      final area = data['areaAtuacao']?.toString();
+      if (area != null && _categoriasPrestador.contains(area)) {
+        _categoriaPrestadorSelecionada = area;
+      } else if (area != null && area.isNotEmpty) {
+        _categoriaPrestadorSelecionada = 'Outros';
+        _outraAreaAtuacaoController.text = area;
+      }
+
+      _descricaoServicosController.text =
+          data['descricaoServicos']?.toString() ?? '';
+
+      if (data['areaAtendimento'] is List) {
+        _bairrosSelecionados = List<String>.from(data['areaAtendimento']);
+      }
+
+      if (data['disponibilidadeAtendimento'] is String) {
+        final str = data['disponibilidadeAtendimento'] as String;
+        if (str != "Não informado") {
+          final partes = str.split(', ');
+          for (var parte in partes) {
+            final sub = parte.split(': ');
+            if (sub.length == 2) {
+              _horariosSemanais[sub[0].trim()] = sub[1].trim();
+            }
+          }
+        }
+      }
+
+      if (data['faixaPrecos'] != null) {
+        _faixaPrecosController.text = data['faixaPrecos'].toString();
+      }
+
+      _registroProfissionalController.text =
+          data['registroProfissional']?.toString() ?? '';
+      _qualificacoesController.text = data['qualificacoes']?.toString() ?? '';
+      _cnpjPrestadorController.text = data['cnpj']?.toString() ?? '';
+
+      if (data['documentosUrl'] is List) {
+        _documentosUrlsExistentes.addAll(
+          List<String>.from(data['documentosUrl']),
+        );
+      }
+      if (data['portfolio'] is List) {
+        _portfolioUrlsExistentes.addAll(List<String>.from(data['portfolio']));
+      }
+    } else {
+      _nomeController.text = data['nome']?.toString() ?? '';
+      _sobrenomeController.text = data['sobrenome']?.toString() ?? '';
+      _cpfController.text = data['cpf']?.toString() ?? '';
+      _emailController.text = data['email']?.toString() ?? '';
+      _telefoneController.text = data['telefone']?.toString() ?? '';
+    }
   }
 
   @override
@@ -295,7 +413,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ) async {
     List<String> urls = [];
     for (int i = 0; i < imagens.length; i++) {
-      debugPrint('>>> [STORAGE] Iniciando upload imagem ${i + 1}/${imagens.length} para pasta "$pasta"...');
+      debugPrint(
+        '>>> [STORAGE] Iniciando upload imagem ${i + 1}/${imagens.length} para pasta "$pasta"...',
+      );
       // Cria um caminho único para cada imagem no Storage
       final ref = FirebaseStorage.instance
           .ref()
@@ -324,7 +444,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
       // Obtém o link público para salvar no Firestore
       final url = await snapshot.ref.getDownloadURL().timeout(
         const Duration(seconds: 10),
-        onTimeout: () => throw TimeoutException('Tempo esgotado ao obter link da imagem salva.'),
+        onTimeout: () => throw TimeoutException(
+          'Tempo esgotado ao obter link da imagem salva.',
+        ),
       );
       urls.add(url);
       debugPrint('>>> [STORAGE] Imagem ${i + 1} enviada com sucesso: $url');
@@ -406,9 +528,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   itemCount: _listaBairros.length + 1,
                   itemBuilder: (context, index) {
                     if (index == 0) {
-                      bool allSelected = selecaoTemporaria.length == _listaBairros.length;
+                      bool allSelected =
+                          selecaoTemporaria.length == _listaBairros.length;
                       return CheckboxListTile(
-                        title: const Text('Selecionar Todos', style: TextStyle(fontWeight: FontWeight.bold)),
+                        title: const Text(
+                          'Selecionar Todos',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         value: allSelected,
                         onChanged: (bool? value) {
                           setStateDialog(() {
@@ -474,8 +600,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
       return;
     }
 
-    // senha forte
-    if (!_isSenhaValida()) {
+    // Senha forte só é exigida no cadastro novo (não no reenvio)
+    if (!widget.isReenvio && !_isSenhaValida()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -542,7 +668,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         return;
       }
       String? labelRegistro = _getLabelRegistroProfissional();
-      if (labelRegistro != null && _imagensDocumentosBytes.isEmpty) {
+      if (labelRegistro != null &&
+          _imagensDocumentosBytes.isEmpty &&
+          _documentosUrlsExistentes.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -565,18 +693,140 @@ class _TelaCadastroState extends State<TelaCadastro> {
       return;
     }
 
+    // --- FLUXO DE REENVIO DE CADASTRO / DOCUMENTOS ---
+    if (widget.isReenvio) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sessão expirada. Faça login novamente.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      try {
+        final String uid = user.uid;
+        debugPrint('>>> [REENVIO] Atualizando cadastro para UID: $uid');
+
+        // 1. Upload de novas fotos para o Storage (se houver)
+        List<String> novasUrlsDocs = [];
+        List<String> novasUrlsPort = [];
+
+        if (_imagensDocumentosBytes.isNotEmpty) {
+          debugPrint(
+            '>>> [REENVIO] Fazendo upload de ${_imagensDocumentosBytes.length} novo(s) documento(s)...',
+          );
+          novasUrlsDocs = await _uploadImagensFirebase(
+            _imagensDocumentosBytes,
+            'documentos',
+            uid,
+          );
+        }
+
+        if (_imagensPortfolioBytes.isNotEmpty) {
+          debugPrint(
+            '>>> [REENVIO] Fazendo upload de ${_imagensPortfolioBytes.length} nova(s) foto(s) de portfólio...',
+          );
+          novasUrlsPort = await _uploadImagensFirebase(
+            _imagensPortfolioBytes,
+            'portfolio',
+            uid,
+          );
+        }
+
+        final List<String> documentosFinais = [
+          ..._documentosUrlsExistentes,
+          ...novasUrlsDocs,
+        ];
+        final List<String> portfolioFinal = [
+          ..._portfolioUrlsExistentes,
+          ...novasUrlsPort,
+        ];
+
+        // 2. Salva os dados atualizados no Firestore com status 'pendente'
+        await _salvarDadosNoFirestore(
+          uid,
+          documentosFinais,
+          portfolioFinal,
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw TimeoutException(
+            'Tempo esgotado ao atualizar dados no servidor.',
+          ),
+        );
+
+        // 3. Atualiza DisplayName
+        String nomeCompleto =
+            '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'
+                .trim();
+        await user.updateDisplayName(nomeCompleto).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () =>
+              debugPrint('>>> [REENVIO] Timeout ao atualizar displayName.'),
+        );
+
+        debugPrint('>>> [REENVIO] Cadastro reenviado com sucesso!');
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text(
+                'Cadastro Reenviado!',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Seus dados e documentos foram atualizados e reenviados com sucesso!\n\n'
+                'Seu cadastro voltou para a fila de análise pelo administrador.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text('OK, ENTENDI'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('>>> [REENVIO] Erro ao reenviar cadastro: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao reenviar dados: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    // --- FLUXO PADRÃO DE NOVO CADASTRO ---
     setState(() => _isLoading = true);
 
     try {
-      debugPrint('>>> [CADASTRO] 1. Criando conta no Firebase Auth para: ${_emailController.text.trim()}');
+      debugPrint(
+        '>>> [CADASTRO] 1. Criando conta no Firebase Auth para: ${_emailController.text.trim()}',
+      );
       final credencial = await _authRepository
-          .cadastrar(
-            _emailController.text.trim(),
-            _senhaController.text.trim(),
-          )
+          .cadastrar(_emailController.text.trim(), _senhaController.text.trim())
           .timeout(
             const Duration(seconds: 15),
-            onTimeout: () => throw TimeoutException('Tempo limite esgotado ao criar conta no Firebase Auth.'),
+            onTimeout: () => throw TimeoutException(
+              'Tempo limite esgotado ao criar conta no Firebase Auth.',
+            ),
           );
 
       final String uid = credencial.user!.uid;
@@ -586,9 +836,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
       String nomeCompleto =
           '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'
               .trim();
-      await credencial.user!.updateDisplayName(nomeCompleto).timeout(
+      await credencial.user!
+          .updateDisplayName(nomeCompleto)
+          .timeout(
             const Duration(seconds: 10),
-            onTimeout: () => debugPrint('>>> [CADASTRO] Timeout ao atualizar displayName, continuando...'),
+            onTimeout: () => debugPrint(
+              '>>> [CADASTRO] Timeout ao atualizar displayName, continuando...',
+            ),
           );
 
       // 2. Faz o upload das imagens para o Storage
@@ -597,7 +851,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       try {
         if (_imagensDocumentosBytes.isNotEmpty) {
-          debugPrint('>>> [CADASTRO] 3. Fazendo upload de ${_imagensDocumentosBytes.length} documento(s)...');
+          debugPrint(
+            '>>> [CADASTRO] 3. Fazendo upload de ${_imagensDocumentosBytes.length} documento(s)...',
+          );
           urlsDocumentos = await _uploadImagensFirebase(
             _imagensDocumentosBytes,
             'documentos',
@@ -606,7 +862,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
 
         if (_imagensPortfolioBytes.isNotEmpty) {
-          debugPrint('>>> [CADASTRO] 4. Fazendo upload de ${_imagensPortfolioBytes.length} imagem(ns) de portfólio...');
+          debugPrint(
+            '>>> [CADASTRO] 4. Fazendo upload de ${_imagensPortfolioBytes.length} imagem(ns) de portfólio...',
+          );
           urlsPortfolio = await _uploadImagensFirebase(
             _imagensPortfolioBytes,
             'portfolio',
@@ -616,29 +874,42 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
         // 3. Salva todos os dados e as URLs no Firestore
         debugPrint('>>> [CADASTRO] 5. Salvando dados no Firestore...');
-        await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio).timeout(
-              const Duration(seconds: 15),
-              onTimeout: () => throw TimeoutException('Tempo esgotado ao salvar dados no Firestore.'),
-            );
+        await _salvarDadosNoFirestore(
+          uid,
+          urlsDocumentos,
+          urlsPortfolio,
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw TimeoutException(
+            'Tempo esgotado ao salvar dados no Firestore.',
+          ),
+        );
         debugPrint('>>> [CADASTRO] 6. Dados salvos com sucesso no Firestore.');
 
         // --- DOUBLE OPT-IN (Bypass para contas de teste) ---
-        final bool isEmailDeTeste = _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
+        final bool isEmailDeTeste =
+            _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
             _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
 
         if (!isEmailDeTeste) {
           debugPrint('>>> [CADASTRO] 7. Enviando e-mail de verificação...');
           await credencial.user!.sendEmailVerification().timeout(
-                const Duration(seconds: 10),
-                onTimeout: () => debugPrint('>>> [CADASTRO] Timeout ao enviar e-mail de verificação.'),
-              );
-          debugPrint('>>> [CADASTRO] 8. Deslogando para exigir confirmação de e-mail...');
+            const Duration(seconds: 10),
+            onTimeout: () => debugPrint(
+              '>>> [CADASTRO] Timeout ao enviar e-mail de verificação.',
+            ),
+          );
+          debugPrint(
+            '>>> [CADASTRO] 8. Deslogando para exigir confirmação de e-mail...',
+          );
           await FirebaseAuth.instance.signOut().timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => debugPrint('>>> [CADASTRO] Timeout no signOut.'),
-              );
+            const Duration(seconds: 5),
+            onTimeout: () => debugPrint('>>> [CADASTRO] Timeout no signOut.'),
+          );
         } else {
-          debugPrint('>>> [CADASTRO] 7. E-mail de teste detectado: pulando envio de verificação.');
+          debugPrint(
+            '>>> [CADASTRO] 7. E-mail de teste detectado: pulando envio de verificação.',
+          );
         }
       } catch (e) {
         debugPrint('>>> [CADASTRO] ERRO durante upload/salvamento: $e');
@@ -649,14 +920,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
         } catch (delErr) {
           debugPrint('>>> [CADASTRO] Falha ao remover usuário órfão: $delErr');
         }
-        throw Exception(
-          'Falha ao concluir o cadastro: $e',
-        );
+        throw Exception('Falha ao concluir o cadastro: $e');
       }
 
       debugPrint('>>> [CADASTRO] 9. Cadastro finalizado com sucesso!');
       if (mounted) {
-        final bool isEmailDeTeste = _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
+        final bool isEmailDeTeste =
+            _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
             _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
 
         showDialog(
@@ -689,7 +959,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('>>> [CADASTRO] FirebaseAuthException: ${e.code} - ${e.message}');
+      debugPrint(
+        '>>> [CADASTRO] FirebaseAuthException: ${e.code} - ${e.message}',
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro no cadastro: ${e.message}')),
@@ -698,9 +970,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
     } catch (e) {
       debugPrint('>>> [CADASTRO] Exception: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro inesperado: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -756,87 +1031,187 @@ class _TelaCadastroState extends State<TelaCadastro> {
             0.0;
 
         return _usuarioRepository.salvarDadosUsuario(uid, 'prestadorServicos', {
-              'nome': _nomeController.text.trim(),
-              'sobrenome': _sobrenomeController.text.trim(),
-              'telefone': _telefoneController.text.trim(),
-              'cpf': _cpfController.text.trim(),
-              'email': _emailController.text.trim(),
-              'areaAtuacao': areaFinal,
-              'descricaoServicos': _descricaoServicosController.text.trim(),
-              'areaAtendimento': _bairrosSelecionados,
-              'disponibilidadeAtendimento': disponibilidadeFinal,
-              'faixaPrecos': preco,
-              'qualificacoes': _qualificacoesController.text.trim(),
-              'cnpj': _cnpjPrestadorController.text.trim(),
-              'registroProfissional': _registroProfissionalController.text
-                  .trim(),
-              'portfolio': portfolioUrls, // Salva as URLs
-              'documentosUrl': documentosUrls, // Salva as URLs
-              'status': false,
-              'statusCadastro': 'pendente',
-              'motivosRejeicao': '',
-              'tipo': 'prestador',
-              'dataCriacao': FieldValue.serverTimestamp(),
-            });
+          'nome': _nomeController.text.trim(),
+          'sobrenome': _sobrenomeController.text.trim(),
+          'telefone': _telefoneController.text.trim(),
+          'cpf': _cpfController.text.trim(),
+          'email': _emailController.text.trim(),
+          'areaAtuacao': areaFinal,
+          'descricaoServicos': _descricaoServicosController.text.trim(),
+          'areaAtendimento': _bairrosSelecionados,
+          'disponibilidadeAtendimento': disponibilidadeFinal,
+          'faixaPrecos': preco,
+          'qualificacoes': _qualificacoesController.text.trim(),
+          'cnpj': _cnpjPrestadorController.text.trim(),
+          'registroProfissional': _registroProfissionalController.text.trim(),
+          'portfolio': portfolioUrls, // Salva as URLs
+          'documentosUrl': documentosUrls, // Salva as URLs
+          'status': false,
+          'statusCadastro': 'pendente',
+          'motivosRejeicao': '',
+          'tipo': 'prestador',
+          'dataCriacao': FieldValue.serverTimestamp(),
+        });
 
       case 'comum':
       default:
         return _usuarioRepository.salvarDadosUsuario(uid, 'usuarioComum', {
-              'nome': _nomeController.text.trim(),
-              'sobrenome': _sobrenomeController.text.trim(),
-              'cpf': _cpfController.text.trim(),
-              'email': _emailController.text.trim(),
-              'telefone': _telefoneController.text.trim(),
-              'endereco': {
-                'rua': _ruaController.text.trim(),
-                'numero': _numeroController.text.trim(),
-                'bairro': _bairroController.text.trim(),
-                'complemento': _complementoController.text.trim(),
-              },
-              'status': true,
-              'tipo': 'comum',
-              'dataCriacao': FieldValue.serverTimestamp(),
-            });
+          'nome': _nomeController.text.trim(),
+          'sobrenome': _sobrenomeController.text.trim(),
+          'cpf': _cpfController.text.trim(),
+          'email': _emailController.text.trim(),
+          'telefone': _telefoneController.text.trim(),
+          'endereco': {
+            'rua': _ruaController.text.trim(),
+            'numero': _numeroController.text.trim(),
+            'bairro': _bairroController.text.trim(),
+            'complemento': _complementoController.text.trim(),
+          },
+          'status': true,
+          'tipo': 'comum',
+          'dataCriacao': FieldValue.serverTimestamp(),
+        });
     }
   }
 
   // --- WIDGETS VISUAIS ---
-  Widget _buildImagePreview(List<Uint8List> imagensBytes, bool isPortfolio) {
-    if (imagensBytes.isEmpty) return const SizedBox.shrink();
+  Widget _buildCombinedPreview({
+    required List<String> urlsExistentes,
+    required List<Uint8List> imagensBytes,
+    required bool isPortfolio,
+  }) {
+    if (urlsExistentes.isEmpty && imagensBytes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return SizedBox(
       height: 100,
-      child: ListView.builder(
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        itemCount: imagensBytes.length,
-        itemBuilder: (context, index) {
-          final Uint8List bytes = imagensBytes[index];
-          return Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Image.memory(bytes, fit: BoxFit.cover),
-              ),
-              Positioned(
-                top: 0,
-                right: 8,
-                child: InkWell(
-                  onTap: () => _removerImagem(index, isPortfolio),
-                  child: const CircleAvatar(
-                    radius: 10,
-                    backgroundColor: Colors.red,
-                    child: Icon(Icons.close, size: 12, color: Colors.white),
+        children: [
+          // Imagens já salvas no Firestore / Storage
+          ...urlsExistentes.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final String url = entry.value;
+            return Stack(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blueAccent),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                            child: Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+                Positioned(
+                  top: 0,
+                  right: 8,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        urlsExistentes.removeAt(index);
+                      });
+                    },
+                    child: const CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Colors.red,
+                      child: Icon(Icons.close, size: 12, color: Colors.white),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  left: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Salvo',
+                      style: TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+
+          // Novas imagens adicionadas nesta sessão
+          ...imagensBytes.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final Uint8List bytes = entry.value;
+            return Stack(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.green),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: Image.memory(bytes, fit: BoxFit.cover),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 8,
+                  child: InkWell(
+                    onTap: () => _removerImagem(index, isPortfolio),
+                    child: const CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Colors.red,
+                      child: Icon(Icons.close, size: 12, color: Colors.white),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  left: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade800,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Novo',
+                      style: TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
       ),
     );
   }
@@ -885,7 +1260,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
           controller: _cnpjController,
           inputFormatters: [CpfCnpjFormatter()],
           validator: AppFormatadores.validarCpfCnpj,
-          decoration: const InputDecoration(labelText: 'Documento (CPF ou CNPJ)'),
+          decoration: const InputDecoration(
+            labelText: 'Documento (CPF ou CNPJ)',
+          ),
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
@@ -895,15 +1272,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
           keyboardType: TextInputType.emailAddress,
           validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
-        // Ocultado conforme regra de não possuir contato externo
-        // const SizedBox(height: 16),
-        // TextFormField(
-        //   controller: _telefoneComercialController,
-        //   decoration: const InputDecoration(labelText: 'Telefone Comercial'),
-        //   inputFormatters: [AppFormatadores.maskTelefone],
-        //   validator: AppFormatadores.validarTelefone,
-        //   keyboardType: TextInputType.phone,
-        // ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _categoriaSelecionadaCnae,
@@ -1005,7 +1373,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
           ),
         ),
         const SizedBox(height: 8),
-        _buildImagePreview(_imagensDocumentosBytes, false),
+        _buildCombinedPreview(
+          urlsExistentes: _documentosUrlsExistentes,
+          imagensBytes: _imagensDocumentosBytes,
+          isPortfolio: false,
+        ),
       ];
     } else if (widget.tipoUsuario == 'prestador') {
       String? labelRegistro = _getLabelRegistroProfissional();
@@ -1196,7 +1568,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
             foregroundColor: Colors.black,
           ),
         ),
-        _buildImagePreview(_imagensDocumentosBytes, false),
+        const SizedBox(height: 8),
+        _buildCombinedPreview(
+          urlsExistentes: _documentosUrlsExistentes,
+          imagensBytes: _imagensDocumentosBytes,
+          isPortfolio: false,
+        ),
         const SizedBox(height: 24),
         const Text(
           'Portfólio',
@@ -1216,7 +1593,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
             foregroundColor: Colors.black,
           ),
         ),
-        _buildImagePreview(_imagensPortfolioBytes, true),
+        const SizedBox(height: 8),
+        _buildCombinedPreview(
+          urlsExistentes: _portfolioUrlsExistentes,
+          imagensBytes: _imagensPortfolioBytes,
+          isPortfolio: true,
+        ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _qualificacoesController,
@@ -1244,7 +1626,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
         TextFormField(
           controller: _ruaController,
           decoration: const InputDecoration(labelText: 'Rua / Avenida'),
-          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -1253,7 +1636,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
             labelText: 'Número',
             hintText: 'Número',
           ),
-          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -1262,7 +1646,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
             labelText: 'Bairro',
             hintText: 'Digite seu bairro',
           ),
-          validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -1308,8 +1693,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
   @override
   Widget build(BuildContext context) {
+    final String tituloAppBar = widget.isReenvio
+        ? 'Reenviar Cadastro - ${widget.tipoUsuario == 'lojista' ? 'Lojista' : widget.tipoUsuario == 'prestador' ? 'Prestador' : widget.tipoUsuario}'
+        : 'Cadastro - ${widget.tipoUsuario}';
+
     return Scaffold(
-      appBar: AppBar(title: Text('Cadastro - ${widget.tipoUsuario}')),
+      appBar: AppBar(title: Text(tituloAppBar)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -1334,69 +1723,74 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   decoration: const InputDecoration(labelText: 'Sobrenome'),
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _senhaController,
-                  decoration: InputDecoration(
-                    labelText: 'Senha',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.grey,
+
+                // Senha é ocultada se estiver em modo de reenvio
+                if (!widget.isReenvio) ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _senhaController,
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+                    ),
+                    obscureText: !_isPasswordVisible,
+                    onChanged: _validarSenha,
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'A senha deve conter:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        _buildRequisitoRow(
+                          'Mínimo de 8 caracteres',
+                          _temMinimoCaracteres,
+                        ),
+                        _buildRequisitoRow(
+                          'Pelo menos uma letra maiúscula (A-Z)',
+                          _temMaiuscula,
+                        ),
+                        _buildRequisitoRow(
+                          'Pelo menos uma letra minúscula (a-z)',
+                          _temMinuscula,
+                        ),
+                        _buildRequisitoRow(
+                          'Pelo menos um número (0-9)',
+                          _temNumero,
+                        ),
+                        _buildRequisitoRow(
+                          'Pelo menos um caractere especial (!@#\$%&*)',
+                          _temEspecial,
+                        ),
+                      ],
                     ),
                   ),
-                  obscureText: !_isPasswordVisible,
-                  onChanged: _validarSenha,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'A senha deve conter:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      _buildRequisitoRow(
-                        'Mínimo de 8 caracteres',
-                        _temMinimoCaracteres,
-                      ),
-                      _buildRequisitoRow(
-                        'Pelo menos uma letra maiúscula (A-Z)',
-                        _temMaiuscula,
-                      ),
-                      _buildRequisitoRow(
-                        'Pelo menos uma letra minúscula (a-z)',
-                        _temMinuscula,
-                      ),
-                      _buildRequisitoRow(
-                        'Pelo menos um número (0-9)',
-                        _temNumero,
-                      ),
-                      _buildRequisitoRow(
-                        'Pelo menos um caractere especial (!@#\$%&*)',
-                        _temEspecial,
-                      ),
-                    ],
-                  ),
-                ),
+                ],
+
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _cpfController,
@@ -1473,9 +1867,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
                             backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text(
-                            'CADASTRAR',
-                            style: TextStyle(
+                          child: Text(
+                            widget.isReenvio
+                                ? 'REENVIAR CADASTRO PARA ANÁLISE'
+                                : 'CADASTRAR',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1491,5 +1887,3 @@ class _TelaCadastroState extends State<TelaCadastro> {
     );
   }
 }
-
-
