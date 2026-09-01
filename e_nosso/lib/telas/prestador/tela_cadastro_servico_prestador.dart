@@ -1,7 +1,9 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/usuario_util.dart';
 
@@ -9,14 +11,14 @@ class TelaCadastroServicoPrestador extends StatefulWidget {
   final String? servicoId;
   final String? nomeAtual;
   final double? precoAtual;
-  final String? imagemBase64Atual;
+  final String? imagemUrlAtual;
 
   const TelaCadastroServicoPrestador({
     super.key,
     this.servicoId,
     this.nomeAtual,
     this.precoAtual,
-    this.imagemBase64Atual,
+    this.imagemUrlAtual,
   });
 
   @override
@@ -31,7 +33,8 @@ class _TelaCadastroServicoPrestadorState
   final TextEditingController _precoController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
-  String? _imagemBase64;
+  String? _imagemUrl;
+  Uint8List? _imagemBytes;
   bool _isLoading = false;
 
   @override
@@ -41,8 +44,8 @@ class _TelaCadastroServicoPrestadorState
     if (widget.precoAtual != null) {
       _precoController.text = widget.precoAtual!.toStringAsFixed(2);
     }
-    if (widget.imagemBase64Atual != null) {
-      _imagemBase64 = widget.imagemBase64Atual;
+    if (widget.imagemUrlAtual != null) {
+      _imagemUrl = widget.imagemUrlAtual;
     }
   }
 
@@ -56,7 +59,7 @@ class _TelaCadastroServicoPrestadorState
 
       final bytes = await imagemSelecionada.readAsBytes();
       setState(() {
-        _imagemBase64 = base64Encode(bytes);
+        _imagemBytes = bytes;
       });
     } catch (e) {
       if (mounted) {
@@ -79,10 +82,35 @@ class _TelaCadastroServicoPrestadorState
       final double preco =
           double.tryParse(_precoController.text.replaceAll(',', '.')) ?? 0.0;
 
+      String? urlFinal = _imagemUrl;
+
+      if (_imagemBytes != null) {
+        debugPrint('>>> [SERVICO] Enviando foto do serviço para o Storage...');
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child('servicos')
+            .child(prestadorId)
+            .child('img_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+        final uploadTask = ref.putData(
+          _imagemBytes!,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+        final snapshot = await uploadTask.timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw TimeoutException('Tempo limite esgotado ao enviar foto do serviço.'),
+        );
+        urlFinal = await snapshot.ref.getDownloadURL().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw TimeoutException('Tempo limite ao obter URL da foto do serviço.'),
+        );
+        debugPrint('>>> [SERVICO] Foto enviada com sucesso: $urlFinal');
+      }
+
       final Map<String, dynamic> dadosServico = {
         'nome': _nomeController.text.trim(),
         'preco': preco,
-        'imagemBase64': _imagemBase64,
+        'imagemUrl': urlFinal,
         'prestadorId': prestadorId,
       };
 
@@ -148,23 +176,31 @@ class _TelaCadastroServicoPrestadorState
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey),
                         ),
-                        child: _imagemBase64 != null
+                        child: _imagemBytes != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: UsuarioUtil.buildImageWidget(
-                                  _imagemBase64!,
+                                child: Image.memory(
+                                  _imagemBytes!,
                                   fit: BoxFit.cover,
                                 ),
                               )
-                            : const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_a_photo,
-                                      size: 50, color: Colors.grey),
-                                  SizedBox(height: 8),
-                                  Text('Adicionar Foto do Serviço'),
-                                ],
-                              ),
+                            : _imagemUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: UsuarioUtil.buildImageWidget(
+                                      _imagemUrl!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_a_photo,
+                                          size: 50, color: Colors.grey),
+                                      SizedBox(height: 8),
+                                      Text('Adicionar Foto do Serviço'),
+                                    ],
+                                  ),
                       ),
                     ),
                     const SizedBox(height: 24),
