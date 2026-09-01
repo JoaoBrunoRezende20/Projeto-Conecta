@@ -144,7 +144,11 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     }
 
     final bool avaliado = data['avaliado'] ?? false;
-    final prestadorId = data['lojistaId'] ?? data['prestadorId'] ?? "";
+    final String? lojistaId = data['lojistaId'] as String?;
+    final String? pId = data['prestadorId'] as String?;
+    final bool isPrestador = pId != null && pId.isNotEmpty;
+    final String alvoId = isPrestador ? pId : (lojistaId ?? "");
+    final String tipoAlvo = isPrestador ? "prestador" : "lojista";
 
     Color statusColor =
         concluido ? Colors.green : (cancelado ? Colors.red : Colors.grey);
@@ -266,8 +270,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     MaterialPageRoute(
                       builder: (_) => TelaAvaliacaoServico(
                         pedidoId: id,
-                        prestadorId: prestadorId,
+                        prestadorId: alvoId,
                         nomePrestador: loja,
+                        tipoAlvo: tipoAlvo,
                       ),
                     ),
                   );
@@ -281,9 +286,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  "AVALIAR LOJA",
-                  style: TextStyle(
+                child: Text(
+                  isPrestador ? "AVALIAR PRESTADOR" : "AVALIAR LOJA",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),

@@ -6,12 +6,14 @@ class TelaAvaliacaoServico extends StatefulWidget {
   final String pedidoId;
   final String prestadorId;
   final String nomePrestador;
+  final String tipoAlvo; // 'prestador' ou 'lojista'
 
   const TelaAvaliacaoServico({
     super.key,
     required this.pedidoId,
     required this.prestadorId,
     required this.nomePrestador,
+    this.tipoAlvo = 'prestador',
   });
 
   @override
@@ -32,6 +34,7 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLojista = widget.tipoAlvo == 'lojista';
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -41,9 +44,9 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Avaliar serviço',
-          style: TextStyle(
+        title: Text(
+          isLojista ? 'Avaliar loja' : 'Avaliar serviço',
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -349,17 +352,17 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
     setState(() => _isSaving = true);
 
     final firestore = FirebaseFirestore.instance;
-    final prestadorRef = firestore
-        .collection('prestadorServicos')
-        .doc(widget.prestadorId);
-    final avaliacoesRef = prestadorRef.collection('avaliacoes');
+    final String colecaoAlvo = widget.tipoAlvo == 'lojista' ? 'lojistas' : 'prestadorServicos';
+    final alvoRef = firestore.collection(colecaoAlvo).doc(widget.prestadorId);
+    final avaliacoesGlobalRef = firestore.collection('avaliacoes');
+    final avaliacoesSubRef = alvoRef.collection('avaliacoes');
     final pedidoRef = firestore.collection('pedidos').doc(widget.pedidoId);
 
     try {
       await firestore.runTransaction((transaction) async {
-        // 1. Lê o documento atual do prestador para recalcular a média
-        final prestadorSnap = await transaction.get(prestadorRef);
-        final dadosAtuais = prestadorSnap.data() ?? {};
+        // 1. Lê o documento atual do alvo para recalcular a média
+        final alvoSnap = await transaction.get(alvoRef);
+        final dadosAtuais = alvoSnap.data() ?? {};
 
         final int qtdAtual =
             (dadosAtuais['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
@@ -370,24 +373,41 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
         final int novaQtd = qtdAtual + 1;
         final double novaMedia = ((mediaAtual * qtdAtual) + _nota) / novaQtd;
 
-        // 3. Cria o documento de avaliação na sub-coleção
-        final novaAvaliacaoRef = avaliacoesRef.doc();
-        transaction.set(novaAvaliacaoRef, {
-          'nota': _nota,
+        // 3. Documento de avaliação na coleção global 'avaliacoes'
+        final novaAvaliacaoRef = avaliacoesGlobalRef.doc();
+        final Map<String, dynamic> dadosAvaliacao = {
+          'id': novaAvaliacaoRef.id,
+          'pedidoId': widget.pedidoId,
           'clienteId': user.uid,
+          'alvoId': widget.prestadorId,
+          'tipoAlvo': widget.tipoAlvo,
+          'nomeAlvo': widget.nomePrestador,
+          'nota': _nota,
           'comentario': _comentarioController.text.trim(),
           'gostouEntrega': _gostouEntrega,
-          'data': FieldValue.serverTimestamp(),
-        });
+          'createdAt': FieldValue.serverTimestamp(),
+        };
 
-        // 4. Atualiza mediaEstrelas e quantidadeAvaliacoes no prestador
-        transaction.update(prestadorRef, {
-          'mediaEstrelas': double.parse(novaMedia.toStringAsFixed(2)),
-          'quantidadeAvaliacoes': novaQtd,
-        });
+        // Salva na coleção global 'avaliacoes'
+        transaction.set(novaAvaliacaoRef, dadosAvaliacao);
+
+        // Salva também na sub-coleção do alvo para manter compatibilidade
+        final novaAvaliacaoSubRef = avaliacoesSubRef.doc(novaAvaliacaoRef.id);
+        transaction.set(novaAvaliacaoSubRef, dadosAvaliacao);
+
+        // 4. Atualiza mediaEstrelas e quantidadeAvaliacoes no alvo (Prestador ou Loja)
+        if (alvoSnap.exists) {
+          transaction.update(alvoRef, {
+            'mediaEstrelas': double.parse(novaMedia.toStringAsFixed(2)),
+            'quantidadeAvaliacoes': novaQtd,
+          });
+        }
 
         // 5. Marca o pedido como avaliado
-        transaction.update(pedidoRef, {'avaliado': true});
+        transaction.update(pedidoRef, {
+          'avaliado': true,
+          'avaliacaoId': novaAvaliacaoRef.id,
+        });
       });
 
       if (mounted) {
