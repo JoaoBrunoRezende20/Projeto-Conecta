@@ -30,5 +30,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+dependency_overrides:
+  permission_handler_android: 13.0.0
+
 flutter:
   uses-material-design: true

@@ -32,6 +32,8 @@
             "statusCadastro": "pendente",
             "motivosRejeicao": "",
             "documentosUrl": [],
+            "mediaEstrelas": 5.0,
+            "quantidadeAvaliacoes": 1,
             "tipo": "prestador",
             "dataCriacao": ""
         }
@@ -83,6 +85,8 @@
             "statusCadastro": "pendente",
             "motivosRejeicao": "CNPJ inválido.",
             "documentosUrl": [],
+            "mediaEstrelas": 5.0,
+            "quantidadeAvaliacoes": 1,
             "tipo": "lojista"
         }
     },
@@ -111,7 +115,21 @@
             "tipoEntrega": "Motoboy",
             "tipoPagamento": "PIX",
             "valorTotal": 399.90,
-            "status": false
+            "status": false,
+            "avaliado": false
+        }
+    },
+    "avaliacoes": {
+        "idAvaliacao": {
+            "pedidoId": "idPedido1",
+            "clienteId": "kenil343223ssnxc",
+            "alvoId": "uidPrestadorOuLojista1",
+            "tipoAlvo": "prestador",
+            "nomeAlvo": "Mariana Costa",
+            "nota": 5.0,
+            "comentario": "Serviço excelente e rápido.",
+            "gostouEntrega": true,
+            "createdAt": "2025-09-24T19:00:00Z"
         }
     }
 }

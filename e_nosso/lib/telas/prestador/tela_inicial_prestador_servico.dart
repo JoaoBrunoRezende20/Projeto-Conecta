@@ -253,7 +253,7 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
   Widget _buildServiceCard(Map<String, dynamic> servico) {
     final nome = servico['nome'] ?? 'Sem nome';
     final preco = servico['preco'] ?? 0.0;
-    final imagemBase64 = servico['imagemBase64'] as String?;
+    final imagem = (servico['imagemUrl'] ?? servico['imagemBase64']) as String?;
 
     return Card(
       elevation: 0,
@@ -271,9 +271,9 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: imagemBase64 != null && imagemBase64.isNotEmpty
+                child: imagem != null && imagem.isNotEmpty
                     ? UsuarioUtil.buildImageWidget(
-                        imagemBase64,
+                        imagem,
                         fit: BoxFit.cover,
                       )
                     : const Center(

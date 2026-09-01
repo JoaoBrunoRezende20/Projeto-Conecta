@@ -84,7 +84,7 @@ class _TelaGerenciarServicosPrestadorState
 
               final nome = data['nome'] ?? 'Sem nome';
               final preco = data['preco'] ?? 0.0;
-              final imagemBase64 = data['imagemBase64'] as String?;
+              final imagem = (data['imagemUrl'] ?? data['imagemBase64']) as String?;
 
               return Card(
                 elevation: 2,
@@ -93,11 +93,11 @@ class _TelaGerenciarServicosPrestadorState
                   leading: SizedBox(
                     width: 50,
                     height: 50,
-                    child: imagemBase64 != null && imagemBase64.isNotEmpty
+                    child: imagem != null && imagem.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: UsuarioUtil.buildImageWidget(
-                              imagemBase64,
+                              imagem,
                               fit: BoxFit.cover,
                             ),
                           )
@@ -124,7 +124,7 @@ class _TelaGerenciarServicosPrestadorState
                                 servicoId: doc.id,
                                 nomeAtual: nome,
                                 precoAtual: preco is double ? preco : double.tryParse(preco.toString()) ?? 0.0,
-                                imagemBase64Atual: imagemBase64,
+                                imagemUrlAtual: imagem,
                               ),
                             ),
                           );
