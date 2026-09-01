@@ -467,15 +467,39 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       // Bloqueia o pedido antes de qualquer gravação se o estoque for insuficiente.
       await _produtoRepository.validarEstoqueItens(itensCopia);
 
+      String nomeCliente = "Cliente";
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        if (currentUser.displayName != null && currentUser.displayName!.trim().isNotEmpty) {
+          nomeCliente = currentUser.displayName!.trim();
+        } else {
+          try {
+            final userDoc = await FirebaseFirestore.instance.collection('usuarioComum').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+              final data = userDoc.data();
+              if (data != null) {
+                final nomeCompleto = "${data['nome'] ?? ''} ${data['sobrenome'] ?? ''}".trim();
+                if (nomeCompleto.isNotEmpty) {
+                  nomeCliente = nomeCompleto;
+                } else if (data['nome'] != null) {
+                  nomeCliente = data['nome'];
+                }
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
       final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
+        'nomeCliente': nomeCliente,
         'lojistaId': carrinhoService.lojaId ?? 'desconhecido',
         'itens': itensCopia,
         'valorTotal': _totalGeral,
         'status': 'pendente',
         'dataCriacao': FieldValue.serverTimestamp(),
         'dadosCliente': <String, dynamic>{
-          'nome': "Cliente",
+          'nome': nomeCliente,
           'telefone': _telefoneController.text.trim(),
         },
         'dadosEntrega': <String, dynamic>{

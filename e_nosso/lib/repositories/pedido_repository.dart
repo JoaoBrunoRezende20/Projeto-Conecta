@@ -45,7 +45,63 @@ class PedidoRepository {
     await _firestore.collection('pedidos').doc(pedidoId).update({'status': novoStatus});
   }
 
-  Future<void> criarPedido(Map<String, dynamic> dadosPedido) async {
-    await _firestore.collection('pedidos').add(dadosPedido);
+  /// Envia uma notificação em tempo real para qualquer usuário (lojistas, prestadorServicos, usuarioComum)
+  Future<void> enviarNotificacao({
+    required String destinatarioId,
+    required String colecaoDestinatario,
+    required String titulo,
+    required String mensagem,
+    required String tipo,
+    String? pedidoId,
+  }) async {
+    try {
+      await _firestore
+          .collection(colecaoDestinatario)
+          .doc(destinatarioId)
+          .collection('notificacoes')
+          .add({
+        'titulo': titulo,
+        'mensagem': mensagem,
+        'tipo': tipo,
+        'pedidoId': pedidoId,
+        'data': FieldValue.serverTimestamp(),
+        'lida': false,
+      });
+    } catch (e) {
+      // Evita que qualquer erro ao emitir a notificação quebre a transação do pedido
+    }
+  }
+
+  Future<DocumentReference> criarPedido(Map<String, dynamic> dadosPedido) async {
+    final docRef = await _firestore.collection('pedidos').add(dadosPedido);
+
+    final String? lojistaId = dadosPedido['lojistaId'];
+    final String? prestadorId = dadosPedido['prestadorId'];
+    final String nomeCliente = dadosPedido['nomeCliente'] ??
+        dadosPedido['dadosCliente']?['nome'] ??
+        'Um cliente';
+
+    if (lojistaId != null && lojistaId.isNotEmpty && lojistaId != 'desconhecido') {
+      final double total = ((dadosPedido['valorTotal'] ?? 0) as num).toDouble();
+      await enviarNotificacao(
+        destinatarioId: lojistaId,
+        colecaoDestinatario: 'lojistas',
+        titulo: 'Novo Pedido Recebido!',
+        mensagem: '$nomeCliente realizou um novo pedido no valor de R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}.',
+        tipo: 'novo_pedido',
+        pedidoId: docRef.id,
+      );
+    } else if (prestadorId != null && prestadorId.isNotEmpty) {
+      await enviarNotificacao(
+        destinatarioId: prestadorId,
+        colecaoDestinatario: 'prestadorServicos',
+        titulo: 'Nova Solicitação de Serviço!',
+        mensagem: '$nomeCliente solicitou um agendamento/serviço com você.',
+        tipo: 'solicitacao_servico',
+        pedidoId: docRef.id,
+      );
+    }
+
+    return docRef;
   }
 }

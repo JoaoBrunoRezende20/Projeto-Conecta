@@ -59,7 +59,56 @@ class TelaNotificacoes extends StatelessWidget {
               final doc = docs[index];
               final data = doc.data() as Map<String, dynamic>;
               final bool lida = data['lida'] ?? false;
-              final bool isAprovado = data['tipo'] == 'aprovado';
+              final String tipo = data['tipo'] ?? '';
+
+              IconData icon;
+              Color corStatus;
+              String tag;
+
+              switch (tipo) {
+                case 'novo_pedido':
+                  icon = Icons.shopping_bag_outlined;
+                  corStatus = Colors.orange.shade800;
+                  tag = 'NOVO PEDIDO';
+                  break;
+                case 'solicitacao_servico':
+                  icon = Icons.handyman_outlined;
+                  corStatus = Colors.blue.shade800;
+                  tag = 'SOLICITAÇÃO DE SERVIÇO';
+                  break;
+                case 'pedido_aceito':
+                case 'servico_aceito':
+                  icon = Icons.check_circle_outline;
+                  corStatus = Colors.green.shade800;
+                  tag = 'CONFIRMADO';
+                  break;
+                case 'pedido_concluido':
+                case 'servico_concluido':
+                  icon = Icons.task_alt;
+                  corStatus = Colors.teal.shade800;
+                  tag = 'CONCLUÍDO';
+                  break;
+                case 'pedido_recusado':
+                case 'servico_recusado':
+                  icon = Icons.cancel_outlined;
+                  corStatus = Colors.red.shade800;
+                  tag = 'RECUSADO';
+                  break;
+                case 'aprovado':
+                  icon = Icons.verified_user_outlined;
+                  corStatus = Colors.green.shade800;
+                  tag = 'CADASTRO APROVADO';
+                  break;
+                case 'rejeitado':
+                  icon = Icons.gpp_bad_outlined;
+                  corStatus = Colors.red.shade800;
+                  tag = 'CADASTRO REJEITADO';
+                  break;
+                default:
+                  icon = Icons.notifications_none;
+                  corStatus = Colors.grey.shade700;
+                  tag = 'AVISO';
+              }
 
               // LOGICA AUTOMÁTICA: Marca como lida se ainda não foi
               if (!lida) {
@@ -112,15 +161,15 @@ class TelaNotificacoes extends StatelessWidget {
                       Row(
                         children: [
                           Icon(
-                            isAprovado ? Icons.check_circle : Icons.cancel,
+                            icon,
                             size: 16,
-                            color: isAprovado ? Colors.green : Colors.red,
+                            color: corStatus,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            isAprovado ? 'STATUS: APROVADO' : 'STATUS: REJEITADO',
+                            tag,
                             style: TextStyle(
-                              color: isAprovado ? Colors.green[700] : Colors.red[700],
+                              color: corStatus,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),

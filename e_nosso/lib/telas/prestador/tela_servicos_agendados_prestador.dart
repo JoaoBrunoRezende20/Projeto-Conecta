@@ -39,9 +39,22 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
     }
   }
 
-  void _concluirServico(String pedidoId) async {
+  void _concluirServico(String pedidoId, {String? clienteId}) async {
     try {
       await _pedidoRepository.atualizarStatusPedido(pedidoId, 'Concluído');
+
+      // Notifica o cliente em tempo real
+      if (clienteId != null && clienteId.isNotEmpty) {
+        final nomePrestador = _nomeUsuario ?? "O prestador";
+        await _pedidoRepository.enviarNotificacao(
+          destinatarioId: clienteId,
+          colecaoDestinatario: 'usuarioComum',
+          titulo: 'Serviço Concluído!',
+          mensagem: '$nomePrestador finalizou seu atendimento. Não esqueça de avaliar o serviço!',
+          tipo: 'servico_concluido',
+          pedidoId: pedidoId,
+        );
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +192,10 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
                             children: [
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () => _concluirServico(doc.id),
+                                  onPressed: () => _concluirServico(
+                                    doc.id,
+                                    clienteId: data['clienteId'],
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00A36C), // Green
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
