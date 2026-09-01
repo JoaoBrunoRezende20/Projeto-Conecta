@@ -27,7 +27,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 1.2 Tratamento Visual de Produtos Indisponíveis (Filtro Preto e Branco)
+### [x] 1.2 Tratamento Visual de Produtos Indisponíveis (Filtro Preto e Branco e Estoque em Tempo Real)
 - **Referência:** Documento pág. 19 e 31 (Figura 8).
 - **Descrição:** Quando o lojista marcar um produto como indisponível (ou estoque zerado), a foto do produto deve receber um filtro em escala de cinza/preto e branco (`ColorFilter.mode`), com uma tag/selo visual de "Indisponível", bloqueando a adição do item ao carrinho.
 - **Arquivos:** `lib/telas/cliente/tela_produtos_disponiveis.dart`, `lib/telas/cliente/tela_detalhes_produto.dart`, `lib/telas/lojista/abas/aba_produtos_lojista.dart`.

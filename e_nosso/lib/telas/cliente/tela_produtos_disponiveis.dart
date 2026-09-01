@@ -4,6 +4,7 @@ import '../../services/carrinho_service.dart';
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
 import '../../repositories/produto_repository.dart';
+import '../../utils/usuario_util.dart';
 
 // --- TELA DE PRODUTOS DISPONÍVEIS ---
 class TelaProdutosDisponiveis extends StatefulWidget {
@@ -131,12 +132,41 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   }
 
   Widget _produtoCard(Map<String, dynamic> produto, String id) {
-    final int estoqueDisponivel = produto["estoque"] ?? 0;
-    final bool isIndisponivel = estoqueDisponivel <= 0;
+    final int estoqueDisponivel = (produto["estoque"] as num?)?.toInt() ?? 0;
+    final bool ativo = produto["ativo"] ?? true;
+    final bool isIndisponivel = estoqueDisponivel <= 0 || !ativo;
     final String nome = produto["nome"] ?? "Produto";
     final String descricao = produto["descricao"] ?? "Descrição do produto";
-    final double preco = (produto["preco"] ?? 0).toDouble();
-    final double avaliacao = (produto["avaliacao"] ?? 5.0).toDouble();
+    final double preco = ((produto["preco"] ?? 0) as num).toDouble();
+    final double avaliacao = ((produto["avaliacao"] ?? 5.0) as num).toDouble();
+    final String? imagem = (produto["imagemUrl"] ?? produto["imagemBase64"]) as String?;
+
+    const ColorFilter greyscaleFilter = ColorFilter.matrix(<double>[
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0,      0,      0,      1, 0,
+    ]);
+
+    Widget imageWidget = (imagem != null && imagem.isNotEmpty)
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: UsuarioUtil.buildImageWidget(imagem, fit: BoxFit.cover),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFDFDFDF),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 28),
+          );
+
+    if (isIndisponivel) {
+      imageWidget = ColorFiltered(
+        colorFilter: greyscaleFilter,
+        child: imageWidget,
+      );
+    }
 
     return InkWell(
       onTap: () {
@@ -158,13 +188,33 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDFDFDF),
-                borderRadius: BorderRadius.circular(8),
-              ),
+            Stack(
+              children: [
+                SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: imageWidget,
+                ),
+                if (isIndisponivel)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        "ESGOTADO",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -173,17 +223,15 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 children: [
                   Text(
                     nome,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.black87,
+                      color: isIndisponivel ? Colors.black54 : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    descricao.trim().isEmpty
-                        ? "Descrição do produto"
-                        : descricao,
+                    descricao.trim().isEmpty ? "Descrição do produto" : descricao,
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey[500],
@@ -195,31 +243,37 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.star_border,
-                        size: 16,
-                        color: Colors.black54,
+                      Icon(
+                        isIndisponivel ? Icons.cancel_outlined : Icons.inventory_2_outlined,
+                        size: 13,
+                        color: isIndisponivel ? Colors.red : Colors.green[700],
                       ),
                       const SizedBox(width: 4),
                       Text(
+                        isIndisponivel
+                            ? "Indisponível"
+                            : "$estoqueDisponivel em estoque",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isIndisponivel ? Colors.red : Colors.green[800],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.star,
+                        size: 13,
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
                         avaliacao.toStringAsFixed(1).replaceAll('.', ','),
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
                       ),
-                      if (isIndisponivel) ...[
-                        const SizedBox(width: 12),
-                        const Text(
-                          "INDISPONÍVEL",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ],
@@ -228,9 +282,9 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
             const SizedBox(width: 8),
             Text(
               "R\$${preco.toStringAsFixed(2).replaceAll('.', ',')}",
-              style: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
+              style: TextStyle(
+                color: isIndisponivel ? Colors.grey : Colors.black87,
+                fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
