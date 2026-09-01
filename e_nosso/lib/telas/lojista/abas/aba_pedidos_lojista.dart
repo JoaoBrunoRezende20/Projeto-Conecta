@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/pedido_repository.dart';
 import '../../../repositories/produto_repository.dart';
+import '../../chat/tela_chat.dart';
 
 class AbaPedidosLojista extends StatefulWidget {
   final String lojistaId;
@@ -375,7 +376,18 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TelaChat(
+                      conversaId: pedidoId,
+                      tituloChat: nomeCliente,
+                      currentUserId: widget.lojistaId,
+                    ),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8E8E8E), // Cinza botão
                 shape: RoundedRectangleBorder(

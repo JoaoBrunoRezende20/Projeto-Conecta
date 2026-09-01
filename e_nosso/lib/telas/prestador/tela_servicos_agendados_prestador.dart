@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../chat/tela_chat.dart';
 import '../../widgets/menu_lateral.dart';
 import '../../utils/usuario_util.dart';
 import '../../repositories/pedido_repository.dart';
@@ -209,7 +210,18 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TelaChat(
+                                      conversaId: doc.id,
+                                      tituloChat: data['nomeCliente'] ?? data['dadosCliente']?['nome'] ?? 'Cliente',
+                                      currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                                    ),
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey[600],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
