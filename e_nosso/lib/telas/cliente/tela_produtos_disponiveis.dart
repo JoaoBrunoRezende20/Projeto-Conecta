@@ -58,28 +58,63 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
               icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Column(
-              children: [
-                Text(
-                  widget.storeName,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            title: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('lojistas')
+                  .doc(widget.lojaId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                double liveRating = widget.rating;
+                int qtdAvaliacoes = 0;
+                String liveName = widget.storeName;
+
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  liveRating = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? widget.rating) as num).toDouble();
+                  qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+                  liveName = data['razaoSocial'] ?? data['nomeFantasia'] ?? widget.storeName;
+                }
+
+                return InkWell(
+                  onTap: () => _mostrarModalAvaliacoes(context, liveName, liveRating, qtdAvaliacoes),
+                  child: Column(
+                    children: [
+                      Text(
+                        liveName,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            liveRating > 0 ? liveRating.toStringAsFixed(1) : "Novo",
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (qtdAvaliacoes > 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              "($qtdAvaliacoes)",
+                              style: const TextStyle(color: Colors.black54, fontSize: 12),
+                            ),
+                          ],
+                          const SizedBox(width: 4),
+                          const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.rating.toStringAsFixed(1),
-                      style: const TextStyle(color: Colors.black, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
           ),
           body: _buildListaProdutos(),
@@ -354,6 +389,136 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           ],
         ),
       ),
+    );
+  }
+
+  void _mostrarModalAvaliacoes(BuildContext context, String nomeLoja, double media, int total) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Avaliações de $nomeLoja",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 20),
+                            const SizedBox(width: 4),
+                            Text(
+                              media > 0 ? media.toStringAsFixed(1) : "Sem avaliações",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (total > 0) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                "($total avaliações)",
+                                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 25),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('avaliacoes')
+                      .where('alvoId', isEqualTo: widget.lojaId)
+                      .orderBy('data', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          "Esta loja ainda não possui comentários.",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    }
+                    final reviews = snapshot.data!.docs;
+                    return ListView.separated(
+                      itemCount: reviews.length,
+                      separatorBuilder: (_, index) => const Divider(),
+                      itemBuilder: (context, i) {
+                        final r = reviews[i].data() as Map<String, dynamic>;
+                        final double stars = ((r['estrelas'] ?? 5) as num).toDouble();
+                        final String autor = r['nomeAvaliador'] ?? 'Cliente';
+                        final String comentario = r['comentario'] ?? '';
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Row(
+                            children: [
+                              Text(autor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              const Spacer(),
+                              ...List.generate(5, (starIndex) {
+                                return Icon(
+                                  starIndex < stars ? Icons.star : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 14,
+                                );
+                              }),
+                            ],
+                          ),
+                          subtitle: comentario.isNotEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(comentario, style: const TextStyle(color: Colors.black87, fontSize: 13)),
+                                )
+                              : null,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

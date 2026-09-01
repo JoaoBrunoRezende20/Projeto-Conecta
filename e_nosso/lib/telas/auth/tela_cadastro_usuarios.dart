@@ -730,6 +730,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
             'estado': _estadoSelecionado,
             'cep': _cepController.text.trim(),
           },
+          'areaAtendimento': _bairrosSelecionados.isNotEmpty
+              ? _bairrosSelecionados
+              : (_bairroLojistaSelecionado != null ? [_bairroLojistaSelecionado!] : _listaBairros),
           'dadosDoResponsavel': {
             'nome': _nomeController.text.trim(),
             'sobrenome': _sobrenomeController.text.trim(),
@@ -950,15 +953,40 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _bairroLojistaSelecionado,
-          decoration: const InputDecoration(labelText: 'Bairro da Loja'),
+          decoration: const InputDecoration(labelText: 'Bairro da Loja (Sede)'),
           hint: const Text('Selecione o Bairro'),
           isExpanded: true,
           menuMaxHeight: 300,
-          items: _listaBairros.map((String bairro) {
+          items: ['Todos os Bairros', ..._listaBairros].map((String bairro) {
             return DropdownMenuItem(value: bairro, child: Text(bairro));
           }).toList(),
           onChanged: (v) => setState(() => _bairroLojistaSelecionado = v),
           validator: (v) => v == null ? 'Selecione o bairro da loja.' : null,
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: _mostrarSelecaoBairros,
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Área de Entrega (Bairros Atendidos)',
+              border: UnderlineInputBorder(),
+              suffixIcon: Icon(Icons.arrow_drop_down),
+            ),
+            child: Text(
+              _bairrosSelecionados.isEmpty
+                  ? 'Selecione os bairros de entrega'
+                  : (_bairrosSelecionados.length == _listaBairros.length
+                      ? 'Todos os bairros selecionados (${_listaBairros.length})'
+                      : _bairrosSelecionados.join(', ')),
+              style: TextStyle(
+                color: _bairrosSelecionados.isEmpty
+                    ? Colors.grey.shade600
+                    : Colors.black,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(

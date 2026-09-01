@@ -4,6 +4,7 @@ import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../utils/usuario_util.dart';
 
 class CategoriaComidas extends StatefulWidget {
   final String? categoriaSelecionada;
@@ -118,6 +119,9 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                   final data = docs[index].data() as Map<String, dynamic>;
                   final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
                   final descricao = (data['descricao'] ?? 'Sem descrição').toString();
+                  final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
+                  final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+                  final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
                   final lojaId = docs[index].id;
 
                   return _buildLojaCard(
@@ -126,7 +130,9 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                     nome: nome,
                     categoriaTexto: categoria ?? "Loja",
                     descricaoExtra: descricao,
-                    avaliacao: 5.0,
+                    avaliacao: avaliacao,
+                    qtdAvaliacoes: qtdAvaliacoes,
+                    fotoUrl: fotoUrl,
                     isFavorita: lojasFavoritas.contains(lojaId),
                   );
                 },
@@ -142,6 +148,9 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
             final data = docs[index].data() as Map<String, dynamic>;
             final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
             final descricao = (data['descricao'] ?? 'Sem descrição').toString();
+            final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
+            final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+            final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
 
             return _buildLojaCard(
               context: context,
@@ -149,7 +158,9 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
               nome: nome,
               categoriaTexto: categoria ?? "Loja",
               descricaoExtra: descricao,
-              avaliacao: 5.0,
+              avaliacao: avaliacao,
+              qtdAvaliacoes: qtdAvaliacoes,
+              fotoUrl: fotoUrl,
               isFavorita: false,
             );
           },
@@ -165,6 +176,8 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
     required String categoriaTexto,
     required String descricaoExtra,
     required double avaliacao,
+    required int qtdAvaliacoes,
+    String? fotoUrl,
     required bool isFavorita,
   }) {
     return GestureDetector(
@@ -196,6 +209,12 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                 color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(10),
               ),
+              child: (fotoUrl != null && fotoUrl.isNotEmpty)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: UsuarioUtil.buildImageWidget(fotoUrl, fit: BoxFit.cover),
+                    )
+                  : const Icon(Icons.storefront, color: Colors.grey, size: 30),
             ),
             const SizedBox(width: 12),
 
@@ -210,10 +229,31 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                       fontSize: 16,
                     ),
                   ),
-                  Text("⭐ $avaliacao  •  $categoriaTexto"),
-                  const Text("50–60 min  •  R\$ 5,00"),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 15),
+                      const SizedBox(width: 3),
+                      Text(
+                        avaliacao > 0 ? avaliacao.toStringAsFixed(1) : "Novo",
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      if (qtdAvaliacoes > 0) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          "($qtdAvaliacoes)",
+                          style: const TextStyle(color: Colors.black54, fontSize: 11),
+                        ),
+                      ],
+                      const SizedBox(width: 6),
+                      Text("•  $categoriaTexto", style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     descricaoExtra,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
