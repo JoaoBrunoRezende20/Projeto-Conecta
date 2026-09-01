@@ -52,6 +52,16 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
+### [x] 1.5 Notificações em Tempo Real de Pedidos e Serviços
+- **Descrição:** Disparo e recepção automática de notificações no app:
+  - Lojista é notificado com nome do cliente e valor quando um novo pedido é criado.
+  - Prestador é notificado quando uma nova solicitação de serviço é feita.
+  - Cliente é notificado em tempo real quando o lojista ou prestador aceita, conclui ou recusa o pedido/serviço.
+  - Sino de notificações (`BotaoNotificacao`) com contador de não lidas adicionado na AppBar do Cliente e no Menu Lateral.
+- **Arquivos:** `lib/repositories/pedido_repository.dart`, `lib/telas/perfil/tela_notificacoes.dart`, `lib/telas/cliente/tela_inicial_comum.dart`, `lib/telas/lojista/abas/aba_pedidos_lojista.dart`, `lib/telas/prestador/tela_pedidos_pendentes_prestador.dart`, `lib/telas/prestador/tela_servicos_agendados_prestador.dart`.
+
+---
+
 ## 🔴 2. Novas Funcionalidades Exigidas no Documento
 
 ### [ ] 2.1 Agendamento In-App de Prestadores com Calendário e Horários
