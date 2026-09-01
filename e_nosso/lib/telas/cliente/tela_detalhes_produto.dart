@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../services/carrinho_service.dart';
+import 'tela_carrinho.dart';
 
 // Este widget é Stateful porque precisamos que a quantidade mude na tela
 class TelaDetalhesProduto extends StatefulWidget {
@@ -29,9 +30,22 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Sabor da roça", // Nome da Loja
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        title: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance.collection('lojistas').doc(widget.lojaId).get(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text("Carregando...", style: TextStyle(color: Colors.black, fontSize: 16));
+            }
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final nomeDaLoja = data['razaoSocial'] ?? data['nomeFantasia'] ?? 'Loja';
+              return Text(
+                nomeDaLoja,
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              );
+            }
+            return const Text("Loja", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold));
+          },
         ),
         centerTitle: true,
       ),
@@ -355,10 +369,75 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Adicionado: $quantidade x ${widget.produto['nome'] ?? 'Produto'}"),
-        backgroundColor: Colors.green,
+    // Buscar nome da loja para a tela de carrinho
+    String storeName = "Loja";
+    try {
+      final doc = await FirebaseFirestore.instance.collection('lojistas').doc(widget.lojaId).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        storeName = data['razaoSocial'] ?? data['nomeFantasia'] ?? "Loja";
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    
+    // Mostra o bottom sheet de confirmação
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 60),
+            const SizedBox(height: 16),
+            const Text(
+              "Produto adicionado!",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "$quantidade x ${widget.produto['nome'] ?? 'Produto'}",
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Fecha modal
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TelaRevisaoCarrinho(lojaName: storeName),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text("Ir para o Carrinho", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pop(context); // Fecha modal e fica na tela
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text("Continuar Comprando", style: TextStyle(color: Colors.black, fontSize: 16)),
+            ),
+          ],
+        ),
       ),
     );
   }
