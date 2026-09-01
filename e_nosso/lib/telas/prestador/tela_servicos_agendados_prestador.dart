@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../chat/tela_chat.dart';
 import '../../widgets/menu_lateral.dart';
 import '../../utils/usuario_util.dart';
 import '../../repositories/pedido_repository.dart';
@@ -39,9 +40,22 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
     }
   }
 
-  void _concluirServico(String pedidoId) async {
+  void _concluirServico(String pedidoId, {String? clienteId}) async {
     try {
       await _pedidoRepository.atualizarStatusPedido(pedidoId, 'Concluído');
+
+      // Notifica o cliente em tempo real
+      if (clienteId != null && clienteId.isNotEmpty) {
+        final nomePrestador = _nomeUsuario ?? "O prestador";
+        await _pedidoRepository.enviarNotificacao(
+          destinatarioId: clienteId,
+          colecaoDestinatario: 'usuarioComum',
+          titulo: 'Serviço Concluído!',
+          mensagem: '$nomePrestador finalizou seu atendimento. Não esqueça de avaliar o serviço!',
+          tipo: 'servico_concluido',
+          pedidoId: pedidoId,
+        );
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +193,10 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
                             children: [
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () => _concluirServico(doc.id),
+                                  onPressed: () => _concluirServico(
+                                    doc.id,
+                                    clienteId: data['clienteId'],
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00A36C), // Green
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -193,7 +210,18 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TelaChat(
+                                      conversaId: doc.id,
+                                      tituloChat: data['nomeCliente'] ?? data['dadosCliente']?['nome'] ?? 'Cliente',
+                                      currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                                    ),
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey[600],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart';
+import '../chat/tela_chat.dart';
 import '../../utils/usuario_util.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/usuario_repository.dart';
@@ -39,9 +40,33 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
     }
   }
 
-  void _atualizarStatusPedido(String pedidoId, String novoStatus) async {
+  void _atualizarStatusPedido(String pedidoId, String novoStatus, {String? clienteId}) async {
     try {
       await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
+
+      // Notifica o cliente em tempo real
+      if (clienteId != null && clienteId.isNotEmpty) {
+        final nomePrestador = _nomeUsuario ?? "O prestador";
+        if (novoStatus == 'Confirmado') {
+          await _pedidoRepository.enviarNotificacao(
+            destinatarioId: clienteId,
+            colecaoDestinatario: 'usuarioComum',
+            titulo: 'Serviço Confirmado!',
+            mensagem: '$nomePrestador confirmou sua solicitação de serviço.',
+            tipo: 'servico_aceito',
+            pedidoId: pedidoId,
+          );
+        } else if (novoStatus == 'Rejeitado' || novoStatus == 'Cancelado') {
+          await _pedidoRepository.enviarNotificacao(
+            destinatarioId: clienteId,
+            colecaoDestinatario: 'usuarioComum',
+            titulo: 'Solicitação Recusada',
+            mensagem: '$nomePrestador não pôde aceitar a sua solicitação de serviço.',
+            tipo: 'servico_recusado',
+            pedidoId: pedidoId,
+          );
+        }
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -181,7 +206,11 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                             children: [
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () => _atualizarStatusPedido(doc.id, 'Rejeitado'),
+                                  onPressed: () => _atualizarStatusPedido(
+                                    doc.id,
+                                    'Rejeitado',
+                                    clienteId: data['clienteId'],
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -192,7 +221,11 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                               const SizedBox(width: 15),
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () => _atualizarStatusPedido(doc.id, 'Confirmado'),
+                                  onPressed: () => _atualizarStatusPedido(
+                                    doc.id,
+                                    'Confirmado',
+                                    clienteId: data['clienteId'],
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00A36C), // Green
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -206,7 +239,18 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TelaChat(
+                                      conversaId: doc.id,
+                                      tituloChat: data['nomeCliente'] ?? data['dadosCliente']?['nome'] ?? 'Cliente',
+                                      currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                                    ),
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey[600],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),

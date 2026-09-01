@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/pedido_repository.dart';
 import '../../../repositories/produto_repository.dart';
+import '../../chat/tela_chat.dart';
 
 class AbaPedidosLojista extends StatefulWidget {
   final String lojistaId;
@@ -15,13 +16,71 @@ class AbaPedidosLojista extends StatefulWidget {
 class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
   final ProdutoRepository _produtoRepository = ProdutoRepository();
+  String? _nomeLoja;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarNomeLoja();
+  }
+
+  Future<void> _carregarNomeLoja() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('lojistas')
+          .doc(widget.lojistaId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _nomeLoja = data['razaoSocial'] ?? data['nomeFantasia'] ?? 'Loja';
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   Future<void> _atualizarStatusPedido(
     String pedidoId,
     String novoStatus,
-    Map<String, dynamic> itens,
-  ) async {
+    Map<String, dynamic> itens, {
+    String? clienteId,
+  }) async {
     await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
+
+    // Envia notificação em tempo real para o cliente
+    if (clienteId != null && clienteId.isNotEmpty) {
+      final nomeExibicaoLoja = _nomeLoja ?? "a loja";
+      if (novoStatus == 'em andamento') {
+        await _pedidoRepository.enviarNotificacao(
+          destinatarioId: clienteId,
+          colecaoDestinatario: 'usuarioComum',
+          titulo: 'Pedido Aceito!',
+          mensagem: 'Seu pedido na loja $nomeExibicaoLoja foi confirmado e está em preparação.',
+          tipo: 'pedido_aceito',
+          pedidoId: pedidoId,
+        );
+      } else if (novoStatus == 'concluido') {
+        await _pedidoRepository.enviarNotificacao(
+          destinatarioId: clienteId,
+          colecaoDestinatario: 'usuarioComum',
+          titulo: 'Pedido Concluído!',
+          mensagem: 'Seu pedido na loja $nomeExibicaoLoja foi finalizado. Não se esqueça de avaliar a sua experiência!',
+          tipo: 'pedido_concluido',
+          pedidoId: pedidoId,
+        );
+      } else if (novoStatus == 'cancelado' || novoStatus == 'rejeitado') {
+        await _pedidoRepository.enviarNotificacao(
+          destinatarioId: clienteId,
+          colecaoDestinatario: 'usuarioComum',
+          titulo: 'Pedido Recusado',
+          mensagem: 'Infelizmente seu pedido na loja $nomeExibicaoLoja não pôde ser atendido.',
+          tipo: 'pedido_recusado',
+          pedidoId: pedidoId,
+        );
+      }
+    }
 
     // Devolve estoque quando lojista cancela ou recusa o pedido
     if (novoStatus == 'cancelado' || novoStatus == 'rejeitado') {
@@ -216,6 +275,7 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
                   pedido['itens'] is Map
                       ? Map<String, dynamic>.from(pedido['itens'] as Map)
                       : {},
+                  clienteId: pedido['clienteId'],
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -245,6 +305,7 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
                   pedido['itens'] is Map
                       ? Map<String, dynamic>.from(pedido['itens'] as Map)
                       : {},
+                  clienteId: pedido['clienteId'],
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -288,6 +349,7 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
                   pedido['itens'] is Map
                       ? Map<String, dynamic>.from(pedido['itens'] as Map)
                       : {},
+                  clienteId: pedido['clienteId'],
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -314,7 +376,18 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TelaChat(
+                      conversaId: pedidoId,
+                      tituloChat: nomeCliente,
+                      currentUserId: widget.lojistaId,
+                    ),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8E8E8E), // Cinza botão
                 shape: RoundedRectangleBorder(

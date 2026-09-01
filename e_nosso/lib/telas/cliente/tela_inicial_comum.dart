@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart'; // Verifique se o caminho do import está correto
-import '../auth/tela_tipo_usuario.dart';
+import '../../widgets/botao_notificacao.dart';
 
 // Imports das categorias
 import '../categorias/tela_filtros_comidas.dart';
@@ -70,6 +70,8 @@ class _TelaInicialComumState extends State<TelaInicialComum> {
         ),
 
         actions: [
+          if (!isVisitor)
+            const BotaoNotificacao(colecaoUsuario: 'usuarioComum'),
           if (isVisitor)
             IconButton(
               icon: const Icon(Icons.exit_to_app, color: Colors.black),

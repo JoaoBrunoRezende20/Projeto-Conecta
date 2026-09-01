@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../services/carrinho_service.dart';
+import '../../utils/usuario_util.dart';
 import 'tela_carrinho.dart';
 
 // Este widget é Stateful porque precisamos que a quantidade mude na tela
@@ -49,164 +50,279 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            const Text(
-              "DETALHAMENTO DOS PRODUTOS",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 25),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: (widget.produto['id'] != null)
+            ? FirebaseFirestore.instance
+                .collection('produtos')
+                .doc(widget.produto['id'])
+                .snapshots()
+            : null,
+        builder: (context, snapshot) {
+          Map<String, dynamic> dadosLive = widget.produto;
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final liveMap = snapshot.data!.data() as Map<String, dynamic>;
+            dadosLive = {...liveMap, 'id': widget.produto['id']};
+          }
 
-            // ==========================================
-            // --- CARD CENTRAL PRINCIPAL (CINZA) ---
-            // ==========================================
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white, // Fundo branco
-                border: Border.all(color: Colors.grey.shade300), // Borda cinza
-                borderRadius: BorderRadius.circular(
-                  25,
-                ), // Bordas bem arredondadas
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          final int estoque = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
+          final bool ativo = dadosLive['ativo'] ?? true;
+          final bool isIndisponivel = estoque <= 0 || !ativo;
+          final String nome = dadosLive['nome'] ?? "Pão de queijo";
+          final String descricao = dadosLive['descricao'] ?? "Descrição do produto";
+          final double preco = ((dadosLive['preco'] ?? 0) as num).toDouble();
+          final String? imagem = (dadosLive['imagemUrl'] ?? dadosLive['imagemBase64']) as String?;
+
+          // Ajusta a quantidade automaticamente caso o estoque mude no banco
+          int qtdAjustada = quantidade;
+          if (isIndisponivel) {
+            qtdAjustada = 0;
+          } else if (qtdAjustada > estoque) {
+            qtdAjustada = estoque;
+          } else if (qtdAjustada <= 0 && estoque > 0) {
+            qtdAjustada = 1;
+          }
+
+          const ColorFilter greyscaleFilter = ColorFilter.matrix(<double>[
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0,      0,      0,      1, 0,
+          ]);
+
+          Widget imageWidget = (imagem != null && imagem.isNotEmpty)
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: UsuarioUtil.buildImageWidget(
+                    imagem,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              : const Center(
+                  child: Text(
+                    "*imagem do produto",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
+                );
+
+          if (isIndisponivel) {
+            imageWidget = ColorFiltered(
+              colorFilter: greyscaleFilter,
+              child: imageWidget,
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  "DETALHAMENTO DOS PRODUTOS",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 25),
+
+                // ==========================================
+                // --- CARD CENTRAL PRINCIPAL ---
+                // ==========================================
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Fundo branco
+                    border: Border.all(color: Colors.grey.shade300), // Borda cinza
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Column(
                     children: [
-                      // Espaço da Imagem
-                      Container(
-                        width: 130,
-                        height: 130,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200], // Cinza do mockup
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: widget.produto['imagemUrl'] != null
-                            ? Image.network(
-                                widget.produto['imagemUrl'],
-                                fit: BoxFit.cover,
-                              )
-                            : const Center(
-                                child: Text(
-                                  "*imagem do produto",
-                                  textAlign: TextAlign.center,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Espaço da Imagem
+                          Container(
+                            width: 130,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: imageWidget,
+                          ),
+                          const SizedBox(width: 20),
+                          // Infos do Produto
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  nome,
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isIndisponivel ? Colors.black54 : Colors.black,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  descricao,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "R\$ ${preco.toStringAsFixed(2).replaceAll('.', ',')}",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: isIndisponivel ? Colors.grey : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                // Indicador de Disponibilidade / Estoque
+                                if (isIndisponivel)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.red.shade200),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.cancel_outlined, color: Colors.red, size: 13),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          "Produto Indisponível",
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.green.shade200),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.inventory_2_outlined, color: Colors.green[700], size: 13),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "Em estoque: $estoque un.",
+                                          style: TextStyle(
+                                            color: Colors.green[800],
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 20),
-                      // Infos do Produto
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.produto['nome'] ?? "Pão de queijo",
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              widget.produto['descricao'] ?? "Descrição do produto",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 25),
-                            Text(
-                              "R\$ ${widget.produto['preco'] ?? '0,00'} (*Preço)",
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 25),
+                      const SizedBox(height: 25),
 
-                  // ==========================================
-                  // --- SELETOR DE QUANTIDADE E BOTÃO ---
-                  // ==========================================
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Seletor de Quantidade (- Num +)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200], // Fundo cinza do mockup
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => setState(
-                                () => quantidade > 1 ? quantidade-- : null,
-                              ),
-                              icon: const Icon(Icons.remove, size: 18),
-                            ),
-                            Text(
-                              "$quantidade",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () => setState(() => quantidade++),
-                              icon: const Icon(Icons.add, size: 18),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      // Botão Adicionar à sacola
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _adicionarNaSacola();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Colors.grey[300], // Cinza do mockup
-                            foregroundColor: Colors.black, // Texto preto
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
+                      // ==========================================
+                      // --- SELETOR DE QUANTIDADE E BOTÃO ---
+                      // ==========================================
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Seletor de Quantidade (- Num +)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200], // Fundo cinza do mockup
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                          ),
-                          child: const Text(
-                            "Adicionar à sacola",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  onPressed: (isIndisponivel || qtdAjustada <= 1)
+                                      ? null
+                                      : () => setState(() => quantidade = qtdAjustada - 1),
+                                  icon: Icon(
+                                    Icons.remove,
+                                    size: 18,
+                                    color: (isIndisponivel || qtdAjustada <= 1) ? Colors.grey : Colors.black,
+                                  ),
+                                ),
+                                Text(
+                                  "$qtdAjustada",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: isIndisponivel ? Colors.grey : Colors.black,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: (isIndisponivel || qtdAjustada >= estoque)
+                                      ? null
+                                      : () => setState(() => quantidade = qtdAjustada + 1),
+                                  icon: Icon(
+                                    Icons.add,
+                                    size: 18,
+                                    color: (isIndisponivel || qtdAjustada >= estoque) ? Colors.grey : Colors.black,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 15),
+                          // Botão Adicionar à sacola
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isIndisponivel
+                                  ? null
+                                  : () {
+                                      _adicionarNaSacola(dadosLive, qtdAjustada);
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isIndisponivel
+                                    ? Colors.grey[300]
+                                    : const Color(0xFF8B9467),
+                                foregroundColor: isIndisponivel ? Colors.grey[600] : Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                              ),
+                              child: Text(
+                                isIndisponivel ? "Produto Indisponível" : "Adicionar à sacola",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
             const SizedBox(height: 35),
             const Text(
@@ -310,8 +426,14 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                   color: Colors.grey[200],
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: semelhandoData['imagemUrl'] != null
-                                    ? Image.network(semelhandoData['imagemUrl'], fit: BoxFit.cover)
+                                child: (semelhandoData['imagemUrl'] != null || semelhandoData['imagemBase64'] != null)
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: UsuarioUtil.buildImageWidget(
+                                          (semelhandoData['imagemUrl'] ?? semelhandoData['imagemBase64']) as String,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
                                     : const Icon(Icons.image, size: 20, color: Colors.grey),
                               ),
                               const SizedBox(width: 10),
@@ -349,21 +471,41 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
             const SizedBox(height: 40),
           ],
         ),
-      ),
-    );
-  }
+      );
+    },
+  ),
+);
+}
 
-  Future<void> _adicionarNaSacola() async {
-    // Visitantes agora podem adicionar à sacola normalmente.
-    // A validação será feita apenas no checkout (tela_carrinho.dart).
-
-    final String? id = widget.produto['id'];
+  Future<void> _adicionarNaSacola(Map<String, dynamic> dadosLive, int qtd) async {
+    final String? id = dadosLive['id'];
     if (id == null) return;
 
+    final int estoqueAtual = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
+    if (estoqueAtual <= 0 || qtd <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Este produto está indisponível para compra no momento."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (qtd > estoqueAtual) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Quantidade máxima disponível em estoque: $estoqueAtual."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final itemAdicionado = {
-      'nome': widget.produto['nome'],
-      'preco': widget.produto['preco'],
-      'quantidade': quantidade,
+      'nome': dadosLive['nome'] ?? 'Produto',
+      'preco': dadosLive['preco'] ?? 0.0,
+      'quantidade': qtd,
     };
 
     await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);

@@ -1,5 +1,4 @@
-﻿import 'package:e_nosso/telas/perfil/tela_perfil.dart';
-import 'package:e_nosso/telas/auth/tela_tipo_usuario.dart';
+import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:flutter/material.dart';
 import '../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,15 +24,7 @@ class MenuLateral extends StatelessWidget {
     this.colecaoUsuario = 'usuarioComum',
   });
 
-  void _mostrarAvisoDesenvolvimento(BuildContext context) {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Esta funcionalidade estará disponível em breve!"),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+
 
   void _confirmarSaida(BuildContext context) {
     showDialog(
@@ -161,20 +152,19 @@ class MenuLateral extends StatelessWidget {
                         );
                       },
                     ),
-                    if (colecaoUsuario != 'prestadorServicos')
-                      ListTile(
-                        leading: const Icon(Icons.notifications_none),
-                        title: const Text("Notificações"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
-                            ),
-                          );
-                        },
-                      ),
+                    ListTile(
+                      leading: const Icon(Icons.notifications_none),
+                      title: const Text("Notificações"),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TelaNotificacoes(colecaoUsuario: colecaoUsuario),
+                          ),
+                        );
+                      },
+                    ),
                     if (colecaoUsuario == 'usuarioComum') ...[
                       ListTile(
                         leading: const Icon(Icons.pending_actions),

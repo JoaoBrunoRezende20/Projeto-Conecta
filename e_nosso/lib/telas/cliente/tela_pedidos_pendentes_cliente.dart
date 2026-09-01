@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/menu_lateral.dart';
 import '../../repositories/pedido_repository.dart';
+import '../chat/tela_chat.dart';
 
 class TelaPedidosPendentesCliente extends StatefulWidget {
   const TelaPedidosPendentesCliente({super.key});
@@ -298,6 +299,34 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
               child: Text(
                 "Pedido Recusado",
                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+          
+          if (!isRejeitado) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: Text("Chat com ${nomeLojaExibicao.split(' ')[0]}"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  side: const BorderSide(color: Colors.grey),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TelaChat(
+                        conversaId: pedidoId,
+                        tituloChat: nomeLojaExibicao,
+                        currentUserId: FirebaseAuth.instance.currentUser!.uid,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
