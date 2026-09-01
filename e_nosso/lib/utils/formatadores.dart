@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class AppFormatadores {
@@ -61,5 +62,45 @@ class AppFormatadores {
     if (value == null || value.isEmpty) return "Campo obrigatório";
     if (value.length < 9) return "CEP incompleto";
     return null;
+  }
+
+  static String? validarCpfCnpj(String? value) {
+    if (value == null || value.isEmpty) return "Campo obrigatório";
+    String unmasked = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (unmasked.length <= 11) {
+      if (unmasked.length < 11) return "CPF incompleto";
+    } else {
+      if (unmasked.length < 14) return "CNPJ incompleto";
+    }
+    return null;
+  }
+}
+
+class CpfCnpjFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (text.length > 14) text = text.substring(0, 14);
+
+    String masked = '';
+    if (text.length <= 11) {
+      for (int i = 0; i < text.length; i++) {
+        masked += text[i];
+        if (i == 2 || i == 5) masked += '.';
+        if (i == 8) masked += '-';
+      }
+    } else {
+      for (int i = 0; i < text.length; i++) {
+        masked += text[i];
+        if (i == 1 || i == 4) masked += '.';
+        if (i == 7) masked += '/';
+        if (i == 11) masked += '-';
+      }
+    }
+    return TextEditingValue(
+      text: masked,
+      selection: TextSelection.collapsed(offset: masked.length),
+    );
   }
 }

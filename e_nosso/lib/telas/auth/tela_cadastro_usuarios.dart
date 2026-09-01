@@ -1,5 +1,5 @@
-﻿
-import 'dart:typed_data';
+
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart'; // NOVO: Import do Storage
@@ -65,7 +65,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     'Contador(a)': 'CRC',
     'Corretor(a) de Imóveis': 'CRECI',
     'Dentista': 'CRO',
-    'Eletricista': 'NR10',
     'Enfermeiro(a)': 'COREN',
     'Engenheiro(a)': 'CREA',
     'Médico(a)': 'CRM',
@@ -296,6 +295,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   ) async {
     List<String> urls = [];
     for (int i = 0; i < imagens.length; i++) {
+      debugPrint('>>> [STORAGE] Iniciando upload imagem ${i + 1}/${imagens.length} para pasta "$pasta"...');
       // Cria um caminho único para cada imagem no Storage
       final ref = FirebaseStorage.instance
           .ref()
@@ -305,14 +305,29 @@ class _TelaCadastroState extends State<TelaCadastro> {
           .child('img_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
 
       // Faz o upload dos bytes
-      final uploadTask = await ref.putData(
+      final uploadTask = ref.putData(
         imagens[i],
         SettableMetadata(contentType: 'image/jpeg'),
       );
 
+      // Aguarda com timeout para não travar indefinidamente em caso de bloqueio de CORS no Web
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException(
+            'Tempo esgotado ao enviar imagem para o Firebase Storage. '
+            'Se estiver rodando no navegador (Web), verifique se o CORS foi configurado no Storage ou realize o teste no Emulador Android.',
+          );
+        },
+      );
+
       // Obtém o link público para salvar no Firestore
-      final url = await uploadTask.ref.getDownloadURL();
+      final url = await snapshot.ref.getDownloadURL().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('Tempo esgotado ao obter link da imagem salva.'),
+      );
       urls.add(url);
+      debugPrint('>>> [STORAGE] Imagem ${i + 1} enviada com sucesso: $url');
     }
     return urls;
   }
@@ -388,9 +403,25 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 width: double.maxFinite,
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: _listaBairros.length,
+                  itemCount: _listaBairros.length + 1,
                   itemBuilder: (context, index) {
-                    final bairro = _listaBairros[index];
+                    if (index == 0) {
+                      bool allSelected = selecaoTemporaria.length == _listaBairros.length;
+                      return CheckboxListTile(
+                        title: const Text('Selecionar Todos', style: TextStyle(fontWeight: FontWeight.bold)),
+                        value: allSelected,
+                        onChanged: (bool? value) {
+                          setStateDialog(() {
+                            if (value == true) {
+                              selecaoTemporaria = List.from(_listaBairros);
+                            } else {
+                              selecaoTemporaria.clear();
+                            }
+                          });
+                        },
+                      );
+                    }
+                    final bairro = _listaBairros[index - 1];
                     final isSelected = selecaoTemporaria.contains(bairro);
                     return CheckboxListTile(
                       title: Text(bairro),
@@ -537,19 +568,28 @@ class _TelaCadastroState extends State<TelaCadastro> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Cria a conta de autenticação primeiro
-      final credencial = await _authRepository.cadastrar(
-        _emailController.text.trim(),
-        _senhaController.text.trim(),
-      );
+      debugPrint('>>> [CADASTRO] 1. Criando conta no Firebase Auth para: ${_emailController.text.trim()}');
+      final credencial = await _authRepository
+          .cadastrar(
+            _emailController.text.trim(),
+            _senhaController.text.trim(),
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Tempo limite esgotado ao criar conta no Firebase Auth.'),
+          );
 
       final String uid = credencial.user!.uid;
+      debugPrint('>>> [CADASTRO] 2. Conta criada com UID: $uid');
 
       // ATUALIZA O NOME DO USUÁRIO NO AUTH (Para não aparecer como Visitante)
       String nomeCompleto =
           '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'
               .trim();
-      await credencial.user!.updateDisplayName(nomeCompleto);
+      await credencial.user!.updateDisplayName(nomeCompleto).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => debugPrint('>>> [CADASTRO] Timeout ao atualizar displayName, continuando...'),
+          );
 
       // 2. Faz o upload das imagens para o Storage
       List<String> urlsDocumentos = [];
@@ -557,6 +597,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       try {
         if (_imagensDocumentosBytes.isNotEmpty) {
+          debugPrint('>>> [CADASTRO] 3. Fazendo upload de ${_imagensDocumentosBytes.length} documento(s)...');
           urlsDocumentos = await _uploadImagensFirebase(
             _imagensDocumentosBytes,
             'documentos',
@@ -565,6 +606,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
 
         if (_imagensPortfolioBytes.isNotEmpty) {
+          debugPrint('>>> [CADASTRO] 4. Fazendo upload de ${_imagensPortfolioBytes.length} imagem(ns) de portfólio...');
           urlsPortfolio = await _uploadImagensFirebase(
             _imagensPortfolioBytes,
             'portfolio',
@@ -573,26 +615,62 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
 
         // 3. Salva todos os dados e as URLs no Firestore
-        await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio);
-        // --- NOVO: DOUBLE OPT-IN ---
-        await credencial.user!.sendEmailVerification();
-        await FirebaseAuth.instance.signOut();
+        debugPrint('>>> [CADASTRO] 5. Salvando dados no Firestore...');
+        await _salvarDadosNoFirestore(uid, urlsDocumentos, urlsPortfolio).timeout(
+              const Duration(seconds: 15),
+              onTimeout: () => throw TimeoutException('Tempo esgotado ao salvar dados no Firestore.'),
+            );
+        debugPrint('>>> [CADASTRO] 6. Dados salvos com sucesso no Firestore.');
+
+        // --- DOUBLE OPT-IN (Bypass para contas de teste) ---
+        final bool isEmailDeTeste = _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
+            _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
+
+        if (!isEmailDeTeste) {
+          debugPrint('>>> [CADASTRO] 7. Enviando e-mail de verificação...');
+          await credencial.user!.sendEmailVerification().timeout(
+                const Duration(seconds: 10),
+                onTimeout: () => debugPrint('>>> [CADASTRO] Timeout ao enviar e-mail de verificação.'),
+              );
+          debugPrint('>>> [CADASTRO] 8. Deslogando para exigir confirmação de e-mail...');
+          await FirebaseAuth.instance.signOut().timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => debugPrint('>>> [CADASTRO] Timeout no signOut.'),
+              );
+        } else {
+          debugPrint('>>> [CADASTRO] 7. E-mail de teste detectado: pulando envio de verificação.');
+        }
       } catch (e) {
+        debugPrint('>>> [CADASTRO] ERRO durante upload/salvamento: $e');
         // Se qualquer coisa falhar após a criação do Auth, deletamos o usuário para não deixá-lo órfão.
-        await credencial.user!.delete();
+        try {
+          await credencial.user!.delete();
+          debugPrint('>>> [CADASTRO] Usuário Auth órfão removido com sucesso.');
+        } catch (delErr) {
+          debugPrint('>>> [CADASTRO] Falha ao remover usuário órfão: $delErr');
+        }
         throw Exception(
-          'Falha ao concluir o cadastro. O usuário foi removido. Erro: $e',
+          'Falha ao concluir o cadastro: $e',
         );
       }
 
+      debugPrint('>>> [CADASTRO] 9. Cadastro finalizado com sucesso!');
       if (mounted) {
+        final bool isEmailDeTeste = _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
+            _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
+
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: const Text('Confirme seu E-mail', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              isEmailDeTeste ? 'Cadastro Concluído!' : 'Confirme seu E-mail',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             content: Text(
-              'Cadastro realizado com sucesso!\n\nEnviamos um link de confirmação para o e-mail:\n${_emailController.text.trim()}.\n\nVocê precisa verificar seu e-mail antes de fazer login.',
+              isEmailDeTeste
+                  ? 'Cadastro realizado com sucesso!\n\nPor se tratar de um e-mail de teste (@teste.com), a verificação de e-mail foi liberada automaticamente. Você já pode fazer login normalmente!'
+                  : 'Cadastro realizado com sucesso!\n\nEnviamos um link de confirmação para o e-mail:\n${_emailController.text.trim()}.\n\nVocê precisa verificar seu e-mail antes de fazer login.',
             ),
             actions: [
               TextButton(
@@ -611,16 +689,18 @@ class _TelaCadastroState extends State<TelaCadastro> {
         );
       }
     } on FirebaseAuthException catch (e) {
+      debugPrint('>>> [CADASTRO] FirebaseAuthException: ${e.code} - ${e.message}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro no cadastro: ${e.message}')),
         );
       }
     } catch (e) {
+      debugPrint('>>> [CADASTRO] Exception: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e'), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -803,9 +883,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _cnpjController,
-          inputFormatters: [AppFormatadores.maskCNPJ],
-          validator: AppFormatadores.validarCNPJ,
-          decoration: const InputDecoration(labelText: 'CNPJ'),
+          inputFormatters: [CpfCnpjFormatter()],
+          validator: AppFormatadores.validarCpfCnpj,
+          decoration: const InputDecoration(labelText: 'Documento (CPF ou CNPJ)'),
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
