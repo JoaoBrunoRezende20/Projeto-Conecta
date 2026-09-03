@@ -54,6 +54,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   void initState() {
     super.initState();
     _loadSavedData();
+    _carregarDadosUsuario();
     
     _telefoneController.addListener(_saveData);
     _enderecoController.addListener(_saveData);
@@ -96,11 +97,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     await prefs.setString('checkout_metodoPagamento', _metodoPagamento);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _carregarDadosUsuario();
-  }
+
 
   Future<void> _carregarDadosUsuario() async {
     final user = FirebaseAuth.instance.currentUser;
