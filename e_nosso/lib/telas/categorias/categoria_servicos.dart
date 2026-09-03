@@ -95,12 +95,14 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                         .toString();
                     final telefone = (data["telefone"] ?? "Não informado")
                         .toString();
+                    final bool isOnline = data["isOnline"] ?? false;
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
                       telefone: telefone,
+                      isOnline: isOnline,
                     );
                   },
                 );
@@ -117,6 +119,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
     required String lojaId,
     required String nome,
     required String telefone,
+    required bool isOnline,
   }) {
     return GestureDetector(
       onTap: () {
@@ -160,6 +163,25 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                     ),
                   ),
                   const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: isOnline ? Colors.green : Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isOnline ? "Online" : "Offline",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isOnline ? Colors.green[700] : Colors.grey[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(

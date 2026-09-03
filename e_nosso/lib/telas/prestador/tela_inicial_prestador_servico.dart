@@ -9,10 +9,17 @@ import '../../utils/usuario_util.dart';
 
 // --- Modelos de Dados ---
 class PrestadorProfile {
+  final String uid;
   final String nome;
   final String areaAtuacao;
+  final bool isOnline;
 
-  PrestadorProfile({required this.nome, required this.areaAtuacao});
+  PrestadorProfile({
+    required this.uid,
+    required this.nome,
+    required this.areaAtuacao,
+    required this.isOnline,
+  });
 }
 
 // --- A Tela ---
@@ -69,8 +76,12 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
         // 2. SE APROVADO, CARREGA OS DADOS E MOSTRA O PERFIL
         final nomeFormatado = UsuarioUtil.getNomeCompleto(data, colecao: 'prestadorServicos');
         final areaAtuacao = data['areaAtuacao'] ?? "Profissão não definida";
-        
-        final prestador = PrestadorProfile(nome: nomeFormatado, areaAtuacao: areaAtuacao);
+        final prestador = PrestadorProfile(
+          uid: user.uid,
+          nome: nomeFormatado, 
+          areaAtuacao: areaAtuacao,
+          isOnline: data['isOnline'] ?? false,
+        );
 
         return _buildTelaAprovada(prestador);
       },
@@ -197,6 +208,31 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
             Text(
               '${prestador.areaAtuacao} ${prestador.nome}',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text("Estou disponível (Online)", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Ative para os clientes saberem que você pode responder rápido."),
+              value: prestador.isOnline,
+              activeColor: Colors.green,
+              secondary: Icon(
+                prestador.isOnline ? Icons.circle : Icons.circle_outlined,
+                color: prestador.isOnline ? Colors.green : Colors.grey,
+              ),
+              onChanged: (value) async {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('prestadorServicos')
+                      .doc(prestador.uid)
+                      .update({'isOnline': value});
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao atualizar status: $e')),
+                    );
+                  }
+                }
+              },
             ),
             const SizedBox(height: 24),
             const Text(

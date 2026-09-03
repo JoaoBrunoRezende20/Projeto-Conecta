@@ -83,7 +83,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.3 Status de Disponibilidade "Online / Offline" do Prestador
+### [x] 2.3 Status de Disponibilidade "Online / Offline" do Prestador
 - **Referência:** Documento pág. 19.
 - **Descrição:** Permitir que prestadores de serviço definam seu status como:
   - **Online:** disponível para atendimento imediato ou resposta rápida.
