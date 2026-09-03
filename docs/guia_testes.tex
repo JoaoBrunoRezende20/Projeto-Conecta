@@ -1,0 +1,96 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{booktabs}
+\geometry{a4paper, margin=2cm}
+
+\title{\textbf{Guia de Testes - Projeto Conecta}}
+\author{Equipe de Qualidade e Desenvolvimento}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento serve como o guia oficial para a execução de testes no aplicativo \textbf{Conecta}. Ele descreve um roteiro estruturado com casos de teste separados e detalhados para cada perfil de acesso existente na plataforma, garantindo a integridade dos fluxos e a segurança nas regras de negócio integradas ao Firebase.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Introdução}
+O aplicativo Conecta visa integrar múltiplos tipos de usuários em um ambiente único. Este guia divide a execução dos testes baseando-se no nível de acesso do usuário, assegurando que as funcionalidades exclusivas de cada perfil operem conforme o esperado.
+
+\section{Casos de Teste por Perfil de Usuário}
+
+\subsection{1. Testes para o Visitante (Usuário Não Autenticado)}
+O visitante é aquele que acessa o app sem realizar login. Os testes visam garantir que ele consiga explorar o app com limitações corretas.
+\begin{itemize}
+    \item \textbf{Exploração do Catálogo:} Verificar se o visitante consegue visualizar as categorias e listas de produtos/serviços disponíveis.
+    \item \textbf{Bloqueio de Ações Exclusivas:} Tentar acessar o carrinho, adicionar produtos ou acessar o histórico e confirmar que o app redireciona para a tela de Login ou exibe aviso.
+    \item \textbf{Fluxo de Cadastro/Login:} Testar a transição da exploração como visitante para a criação de uma nova conta de Cliente, Lojista ou Prestador.
+\end{itemize}
+
+\subsection{2. Testes para o Usuário Comum (Consumidor)}
+O consumidor é o usuário final que realiza pedidos na plataforma.
+\begin{itemize}
+    \item \textbf{Autenticação:} Validar login com sucesso e recuperação de senha.
+    \item \textbf{Filtros e Buscas:} Aplicar filtros nas categorias (ex: Comidas) e validar a exibição correta dos resultados.
+    \item \textbf{Gestão do Carrinho (CarrinhoService):}
+    \begin{itemize}
+        \item Adicionar itens de diferentes lojistas (validar regras de bloqueio se houver restrição).
+        \item Editar quantidades de produtos e remover itens do carrinho.
+        \item Calcular corretamente o valor total do carrinho, incluindo taxas.
+    \end{itemize}
+    \item \textbf{Finalização de Compra (Checkout):} Concluir um pedido e verificar se ele é enviado corretamente para o banco de dados (Firestore) e se o status inicial é "Aguardando Confirmação".
+    \item \textbf{Histórico e Perfil:} Acessar o histórico de pedidos para verificar se os dados do pedido recente são exibidos e atualizar informações no painel de perfil.
+\end{itemize}
+
+\subsection{3. Testes para o Lojista}
+O lojista utiliza a plataforma para vender produtos.
+\begin{itemize}
+    \item \textbf{Gestão de Catálogo (Produtos):}
+    \begin{itemize}
+        \item Criar novos produtos (com imagem, descrição e preço).
+        \item Editar produtos existentes (ex: alterar preço ou disponibilidade).
+        \item Excluir ou inativar produtos.
+    \end{itemize}
+    \item \textbf{Gestão de Pedidos:}
+    \begin{itemize}
+        \item Receber e visualizar novos pedidos em tempo real.
+        \item Alterar os status dos pedidos de acordo com o fluxo (Aceito, Em Preparo, Saiu para Entrega, Finalizado).
+    \end{itemize}
+    \item \textbf{Painel Inicial:} Validar se os atalhos e resumos da loja estão desacoplados e carregando rapidamente.
+\end{itemize}
+
+\subsection{4. Testes para o Prestador de Serviço}
+O prestador oferece serviços, diferenciando-se da venda de produtos físicos.
+\begin{itemize}
+    \item \textbf{Perfil Profissional:} Cadastrar e editar as informações do perfil, áreas de atuação e descrição dos serviços prestados.
+    \item \textbf{Disponibilidade:} Testar a ativação e desativação da visibilidade do perfil nas buscas de clientes.
+    \item \textbf{Gestão de Solicitações:} Receber pedidos de orçamentos ou serviços e interagir com as solicitações (Aceitar, Recusar, Concluir).
+\end{itemize}
+
+\subsection{5. Testes para o Administrador (Admin)}
+O administrador possui acesso global às regras e configurações do sistema.
+\begin{itemize}
+    \item \textbf{Gestão de Contas:} Bloquear, desbloquear ou excluir contas de usuários infratores (Clientes, Lojistas ou Prestadores).
+    \item \textbf{Auditoria de Cadastros:} Aprovar perfis de lojistas e prestadores recém-cadastrados (se aplicável ao fluxo de moderação).
+    \item \textbf{Métricas Globais:} Verificar a correta exibição dos relatórios de transações e acesso ao suporte técnico do aplicativo.
+\end{itemize}
+
+\section{Estratégia de Automação e Execução}
+
+Para cobrir os cenários acima, a equipe técnica deve manter a seguinte abordagem em Flutter:
+\begin{itemize}
+    \item \textbf{Testes de Unidade:} Foco nos \textit{services} (ex: \texttt{CarrinhoService}) e conversão de \textit{models} para todos os perfis.
+    \item \textbf{Testes de Integração (E2E):} Realizar simulações completas que envolvam dois papéis operando em conjunto (ex: O Cliente faz o pedido e o Lojista o aceita no emulador simultâneo).
+    \item \textbf{Mock e Emuladores:} Utilizar o Firebase Emulator para não poluir os dados em produção ao executar as suítes automatizadas dos perfis Lojista e Admin.
+\end{itemize}
+
+\end{document}

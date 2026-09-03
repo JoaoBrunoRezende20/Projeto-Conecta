@@ -1,0 +1,260 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault} % Arial-like font
+
+\definecolor{headerblue}{RGB}{20, 50, 100} % Dark blue for headers
+\definecolor{rowgray}{RGB}{240, 240, 240} % Light gray for table rows
+
+\begin{document}
+
+% Cabeçalho
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{|X|X|l|l|}
+\hline
+\rowcolor{headerblue}
+\multicolumn{4}{|c|}{\textcolor{white}{\textbf{\Large DECLARAÇÃO DE ESCOPO}}} \\
+\hline
+Nome do Projeto: & \multicolumn{3}{l|}{Projeto Conecta - Plataforma de Conexão Local (Android \& Web)} \\
+\hline
+Gerente do Projeto: & \multicolumn{3}{l|}{João Bruno Faria Rezende} \\
+\hline
+Data: & 28/08/2026 & Nº Versão do Documento: & 2.0 \\
+\hline
+\end{tabularx}
+\end{center}
+
+\vspace{0.5cm}
+
+\section*{\textcolor{headerblue}{1. Título e Descrição do projeto}}
+\textbf{Projeto Conecta}\\
+O projeto Conecta consiste no desenvolvimento de uma plataforma digital que integra usuários comuns, lojistas e prestadores de serviços em um único aplicativo móvel e web, facilitando a busca, contratação, avaliação e gerenciamento de produtos e serviços locais e regionais. Desenvolvido no contexto da F.A.S.T (Fábrica de Soluções Tecnológicas) em parceria com o IFMG – Campus Bambuí.
+
+O projeto implantará uma plataforma desenvolvida em Flutter com backend em Firebase. A solução abrangerá controle de acesso avançado (Lazy Authentication para visitantes, Double Opt-in para cadastros), perfis distintos (Comum, Lojista, Prestador e Administrador), vitrine de produtos e serviços, agendamento de serviços, carrinho de compras, e painel administrativo para validação de documentos de lojas e prestadores. O lançamento inicial atenderá usuários a nível regional, sendo exclusivo para dispositivos Android (versão 8.0+) e navegadores Web.
+
+O escopo do projeto compreende o levantamento (apoiado por orientadores do IFMG), design de interfaces, desenvolvimento, testes, publicação na Google Play Store e versão Web, suporte inicial e encerramento.
+
+\section*{\textcolor{headerblue}{2. Patrocinador (sponsor)}}
+F.A.S.T (Fábrica de Soluções Tecnológicas) e Instituto Federal de Minas Gerais (IFMG) – Campus Bambuí. Responsabilidades: prover orientação acadêmica (Me. Cláudio Ribeiro de Sousa e Dr. Eduardo Cardoso Melo), aprovar a linha de base de escopo e formalizar o aceite das entregas.
+
+\section*{\textcolor{headerblue}{3. Gerente do Projeto e Autoridade}}
+João Bruno Faria Rezende, Gerente de Projetos. Possui autoridade para planejar e coordenar a equipe de desenvolvimento, priorizar requisitos, convocar validações e assegurar o cumprimento dos objetivos técnicos.
+
+\section*{\textcolor{headerblue}{4. Usuários}}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Usuário Comum (Cliente):} pesquisa produtos e serviços, adiciona ao carrinho, favorita, agenda serviços, acompanha pedidos e avalia após o consumo real.
+    \item \textbf{Lojista:} gerencia catálogo de produtos, recebe pedidos, confirma estoque manualmente e atende clientes. Pode ser empresa formal (com CNPJ) ou autônomo (sem CNPJ).
+    \item \textbf{Prestador de serviço:} disponibiliza portfólio, define áreas de atuação, gerencia agenda de serviços e status de disponibilidade (Online/Offline).
+    \item \textbf{Administrador:} acessa painel exclusivo para aprovar ou rejeitar (com justificativa) cadastros e documentos de Lojistas e Prestadores, além de moderar avaliações.
+    \item \textbf{Visitante:} navega pelo catálogo e visualiza itens sem autenticação (Lazy Authentication). O login é exigido apenas ao tentar comprar, favoritar ou interagir.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{5. Equipe}}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{headerblue}
+\textcolor{white}{\textbf{Papel}} & \textcolor{white}{\textbf{Nome}} & \textcolor{white}{\textbf{Responsabilidade principal}} \\
+\hline
+Gerente de Projetos & João Bruno Faria Rezende & Governança, prazos, documentação, gestão do backlog e coordenação \\
+\hline
+Desenvolvedor & Gabriel Henrique Silva Duque & Implementação frontend/backend (Flutter/Firebase), integrações e UI \\
+\hline
+Desenvolvedor & Rafaek Oliveira Gonçalves & Implementação frontend/backend (Flutter/Firebase), testes e regras de negócio \\
+\hline
+\end{tabularx}
+\end{center}
+
+\section*{\textcolor{headerblue}{6. Objetivos}}
+\begin{enumerate}[label=\arabic*.]
+    \item Lançar a plataforma (Android e Web) até o final do cronograma acadêmico.
+    \item Fornecer uma interface unificada que reduza em 80\% o tempo gasto por consumidores na busca de fornecedores locais.
+    \item Garantir um tempo de resposta inferior a 3 segundos para interações na interface, com leitura de banco de dados abaixo de 1 segundo.
+    \item Implementar um processo de moderação e validação de 100\% dos lojistas e prestadores de serviços via painel administrativo.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{7. Justificativa}}
+O comércio local pulverizado carece de ferramentas digitais robustas, seguras e baratas. O Conecta visa promover a transformação digital e o fortalecimento do comércio de Bambuí-MG e região. A aplicação de Lazy Authentication garante baixa fricção de entrada, enquanto a validação de documentos de lojistas proporciona segurança aos consumidores.
+
+\section*{\textcolor{headerblue}{8. Fatores de Sucesso}}
+\begin{enumerate}[label=\arabic*.]
+    \item Aceitação positiva na validação do protótipo e navegação intuitiva (máximo de 3 cliques para ações principais).
+    \item Estabilidade no banco de dados, suportando 500 usuários simultâneos sem perda perceptível de performance.
+    \item Segurança contra fraudes através da aprovação estrita de documentos pelo perfil Administrador.
+    \item Avaliações reais e orgânicas, restritas a usuários com histórico de consumo confirmado na plataforma.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{9. Restrições}}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Plataforma:} O aplicativo não será desenvolvido ou publicado para o ecossistema iOS (Apple), limitando-se ao Android e Web.
+    \item \textbf{Pagamentos:} A plataforma \textbf{não realiza transações financeiras nem processa pagamentos}. Acordos de pagamento e entrega são feitos diretamente entre vendedor e cliente (ex: pagamento na entrega).
+    \item \textbf{Equipe:} O desenvolvimento será realizado estritamente pelos três membros definidos, limitando a capacidade produtiva diária.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{10. Premissas}}
+\begin{enumerate}[label=\arabic*.]
+    \item A F.A.S.T/IFMG disponibilizará os recursos básicos de orientação acadêmica.
+    \item O Firebase Spark (gratuito) será suficiente para a fase inicial de operação e testes.
+    \item Lojistas e Prestadores serão responsáveis por alimentar seus catálogos e manter o status de disponibilidade (Online/Offline) atualizado.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{11. Requisitos funcionais}}
+\begin{enumerate}[label=RF-\arabic*.]
+    \item \textbf{Acesso Visitante:} O sistema deve usar \textit{Lazy Authentication}, permitindo visualização de lojas sem login, armazenando a intenção de ação para execução após a autenticação.
+    \item \textbf{Cadastros Específicos:} O sistema deve coletar CPF/CNPJ, CNAE, área de atuação e documentos de certificação, com validação de formato e máscara em tempo real.
+    \item \textbf{Painel Admin:} Administradores devem ter uma fila de aprovação de cadastros, podendo Aprovar ou Rejeitar (com envio de feedback do motivo) os lojistas/prestadores.
+    \item \textbf{Vitrine e Agendamento:} Clientes podem adicionar produtos de lojistas à sacola ou selecionar horários na agenda de prestadores de serviço.
+    \item \textbf{Confirmação de Estoque:} O lojista deve aprovar o pedido manualmente, validando o estoque real antes da continuidade.
+    \item \textbf{Avaliações Concretas:} Avaliações em estrelas (1 a 5) só podem ser submetidas após a confirmação de conclusão do pedido/serviço.
+    \item \textbf{Notificações:} Enviar alertas com sons distintos baseados no perfil do usuário (ex: toque de nova venda para lojistas).
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{12. Requisitos não funcionais}}
+\begin{enumerate}[label=RNF-\arabic*.]
+    \item \textbf{Desempenho:} Resposta à interação do usuário em até 3 segundos e leitura do banco de dados em até 1 segundo. Suporte inicial a 500 usuários simultâneos.
+    \item \textbf{Usabilidade:} Navegação com no máximo 3 cliques para ações principais. Correções de arquitetura de rotas para não permitir empilhamento infinito de páginas (Home Bars).
+    \item \textbf{Segurança:} Dados sensíveis (senhas) criptografados. Uso de HTTPS e proteção contra injeções.
+    \item \textbf{Legalidade:} Cumprimento da LGPD, requerendo aceite explícito dos Termos de Uso e clareza sobre a isenção do aplicativo em transações financeiras.
+    \item \textbf{Compatibilidade:} Funcionamento em Android 8.0+ e navegadores web modernos.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{13. Exclusões Específicas}}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Ecossistema Apple:} Compilação, testes ou publicação na Apple App Store (iOS).
+    \item \textbf{Meios de Pagamento:} Gateway de cartão de crédito ou processamento nativo de transações financeiras de qualquer natureza.
+    \item \textbf{Logística Própria:} O sistema não fornece frota nem cálculo avançado de correios, sendo a entrega combinada entre as partes.
+\end{enumerate}
+
+\section*{\textcolor{headerblue}{14. Entregas Principais}}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{headerblue}
+\textcolor{white}{\textbf{Código}} & \textcolor{white}{\textbf{Entrega}} & \textcolor{white}{\textbf{Conteúdo verificável}} \\
+\hline
+1.1 & Levantamento e UX & Protótipo do Figma validado com orientadores e stakeholders \\
+\hline
+1.2 & Módulo de Autenticação & Double Opt-in, Lazy Authentication, máscaras de CPF/CNPJ e validações \\
+\hline
+1.3 & Módulo Administrativo & Painel de aprovação/rejeição de documentos e cadastros pendentes \\
+\hline
+1.4 & Visão do Consumidor & Vitrines, carrinho de compras, agendamento de serviços e avaliações \\
+\hline
+1.5 & Painéis Comerciais & Dashboards de lojistas e prestadores para aceitar pedidos e mudar status \\
+\hline
+1.6 & Publicação & Versão Web online e APK gerado para Android (Play Store) \\
+\hline
+\end{tabularx}
+\end{center}
+
+\section*{\textcolor{headerblue}{15. Marcos Principais}}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{headerblue}
+\textcolor{white}{\textbf{Data}} & \textcolor{white}{\textbf{Marco}} & \textcolor{white}{\textbf{Condição de conclusão}} \\
+\hline
+Etapa 1 & Prototipação e Requisitos & Documento de Requisitos e Figma concluídos \\
+\hline
+Etapa 2 & Estruturação Backend & Firebase modelado (Firestore, Auth, Storage) \\
+\hline
+Etapa 3 & Frontend Android/Web & Telas responsivas conectadas às regras de negócio \\
+\hline
+Etapa 4 & Painel Administrativo & Fluxo de validação de documentos concluído \\
+\hline
+Etapa 5 & Testes e Homologação & Tratamento de falhas e performance (ex: correção do Menu Lateral) \\
+\hline
+Etapa 6 & Lançamento Final & Defesa do projeto e publicação do APK/Web \\
+\hline
+\end{tabularx}
+\end{center}
+
+\section*{\textcolor{headerblue}{16. Critérios de Aceitação do Projeto}}
+\begin{enumerate}[label=\arabic*.]
+    \item Plataforma instalável em dispositivos Android e acessível via navegador Web.
+    \item Painel administrativo plenamente capaz de bloquear acesso comercial de lojistas/prestadores até a validação de seus documentos.
+    \item App isento de transações financeiras, respeitando estritamente os Termos de Uso.
+    \item Sistema tolerante a 500 usuários simultâneos mantendo tempo de resposta ágil.
+    \item Código-fonte estruturado no GitHub, com relatórios técnicos submetidos aos orientadores do IFMG.
+\end{enumerate}
+
+\vspace{1cm}
+\noindent
+\textbf{Aprovado por:} Orientadores do Projeto Conecta (F.A.S.T/IFMG) \\
+\textbf{Assinatura:} \hrulefill \quad \textbf{Data:} \_\_\_/\_\_\_/\_\_\_\_\_
+
+\newpage
+
+\section*{\textcolor{headerblue}{ANEXO A - EAP COMPLETA}}
+\textbf{Projeto Conecta - Plataforma de Conexão Local}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|c|X|X|c|}
+\hline
+\rowcolor{headerblue}
+\textcolor{white}{\textbf{Código}} & \textcolor{white}{\textbf{Elemento da EAP}} & \textcolor{white}{\textbf{Entrega / resultado verificável}} & \textcolor{white}{\textbf{Responsável}} \\
+\hline
+\textbf{1.0} & \textbf{Projeto Conecta} & \textbf{Aplicativo Android e Web para comércio local.} & \textbf{Equipe} \\
+\hline
+\rowcolor{rowgray}
+1.1 & Requisitos e Design & Entregas base focadas no usuário. & João Bruno \\
+\hline
+1.1.1 & Documentação & Levantamento funcional e não funcional aprovado. & João Bruno \\
+\hline
+1.1.2 & Prototipação & Fluxos no Figma validados pelos orientadores. & João Bruno \\
+\hline
+\rowcolor{rowgray}
+1.2 & Autenticação e Perfis & Segurança e segmentação de usuários. & Gabriel / Rafaek \\
+\hline
+1.2.1 & Lazy Authentication & Acesso visitante com persistência de ação após login. & Rafaek \\
+\hline
+1.2.2 & Cadastro Lojista/Prestador & Coleta de documentos, CNPJ/CPF com validação nativa. & Gabriel \\
+\hline
+\rowcolor{rowgray}
+1.3 & Módulo Administrativo & Controle interno de segurança da plataforma. & Gabriel / Rafaek \\
+\hline
+1.3.1 & Validação de Contas & Fila de pendentes, download de documentos e aceite/recusa. & Gabriel \\
+\hline
+\rowcolor{rowgray}
+1.4 & Visão do Consumidor & Funcionalidades de compra e agendamento. & Gabriel / Rafaek \\
+\hline
+1.4.1 & Catálogo e Carrinho & Seleção de produtos, variações e checkout sem pagamento. & Rafaek \\
+\hline
+1.4.2 & Agendamento & Seleção de dias/horários na agenda do prestador. & Gabriel \\
+\hline
+1.4.3 & Avaliações & Sistema de reviews restrito a histórico de compras reais. & Rafaek \\
+\hline
+\rowcolor{rowgray}
+1.5 & Painéis Comerciais & Telas para lojistas e prestadores gerirem o negócio. & Gabriel / Rafaek \\
+\hline
+1.5.1 & Gestão de Estoque & Lojista recebe pedido e valida manualmente disponibilidade. & Rafaek \\
+\hline
+1.5.2 & Status de Serviço & Prestador define Online/Offline e responde solicitações. & Gabriel \\
+\hline
+\rowcolor{rowgray}
+1.6 & Testes e Lançamento & Qualidade e deploy final. & Equipe \\
+\hline
+1.6.1 & Correção de Bugs & Estabilização de rotas (correção de vazamento de tela). & Gabriel / Rafaek \\
+\hline
+1.6.2 & Deploy & Build para Web e pacote APK para Android. & Equipe \\
+\hline
+\end{tabularx}
+\end{center}
+
+\end{document}

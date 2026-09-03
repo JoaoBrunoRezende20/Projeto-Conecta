@@ -44,6 +44,42 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   double get _totalGeral => _subtotal + _taxaEntrega;
 
   @override
+  void initState() {
+    super.initState();
+    _carregarDadosUsuario();
+  }
+
+  Future<void> _carregarDadosUsuario() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance.collection('usuarioComum').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        
+        if (data['telefone'] != null) {
+          _telefoneController.text = data['telefone'];
+        }
+
+        final endereco = data['endereco'];
+        if (endereco != null && endereco is Map) {
+          _enderecoController.text = endereco['rua']?.toString() ?? '';
+          _numeroController.text = endereco['numero']?.toString() ?? '';
+          _bairroController.text = endereco['bairro']?.toString() ?? '';
+        } else if (data['rua'] != null) {
+          _enderecoController.text = data['rua']?.toString() ?? '';
+          _numeroController.text = data['numero']?.toString() ?? '';
+          _bairroController.text = data['bairro']?.toString() ?? '';
+        }
+        
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar dados do usuário no checkout: $e");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
