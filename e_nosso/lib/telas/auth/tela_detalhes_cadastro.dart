@@ -377,6 +377,42 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
     );
   }
 
+  static const Map<String, String> _mapaRegistroProfissional = {
+    'Advogado(a)': 'OAB',
+    'Arquiteto(a)': 'CAU',
+    'Contador(a)': 'CRC',
+    'Corretor(a) de Imóveis': 'CRECI',
+    'Dentista': 'CRO',
+    'Enfermeiro(a)': 'COREN',
+    'Engenheiro(a)': 'CREA',
+    'Médico(a)': 'CRM',
+    'Motorista': 'CNH',
+    'Nutricionista': 'CRN',
+    'Personal Trainer': 'CREF',
+    'Psicólogo(a)': 'CRP',
+    'Veterinário(a)': 'CRMV',
+  };
+
+  bool _temRegistroProfissional(Map<String, dynamic> data) {
+    final area = data['areaAtuacao']?.toString() ?? '';
+    final registro = data['registroProfissional']?.toString().trim() ?? '';
+    return _mapaRegistroProfissional.containsKey(area) || registro.isNotEmpty;
+  }
+
+  String _getLabelRegistro(Map<String, dynamic> data) {
+    final area = data['areaAtuacao']?.toString() ?? '';
+    final conselho = _mapaRegistroProfissional[area];
+    if (conselho != null) {
+      return 'Registro Profissional ($conselho)';
+    }
+    return 'Registro Profissional';
+  }
+
+  String _getValorRegistro(Map<String, dynamic> data) {
+    final registro = data['registroProfissional']?.toString().trim() ?? '';
+    return registro.isNotEmpty ? registro : 'Não informado';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -421,6 +457,14 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
                   _buildInfoRow('Nome', '${data['nome']} ${data['sobrenome']}'),
                   _buildInfoRow('CPF', data['cpf'] ?? '-'),
                   _buildInfoRow('Profissão', data['areaAtuacao'] ?? '-'),
+                  if (_temRegistroProfissional(data))
+                    _buildInfoRow(
+                      _getLabelRegistro(data),
+                      _getValorRegistro(data),
+                    ),
+                  if (data['cnpj'] != null &&
+                      data['cnpj'].toString().trim().isNotEmpty)
+                    _buildInfoRow('CNPJ', data['cnpj'].toString().trim()),
                 ],
                 _buildInfoRow(
                   'Email',
