@@ -137,6 +137,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                   final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
                   final descricao = (data['descricao'] ?? 'Sem descrição').toString();
                   final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
+                  final String lojaId = docs[index].id;
                   final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
                   final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
