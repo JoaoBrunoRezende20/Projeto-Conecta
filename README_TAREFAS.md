@@ -101,7 +101,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.5 Canal de Chamados e Suporte ao Usuário
+### [x] 2.5 Canal de Chamados e Suporte ao Usuário
 - **Referência:** Documento pág. 20.
 - **Descrição:** Além da FAQ informativa atual, criar um formulário para clientes, lojistas e prestadores abrirem chamados:
   - Seleção de categoria do problema (Erro no app, Pedido com problema, Falha de cadastro).

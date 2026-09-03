@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../utils/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../telas/suporte/tela_faq.dart';
+import '../telas/suporte/tela_suporte_chamado.dart';
 import '../telas/perfil/tela_notificacoes.dart';
 import '../telas/cliente/tela_historico_pedidos.dart';
 
@@ -249,7 +250,7 @@ class MenuLateral extends StatelessWidget {
                 ),
               ),
             ),
-           ListTile(
+            ListTile(
               leading: const Icon(Icons.help_outline),
               title: const Text("Tem dúvidas? Acesse o FAQ"),
               onTap: () {
@@ -257,6 +258,19 @@ class MenuLateral extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TelaFaq()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.support_agent),
+              title: const Text("Abrir um Chamado"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TelaSuporteChamado(isVisitante: isVisitante),
+                  ),
                 );
               },
             ),
