@@ -516,9 +516,12 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                       separatorBuilder: (_, index) => const Divider(),
                       itemBuilder: (context, i) {
                         final r = reviews[i].data() as Map<String, dynamic>;
+                        final reviewId = reviews[i].id;
                         final double stars = ((r['estrelas'] ?? 5) as num).toDouble();
                         final String autor = r['nomeAvaliador'] ?? 'Cliente';
                         final String comentario = r['comentario'] ?? '';
+                        final String resposta = r['resposta'] ?? '';
+                        final bool isDono = FirebaseAuth.instance.currentUser?.uid == widget.lojaId;
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Row(
@@ -534,12 +537,46 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                               }),
                             ],
                           ),
-                          subtitle: comentario.isNotEmpty
-                              ? Padding(
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (comentario.isNotEmpty)
+                                Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(comentario, style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                                )
-                              : null,
+                                ),
+                              if (resposta.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 8),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.reply, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          "Resposta da Loja:\n$resposta",
+                                          style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (isDono && resposta.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: GestureDetector(
+                                    onTap: () => _responderAvaliacao(context, reviewId),
+                                    child: const Text("Responder", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ),
+                            ],
+                          ),
                         );
                       },
                     );
@@ -548,6 +585,54 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _responderAvaliacao(BuildContext context, String reviewId) {
+    final TextEditingController respController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Responder Avaliação"),
+          content: TextField(
+            controller: respController,
+            decoration: const InputDecoration(
+              hintText: "Digite sua resposta...",
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () async {
+                if (respController.text.trim().isEmpty) return;
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('avaliacoes')
+                      .doc(reviewId)
+                      .update({'resposta': respController.text.trim()});
+                  
+                  // Atualiza também na subcoleção do lojista
+                  await FirebaseFirestore.instance
+                      .collection('lojistas')
+                      .doc(widget.lojaId)
+                      .collection('avaliacoes')
+                      .doc(reviewId)
+                      .update({'resposta': respController.text.trim()});
+                      
+                  if (context.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  debugPrint("Erro ao salvar resposta: $e");
+                }
+              },
+              child: const Text("Enviar", style: TextStyle(color: Colors.white)),
+            ),
+          ],
         );
       },
     );

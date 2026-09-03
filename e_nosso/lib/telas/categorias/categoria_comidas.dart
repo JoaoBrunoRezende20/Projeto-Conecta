@@ -102,6 +102,22 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
           return nome.contains(pesquisa.toLowerCase());
         }).toList();
 
+        docs.sort((a, b) {
+          final dataA = a.data() as Map<String, dynamic>;
+          final dataB = b.data() as Map<String, dynamic>;
+          
+          final mediaA = (dataA['mediaEstrelas'] ?? dataA['avaliacao'] ?? 0.0) as num;
+          final mediaB = (dataB['mediaEstrelas'] ?? dataB['avaliacao'] ?? 0.0) as num;
+          
+          final cmpMedia = mediaB.compareTo(mediaA);
+          if (cmpMedia != 0) return cmpMedia;
+          
+          final qtdA = (dataA['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+          final qtdB = (dataB['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+          
+          return qtdB.compareTo(qtdA);
+        });
+
         if (docs.isEmpty) {
           return const Center(child: Text("Nenhuma loja encontrada."));
         }

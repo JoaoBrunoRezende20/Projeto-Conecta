@@ -112,21 +112,21 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.6 Resposta a Avaliações por Lojistas e Prestadores
+### [x] 2.6 Réplica de Avaliações por Lojistas/Prestadores
 - **Referência:** Documento pág. 23.
 - **Descrição:** Permitir que os lojistas e prestadores de serviço respondam aos comentários recebidos nas avaliações de seus pedidos/serviços, exibindo a réplica logo abaixo do comentário do cliente.
 - **Arquivos:** `lib/telas/cliente/tela_avaliacao_servico.dart`, `lib/telas/perfil/tela_perfil.dart`, Firestore (`avaliacoes/{id}/resposta`).
 
 ---
 
-### [ ] 2.7 Ranking e Destaque de Prestadores e Lojistas Melhores Avaliados
+### [x] 2.7 Ranking e Destaque de Prestadores e Lojistas Melhores Avaliados
 - **Referência:** Documento pág. 17 e 21.
 - **Descrição:** Adicionar ordenação por nota média (`mediaEstrelas`) e volume de avaliações nas vitrines de serviços e comércios locais, dando mais visibilidade aos fornecedores bem avaliados.
 - **Arquivos:** `lib/repositories/categoria_repository.dart`, `lib/telas/categorias/categoria_servicos.dart`, `lib/telas/categorias/categoria_comidas.dart`.
 
 ---
 
-### [ ] 2.8 Moderação Automática de Palavras Ofensivas em Avaliações
+### [x] 2.8 Moderação Automática de Palavras Ofensivas em Avaliações
 - **Referência:** Documento pág. 54 (Requisitos de Segurança).
 - **Descrição:** Bloquear a submissão de avaliações ou comentários que contenham termos ofensivos ou impróprios utilizando uma blacklist de palavras proibidas.
 - **Arquivos:** `lib/telas/cliente/tela_avaliacao_servico.dart`, `lib/utils/formatadores.dart` ou validador dedicado.
