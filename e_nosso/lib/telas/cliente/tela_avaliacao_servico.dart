@@ -346,6 +346,28 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
       return;
     }
 
+    final textoComentario = _comentarioController.text.trim();
+    if (textoComentario.isNotEmpty) {
+      final blacklist = ['palavrão', 'ofensa', 'idiota', 'burro', 'merda', 'caralho', 'porra', 'bosta', 'filho da puta', 'fdp'];
+      final textoMin = textoComentario.toLowerCase();
+      bool contemOfensa = false;
+      for (final palavra in blacklist) {
+        if (textoMin.contains(palavra)) {
+          contemOfensa = true;
+          break;
+        }
+      }
+      if (contemOfensa) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Seu comentário contém palavras impróprias. Por favor, ajuste a linguagem.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 

@@ -7,7 +7,8 @@ import '../../repositories/pedido_repository.dart';
 import '../chat/tela_chat.dart';
 
 class TelaPedidosPendentesCliente extends StatefulWidget {
-  const TelaPedidosPendentesCliente({super.key});
+  final VoidCallback? onBackToHome;
+  const TelaPedidosPendentesCliente({super.key, this.onBackToHome});
 
   @override
   State<TelaPedidosPendentesCliente> createState() => _TelaPedidosPendentesClienteState();
@@ -87,7 +88,13 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         actions: [
           IconButton(
             icon: const Icon(Icons.arrow_circle_left_outlined, color: Colors.black, size: 30),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else if (widget.onBackToHome != null) {
+                widget.onBackToHome!();
+              }
+            },
           ),
         ],
       ),

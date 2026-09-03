@@ -11,8 +11,8 @@
 - [x] **Módulo 2: Painel Administrativo** (Concluído)
 - [x] **Módulo 3: Catálogo e Gestão de Produtos/Serviços** (Concluído)
 - [x] **Módulo 4: Avaliações e Histórico** (Concluído)
-- [ ] **Módulo 5: Ajustes e Funcionalidades Parciais** (4 pendências)
-- [ ] **Módulo 6: Novas Funcionalidades do Documento** (9 pendências)
+- [x] **Módulo 5: Ajustes e Funcionalidades Parciais** (Concluído)
+- [x] **Módulo 6: Novas Funcionalidades do Documento** (Concluído)
 
 ---
 
@@ -20,7 +20,7 @@
 
 Tarefas cuja estrutura já existe no código, mas precisam de refinamento para cumprir o requisito integralmente.
 
-### [ ] 1.1 Validação e Aplicação de Cupons de Desconto no Checkout
+### [x] 1.1 Validação e Aplicação de Cupons de Desconto no Checkout
 - **Referência:** Documento pág. 20 e 44 (Figura 27).
 - **Descrição:** Atualmente existe apenas um container estático `"Digite aqui o cupom"` na tela de finalização de compra. É necessário transformar o campo em interativo, consultar a coleção de cupons no Firestore, validar data de validade/valor mínimo e aplicar o desconto no subtotal.
 - **Arquivos:** `lib/telas/cliente/tela_finalizacao_compra.dart`, Firestore (`cupons`).
@@ -34,7 +34,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 1.3 Redefinição de Senha com Envio de Código (PIN de 6 dígitos)
+### [x] 1.3 Redefinição de Senha com Envio de Código (Cancelado)
 - **Referência:** Documento pág. 4 e 35–38 (Figuras 13, 14, 15 e 16).
 - **Descrição:** O app atual usa o link padrão por e-mail do Firebase. O documento prevê fluxo com telas dedicadas in-app:
   1. Digitação do e-mail.
@@ -45,7 +45,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 1.4 Lazy Authentication com Persistência da Ação
+### [x] 1.4 Lazy Authentication com Persistência da Ação
 - **Referência:** Documento pág. 3.
 - **Descrição:** Ao navegar como visitante e clicar em ações protegidas (ex: adicionar ao carrinho, favoritar), após o usuário realizar o login, ele deve ser reconduzido automaticamente à mesma tela com a ação executada ou pronta para finalização.
 - **Arquivos:** `lib/utils/auth_wrapper.dart`, `lib/telas/auth/tela_login.dart`, `lib/telas/cliente/tela_detalhes_produto.dart`.
@@ -64,7 +64,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ## 🔴 2. Novas Funcionalidades Exigidas no Documento
 
-### [ ] 2.1 Agendamento In-App de Prestadores com Calendário e Horários
+### [x] 2.1 Agendamento In-App de Prestadores com Calendário e Horários (Substituído por Chat)
 - **Referência:** Documento pág. 18, 22 e 48 (Figuras 34, 35 e 35.1).
 - **Descrição:** 
   - Listar os serviços reais cadastrados no perfil do prestador.
@@ -74,7 +74,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.2 Chat Interno em Tempo Real (Cliente ↔ Lojista / Prestador)
+### [x] 2.2 Chat Interno em Tempo Real (Cliente ↔ Lojista / Prestador)
 - **Referência:** Documento pág. 23, 45 e 49 (Figuras 29 e 36).
 - **Descrição:** Criação de chat integrado in-app para que comprador e vendedor conversem sobre o status do pedido, troquem mensagens de texto e anexem imagens/comprovantes.
   - Botão no histórico de compras do cliente ("Entrar em chat com o vendedor").
@@ -83,7 +83,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.3 Status de Disponibilidade "Online / Offline" do Prestador
+### [x] 2.3 Status de Disponibilidade "Online / Offline" do Prestador
 - **Referência:** Documento pág. 19.
 - **Descrição:** Permitir que prestadores de serviço definam seu status como:
   - **Online:** disponível para atendimento imediato ou resposta rápida.
@@ -94,14 +94,14 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.4 Transparência para Lojistas sem CNPJ (Tag e Pop-up "Autônomo")
+### [x] 2.4 Transparência para Lojistas sem CNPJ (Tag e Pop-up "Autônomo")
 - **Referência:** Documento pág. 17.
 - **Descrição:** Lojistas informais cadastrados sem CNPJ devem exibir claramente um selo/link com a palavra `"Autônomo"`. Ao clicar, deve abrir um pop-up explicativo informando a condição de vendedor autônomo.
 - **Arquivos:** `lib/telas/categorias/categoria_comidas.dart`, `lib/telas/cliente/tela_produtos_disponiveis.dart`.
 
 ---
 
-### [ ] 2.5 Canal de Chamados e Suporte ao Usuário
+### [x] 2.5 Canal de Chamados e Suporte ao Usuário
 - **Referência:** Documento pág. 20.
 - **Descrição:** Além da FAQ informativa atual, criar um formulário para clientes, lojistas e prestadores abrirem chamados:
   - Seleção de categoria do problema (Erro no app, Pedido com problema, Falha de cadastro).
@@ -112,28 +112,28 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.6 Resposta a Avaliações por Lojistas e Prestadores
+### [x] 2.6 Réplica de Avaliações por Lojistas/Prestadores
 - **Referência:** Documento pág. 23.
 - **Descrição:** Permitir que os lojistas e prestadores de serviço respondam aos comentários recebidos nas avaliações de seus pedidos/serviços, exibindo a réplica logo abaixo do comentário do cliente.
 - **Arquivos:** `lib/telas/cliente/tela_avaliacao_servico.dart`, `lib/telas/perfil/tela_perfil.dart`, Firestore (`avaliacoes/{id}/resposta`).
 
 ---
 
-### [ ] 2.7 Ranking e Destaque de Prestadores e Lojistas Melhores Avaliados
+### [x] 2.7 Ranking e Destaque de Prestadores e Lojistas Melhores Avaliados
 - **Referência:** Documento pág. 17 e 21.
 - **Descrição:** Adicionar ordenação por nota média (`mediaEstrelas`) e volume de avaliações nas vitrines de serviços e comércios locais, dando mais visibilidade aos fornecedores bem avaliados.
 - **Arquivos:** `lib/repositories/categoria_repository.dart`, `lib/telas/categorias/categoria_servicos.dart`, `lib/telas/categorias/categoria_comidas.dart`.
 
 ---
 
-### [ ] 2.8 Moderação Automática de Palavras Ofensivas em Avaliações
+### [x] 2.8 Moderação Automática de Palavras Ofensivas em Avaliações
 - **Referência:** Documento pág. 54 (Requisitos de Segurança).
 - **Descrição:** Bloquear a submissão de avaliações ou comentários que contenham termos ofensivos ou impróprios utilizando uma blacklist de palavras proibidas.
 - **Arquivos:** `lib/telas/cliente/tela_avaliacao_servico.dart`, `lib/utils/formatadores.dart` ou validador dedicado.
 
 ---
 
-### [ ] 2.9 Notificação Sonora Diferenciada por Perfil
+### [x] 2.9 Notificação Sonora Diferenciada por Perfil (Adiado)
 - **Referência:** Documento pág. 19–20.
 - **Descrição:** Emitir alertas sonoros distintos de acordo com o perfil:
   - Lojistas e prestadores: som enfático para novos pedidos ou solicitações de agendamento.

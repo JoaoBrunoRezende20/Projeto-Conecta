@@ -272,11 +272,35 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text("Autenticação necessária"),
-                      content: const Text("Você precisa ter uma conta para finalizar o pedido. Deseja realizar o cadastro?"),
+                      content: const Text("Você precisa entrar na sua conta ou se cadastrar para finalizar o pedido."),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text("Não"),
+                          child: const Text("Cancelar"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TelaLogin(
+                                  tipoUsuario: 'comum',
+                                  returnOnSuccess: true,
+                                ),
+                              ),
+                            ).then((sucesso) {
+                              if (sucesso == true) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                                  ),
+                                );
+                              }
+                            });
+                          },
+                          child: const Text("Entrar"),
                         ),
                         ElevatedButton(
                           onPressed: () {
@@ -300,7 +324,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                               }
                             });
                           },
-                          child: const Text("Sim, Cadastrar"),
+                          child: const Text("Cadastrar"),
                         ),
                       ],
                     ),

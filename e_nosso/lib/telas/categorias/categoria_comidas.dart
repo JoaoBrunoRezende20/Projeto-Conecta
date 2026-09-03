@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
 import '../../repositories/usuario_repository.dart';
+import '../auth/tela_login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/usuario_util.dart';
 
@@ -101,6 +102,22 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
           return nome.contains(pesquisa.toLowerCase());
         }).toList();
 
+        docs.sort((a, b) {
+          final dataA = a.data() as Map<String, dynamic>;
+          final dataB = b.data() as Map<String, dynamic>;
+          
+          final mediaA = (dataA['mediaEstrelas'] ?? dataA['avaliacao'] ?? 0.0) as num;
+          final mediaB = (dataB['mediaEstrelas'] ?? dataB['avaliacao'] ?? 0.0) as num;
+          
+          final cmpMedia = mediaB.compareTo(mediaA);
+          if (cmpMedia != 0) return cmpMedia;
+          
+          final qtdA = (dataA['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+          final qtdB = (dataB['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+          
+          return qtdB.compareTo(qtdA);
+        });
+
         if (docs.isEmpty) {
           return const Center(child: Text("Nenhuma loja encontrada."));
         }
@@ -120,9 +137,11 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                   final nome = (data['razaoSocial'] ?? data['nomeLojista'] ?? 'Loja sem nome').toString();
                   final descricao = (data['descricao'] ?? 'Sem descrição').toString();
                   final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
+                  final String lojaId = docs[index].id;
                   final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
-                  final lojaId = docs[index].id;
+                  final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+                  final isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
 
                   return _buildLojaCard(
                     context: context,
@@ -134,6 +153,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                     qtdAvaliacoes: qtdAvaliacoes,
                     fotoUrl: fotoUrl,
                     isFavorita: lojasFavoritas.contains(lojaId),
+                    isAutonomo: isAutonomo,
                   );
                 },
               );
@@ -151,6 +171,8 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
             final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
             final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
             final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
+            final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+            final isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
 
             return _buildLojaCard(
               context: context,
@@ -162,6 +184,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
               qtdAvaliacoes: qtdAvaliacoes,
               fotoUrl: fotoUrl,
               isFavorita: false,
+              isAutonomo: isAutonomo,
             );
           },
         );
@@ -179,6 +202,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
     required int qtdAvaliacoes,
     String? fotoUrl,
     required bool isFavorita,
+    required bool isAutonomo,
   }) {
     return GestureDetector(
       onTap: () {
@@ -247,6 +271,31 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                       ],
                       const SizedBox(width: 6),
                       Text("•  $categoriaTexto", style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                      if (isAutonomo) ...[
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text("Vendedor Autônomo"),
+                                content: const Text("Este lojista atua de forma autônoma (sem CNPJ cadastrado). A plataforma Conecta não se responsabiliza por emissão de nota fiscal para estas compras."),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Entendi")),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[100],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text("Autônomo", style: TextStyle(fontSize: 10, color: Colors.blue)),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -265,17 +314,36 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                 isFavorita ? Icons.star : Icons.star_border,
                 color: isFavorita ? Colors.amber : Colors.grey,
               ),
-              onPressed: () {
-                if (_uid != null) {
+              onPressed: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
                   if (isFavorita) {
-                    _usuarioRepository.removerLojaFavorita(_uid, lojaId);
+                    _usuarioRepository.removerLojaFavorita(user.uid, lojaId);
                   } else {
-                    _usuarioRepository.adicionarLojaFavorita(_uid, lojaId);
+                    _usuarioRepository.adicionarLojaFavorita(user.uid, lojaId);
                   }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Faça login para favoritar lojas.")),
+                  final sucesso = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TelaLogin(
+                        tipoUsuario: 'comum',
+                        returnOnSuccess: true,
+                      ),
+                    ),
                   );
+
+                  if (sucesso == true) {
+                    final novoUser = FirebaseAuth.instance.currentUser;
+                    if (novoUser != null) {
+                       _usuarioRepository.adicionarLojaFavorita(novoUser.uid, lojaId);
+                       if (context.mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text("Loja adicionada aos favoritos!")),
+                         );
+                       }
+                    }
+                  }
                 }
               },
             ),

@@ -63,11 +63,14 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
           children: [
             _buildTabNavigator(0, const TelaInicialComum()),
             _buildTabNavigator(1, const TelaLojasFavoritas()),
-            _buildTabNavigator(2, const TelaPedidosPendentesCliente()),
-            _buildTabNavigator(
-              3,
-              const TelaRevisaoCarrinho(lojaName: "Sua Sacola"),
-            ),
+            _buildTabNavigator(2, TelaPedidosPendentesCliente(
+              onBackToHome: () {
+                setState(() {
+                  _currentIndex = 0;
+                });
+              },
+            )),
+            _buildTabNavigator(3, const TelaRevisaoCarrinho(lojaName: "Sua Sacola")),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(

@@ -87,6 +87,7 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
     final mediaAvaliacoes = (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
     final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
     final fotoPerfilUrl = data['fotoPerfilUrl'] as String?;
+    final bool isOnline = data['isOnline'] ?? false;
 
     // Fotos do portfólio salvas no campo 'fotosPortfolio' como lista de URLs
     final List<dynamic> fotosRaw = data['fotosPortfolio'] ?? [];
@@ -128,7 +129,26 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.circle,
+                                  size: 10,
+                                  color: isOnline ? Colors.green : Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isOnline ? "Online" : "Offline",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isOnline ? Colors.green[700] : Colors.grey[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
                             Row(
                               children: [
                                 const Icon(Icons.star, size: 16, color: Colors.amber),

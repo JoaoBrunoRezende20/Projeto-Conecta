@@ -81,6 +81,22 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   return nome.contains(pesquisa.toLowerCase());
                 }).toList();
 
+                docs.sort((a, b) {
+                  final dataA = a.data() as Map<String, dynamic>;
+                  final dataB = b.data() as Map<String, dynamic>;
+                  
+                  final mediaA = (dataA['mediaEstrelas'] ?? dataA['mediaAvaliacoes'] ?? 0.0) as num;
+                  final mediaB = (dataB['mediaEstrelas'] ?? dataB['mediaAvaliacoes'] ?? 0.0) as num;
+                  
+                  final cmpMedia = mediaB.compareTo(mediaA);
+                  if (cmpMedia != 0) return cmpMedia;
+                  
+                  final qtdA = (dataA['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+                  final qtdB = (dataB['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
+                  
+                  return qtdB.compareTo(qtdA);
+                });
+
                 if (docs.isEmpty) {
                   return const Center(
                     child: Text("Nenhum serviço encontrado."),
@@ -95,12 +111,14 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                         .toString();
                     final telefone = (data["telefone"] ?? "Não informado")
                         .toString();
+                    final bool isOnline = data["isOnline"] ?? false;
 
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
                       telefone: telefone,
+                      isOnline: isOnline,
                     );
                   },
                 );
@@ -117,6 +135,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
     required String lojaId,
     required String nome,
     required String telefone,
+    required bool isOnline,
   }) {
     return GestureDetector(
       onTap: () {
@@ -160,6 +179,25 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                     ),
                   ),
                   const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: isOnline ? Colors.green : Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isOnline ? "Online" : "Offline",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isOnline ? Colors.green[700] : Colors.grey[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(
