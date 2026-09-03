@@ -227,16 +227,14 @@ class _TelaCadastroServicoPrestadorState
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       decoration: const InputDecoration(
-                        labelText: 'Preço (R\$)',
+                        labelText: 'Preço (R$) - Opcional',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Informe o preço';
-                        }
-                        if (double.tryParse(value.replaceAll(',', '.')) ==
-                            null) {
-                          return 'Valor inválido';
+                        if (value != null && value.trim().isNotEmpty) {
+                          if (double.tryParse(value.replaceAll(',', '.')) == null) {
+                            return 'Valor inválido';
+                          }
                         }
                         return null;
                       },
