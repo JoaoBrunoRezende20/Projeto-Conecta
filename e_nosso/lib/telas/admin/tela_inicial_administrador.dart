@@ -459,20 +459,7 @@ class _TelaInicialAdministradorState extends State<TelaInicialAdministrador> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                debugPrint("Botão Cadastrar clicado");
-              },
-              style: darkButtonStyle,
-              child: const Text(
-                'Cadastrar',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ),
+
           const SizedBox(width: 8),
           Expanded(
             child: ElevatedButton(
