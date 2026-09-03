@@ -1246,11 +1246,24 @@ class _TelaCadastroState extends State<TelaCadastro> {
         ),
         const SizedBox(height: 16),
         TextFormField(
-          controller: _cnpjController,
-          inputFormatters: [CpfCnpjFormatter()],
-          validator: AppFormatadores.validarCpfCnpj,
+          controller: _cpfController,
+          inputFormatters: [AppFormatadores.maskCPF],
+          validator: (v) {
+            if (v != null && v.isNotEmpty && v.length < 14) return "CPF incompleto";
+            return null;
+          },
           decoration: const InputDecoration(
-            labelText: 'Documento (CPF ou CNPJ)',
+            labelText: 'CPF',
+          ),
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _cnpjController,
+          inputFormatters: [AppFormatadores.maskCNPJ],
+          validator: AppFormatadores.validarCNPJOpcional,
+          decoration: const InputDecoration(
+            labelText: 'CNPJ',
           ),
           keyboardType: TextInputType.number,
         ),
@@ -1805,14 +1818,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   ),
                 ],
 
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _cpfController,
-                  decoration: const InputDecoration(labelText: 'CPF'),
-                  inputFormatters: [AppFormatadores.maskCPF],
-                  validator: AppFormatadores.validarCPF,
-                  keyboardType: TextInputType.number,
-                ),
+                if (widget.tipoUsuario != 'lojista') ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _cpfController,
+                    decoration: const InputDecoration(labelText: 'CPF'),
+                    inputFormatters: [AppFormatadores.maskCPF],
+                    validator: AppFormatadores.validarCPF,
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
