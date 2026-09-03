@@ -110,12 +110,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         }
 
         // Carrega o endereço
-        final endereco = data['endereco'] as Map<String, dynamic>?;
-        if (endereco != null) {
-          _ruaController.text = endereco['rua'] ?? '';
-          _numeroController.text = endereco['numero'] ?? '';
-          _complementoController.text = endereco['complemento'] ?? '';
-          _bairroController.text = endereco['bairro'] ?? '';
+        final endereco = data['endereco'];
+        if (endereco != null && endereco is Map) {
+          _ruaController.text = endereco['rua']?.toString() ?? '';
+          _numeroController.text = endereco['numero']?.toString() ?? '';
+          _complementoController.text = endereco['complemento']?.toString() ?? '';
+          _bairroController.text = endereco['bairro']?.toString() ?? '';
         } else {
           _ruaController.text = data['rua'] ?? '';
           _numeroController.text = data['numero'] ?? '';
