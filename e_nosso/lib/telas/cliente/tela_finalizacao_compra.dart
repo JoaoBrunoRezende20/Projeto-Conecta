@@ -6,7 +6,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
   const TelaDadosEntrega({super.key, required this.valorTotal});
@@ -42,6 +42,51 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       5.0; // Desconta a taxa padrão para exibir separadamente
   double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
   double get _totalGeral => _subtotal + _taxaEntrega;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+    
+    _telefoneController.addListener(_saveData);
+    _enderecoController.addListener(_saveData);
+    _bairroController.addListener(_saveData);
+    _numeroController.addListener(_saveData);
+  }
+  
+  @override
+  void dispose() {
+    _telefoneController.dispose();
+    _enderecoController.dispose();
+    _bairroController.dispose();
+    _numeroController.dispose();
+    _observacaoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _telefoneController.text = prefs.getString('checkout_telefone') ?? '';
+      _enderecoController.text = prefs.getString('checkout_endereco') ?? '';
+      _bairroController.text = prefs.getString('checkout_bairro') ?? '';
+      _numeroController.text = prefs.getString('checkout_numero') ?? '';
+      _observacao = prefs.getString('checkout_observacao') ?? '';
+      _tipoEntrega = prefs.getString('checkout_tipoEntrega') ?? 'Entrega';
+      _metodoPagamento = prefs.getString('checkout_metodoPagamento') ?? 'Cartão';
+    });
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('checkout_telefone', _telefoneController.text);
+    await prefs.setString('checkout_endereco', _enderecoController.text);
+    await prefs.setString('checkout_bairro', _bairroController.text);
+    await prefs.setString('checkout_numero', _numeroController.text);
+    await prefs.setString('checkout_observacao', _observacao);
+    await prefs.setString('checkout_tipoEntrega', _tipoEntrega);
+    await prefs.setString('checkout_metodoPagamento', _metodoPagamento);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,14 +207,20 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               value: "Irei buscar",
               groupValue: _tipoEntrega,
               icon: Icons.directions_walk,
-              onChanged: (val) => setState(() => _tipoEntrega = val.toString()),
+              onChanged: (val) {
+                setState(() => _tipoEntrega = val.toString());
+                _saveData();
+              },
             ),
             _buildRadioOption(
               title: "Entrega no endereço",
               value: "Entrega",
               groupValue: _tipoEntrega,
               icon: Icons.home_outlined,
-              onChanged: (val) => setState(() => _tipoEntrega = val.toString()),
+              onChanged: (val) {
+                setState(() => _tipoEntrega = val.toString());
+                _saveData();
+              },
             ),
             if (_tipoEntrega == 'Entrega') ...[
               const SizedBox(height: 10),
@@ -283,24 +334,30 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               value: "Cartão",
               groupValue: _metodoPagamento,
               icon: Icons.credit_card,
-              onChanged: (val) =>
-                  setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) {
+                setState(() => _metodoPagamento = val.toString());
+                _saveData();
+              },
             ),
             _buildRadioOption(
               title: "PIX",
               value: "PIX",
               groupValue: _metodoPagamento,
               icon: Icons.pix,
-              onChanged: (val) =>
-                  setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) {
+                setState(() => _metodoPagamento = val.toString());
+                _saveData();
+              },
             ),
             _buildRadioOption(
               title: "Dinheiro",
               value: "Dinheiro",
               groupValue: _metodoPagamento,
               icon: Icons.attach_money,
-              onChanged: (val) =>
-                  setState(() => _metodoPagamento = val.toString()),
+              onChanged: (val) {
+                setState(() => _metodoPagamento = val.toString());
+                _saveData();
+              },
             ),
             const SizedBox(height: 30),
 
@@ -410,6 +467,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               setState(() {
                 _observacao = _observacaoController.text;
               });
+              _saveData();
               Navigator.pop(context);
             },
             child: const Text("Salvar"),
@@ -523,6 +581,10 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       }
 
       await carrinhoService.limparCarrinho();
+      
+      // Limpar observação ao finalizar com sucesso para não poluir próximos pedidos
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('checkout_observacao');
 
       if (mounted) Navigator.pop(context);
 
