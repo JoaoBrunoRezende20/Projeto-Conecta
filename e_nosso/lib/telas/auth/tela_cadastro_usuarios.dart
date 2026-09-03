@@ -667,21 +667,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
         return;
       }
-      String? labelRegistro = _getLabelRegistroProfissional();
-      if (labelRegistro != null &&
-          _imagensDocumentosBytes.isEmpty &&
-          _documentosUrlsExistentes.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Por favor, anexe uma foto do seu $labelRegistro ou documento.',
-              ),
-            ),
-          );
-        }
-        return;
-      }
+
     }
 
     if (widget.tipoUsuario == 'lojista' && _categoriaSelecionadaCnae == null) {
@@ -1539,7 +1525,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 ? 'Número do ${_getLabelRegistroProfissional()}'
                 : 'Registro Profissional (Opcional)',
             helperText: isRegistroObrigatorio
-                ? 'Obrigatório. Anexe o documento abaixo.'
+                ? 'Obrigatório.'
                 : null,
           ),
           validator: (v) {
@@ -1555,7 +1541,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
         const Text(
-          'Anexe documentos, registros, certificados (Obrigatório para profissões regulamentadas)',
+          'Anexe documentos, registros, certificados (Opcional)',
           style: TextStyle(color: Colors.grey, fontSize: 12),
         ),
         const SizedBox(height: 8),

@@ -68,7 +68,7 @@ class TelaFaq extends StatelessWidget {
           ),
           _buildFaqItem(
             'Preciso anexar o Alvará ou Registo Profissional?',
-            'Sim! Se a sua profissão é regulamentada (ex: CREA, CRM) ou se preencheu o campo de CNPJ, o anexo do documento é obrigatório para a aprovação do seu perfil.',
+            'Não é obrigatório! O anexo de documentos ou certificados é opcional para prestadores de serviço.',
           ),
 
           const SizedBox(height: 40),
