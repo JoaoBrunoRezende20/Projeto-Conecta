@@ -227,7 +227,7 @@ class _TelaCadastroServicoPrestadorState
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       decoration: const InputDecoration(
-                        labelText: 'Preço (R$) - Opcional',
+                        labelText: 'Preço (R\$) - Opcional',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
