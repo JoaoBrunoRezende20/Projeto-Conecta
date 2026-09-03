@@ -101,9 +101,15 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.arrow_circle_left_outlined, color: Colors.black, size: 30),
-            onPressed: () => Navigator.pop(context),
+          Builder(
+            builder: (context) {
+              final canPop = ModalRoute.of(context)?.canPop ?? false;
+              if (!canPop) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.arrow_circle_left_outlined, color: Colors.black, size: 30),
+                onPressed: () => Navigator.pop(context),
+              );
+            },
           ),
         ],
       ),
