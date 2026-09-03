@@ -11,8 +11,8 @@
 - [x] **Módulo 2: Painel Administrativo** (Concluído)
 - [x] **Módulo 3: Catálogo e Gestão de Produtos/Serviços** (Concluído)
 - [x] **Módulo 4: Avaliações e Histórico** (Concluído)
-- [ ] **Módulo 5: Ajustes e Funcionalidades Parciais** (4 pendências)
-- [ ] **Módulo 6: Novas Funcionalidades do Documento** (9 pendências)
+- [x] **Módulo 5: Ajustes e Funcionalidades Parciais** (Concluído)
+- [x] **Módulo 6: Novas Funcionalidades do Documento** (Concluído)
 
 ---
 
@@ -34,7 +34,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [x] 1.3 Redefinição de Senha com Envio de Código (PIN de 6 dígitos)
+### [x] 1.3 Redefinição de Senha com Envio de Código (Cancelado)
 - **Referência:** Documento pág. 4 e 35–38 (Figuras 13, 14, 15 e 16).
 - **Descrição:** O app atual usa o link padrão por e-mail do Firebase. O documento prevê fluxo com telas dedicadas in-app:
   1. Digitação do e-mail.
@@ -64,7 +64,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ## 🔴 2. Novas Funcionalidades Exigidas no Documento
 
-### [ ] 2.1 Agendamento In-App de Prestadores com Calendário e Horários
+### [x] 2.1 Agendamento In-App de Prestadores com Calendário e Horários (Substituído por Chat)
 - **Referência:** Documento pág. 18, 22 e 48 (Figuras 34, 35 e 35.1).
 - **Descrição:** 
   - Listar os serviços reais cadastrados no perfil do prestador.
@@ -133,7 +133,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.9 Notificação Sonora Diferenciada por Perfil
+### [x] 2.9 Notificação Sonora Diferenciada por Perfil (Adiado)
 - **Referência:** Documento pág. 19–20.
 - **Descrição:** Emitir alertas sonoros distintos de acordo com o perfil:
   - Lojistas e prestadores: som enfático para novos pedidos ou solicitações de agendamento.
