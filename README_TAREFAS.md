@@ -94,7 +94,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.4 Transparência para Lojistas sem CNPJ (Tag e Pop-up "Autônomo")
+### [x] 2.4 Transparência para Lojistas sem CNPJ (Tag e Pop-up "Autônomo")
 - **Referência:** Documento pág. 17.
 - **Descrição:** Lojistas informais cadastrados sem CNPJ devem exibir claramente um selo/link com a palavra `"Autônomo"`. Ao clicar, deve abrir um pop-up explicativo informando a condição de vendedor autônomo.
 - **Arquivos:** `lib/telas/categorias/categoria_comidas.dart`, `lib/telas/cliente/tela_produtos_disponiveis.dart`.

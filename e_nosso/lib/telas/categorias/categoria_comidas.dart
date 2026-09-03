@@ -123,7 +123,8 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                   final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
                   final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
-                  final lojaId = docs[index].id;
+                  final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+                  final isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
 
                   return _buildLojaCard(
                     context: context,
@@ -135,6 +136,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                     qtdAvaliacoes: qtdAvaliacoes,
                     fotoUrl: fotoUrl,
                     isFavorita: lojasFavoritas.contains(lojaId),
+                    isAutonomo: isAutonomo,
                   );
                 },
               );
@@ -152,6 +154,8 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
             final double avaliacao = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? 0.0) as num).toDouble();
             final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
             final String? fotoUrl = (data['fotoPerfilUrl'] ?? data['imagemUrl'] ?? data['logoUrl']) as String?;
+            final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+            final isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
 
             return _buildLojaCard(
               context: context,
@@ -163,6 +167,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
               qtdAvaliacoes: qtdAvaliacoes,
               fotoUrl: fotoUrl,
               isFavorita: false,
+              isAutonomo: isAutonomo,
             );
           },
         );
@@ -180,6 +185,7 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
     required int qtdAvaliacoes,
     String? fotoUrl,
     required bool isFavorita,
+    required bool isAutonomo,
   }) {
     return GestureDetector(
       onTap: () {
@@ -248,6 +254,31 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                       ],
                       const SizedBox(width: 6),
                       Text("•  $categoriaTexto", style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                      if (isAutonomo) ...[
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text("Vendedor Autônomo"),
+                                content: const Text("Este lojista atua de forma autônoma (sem CNPJ cadastrado). A plataforma Conecta não se responsabiliza por emissão de nota fiscal para estas compras."),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Entendi")),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[100],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text("Autônomo", style: TextStyle(fontSize: 10, color: Colors.blue)),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 2),
