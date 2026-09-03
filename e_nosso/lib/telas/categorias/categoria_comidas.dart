@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../cliente/tela_produtos_disponiveis.dart';
 import '../../repositories/categoria_repository.dart';
 import '../../repositories/usuario_repository.dart';
+import '../auth/tela_login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/usuario_util.dart';
 
@@ -265,17 +266,36 @@ class _CategoriaComidasState extends State<CategoriaComidas> {
                 isFavorita ? Icons.star : Icons.star_border,
                 color: isFavorita ? Colors.amber : Colors.grey,
               ),
-              onPressed: () {
-                if (_uid != null) {
+              onPressed: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
                   if (isFavorita) {
-                    _usuarioRepository.removerLojaFavorita(_uid, lojaId);
+                    _usuarioRepository.removerLojaFavorita(user.uid, lojaId);
                   } else {
-                    _usuarioRepository.adicionarLojaFavorita(_uid, lojaId);
+                    _usuarioRepository.adicionarLojaFavorita(user.uid, lojaId);
                   }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Faça login para favoritar lojas.")),
+                  final sucesso = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TelaLogin(
+                        tipoUsuario: 'comum',
+                        returnOnSuccess: true,
+                      ),
+                    ),
                   );
+
+                  if (sucesso == true) {
+                    final novoUser = FirebaseAuth.instance.currentUser;
+                    if (novoUser != null) {
+                       _usuarioRepository.adicionarLojaFavorita(novoUser.uid, lojaId);
+                       if (context.mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text("Loja adicionada aos favoritos!")),
+                         );
+                       }
+                    }
+                  }
                 }
               },
             ),

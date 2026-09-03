@@ -20,7 +20,7 @@
 
 Tarefas cuja estrutura já existe no código, mas precisam de refinamento para cumprir o requisito integralmente.
 
-### [ ] 1.1 Validação e Aplicação de Cupons de Desconto no Checkout
+### [x] 1.1 Validação e Aplicação de Cupons de Desconto no Checkout
 - **Referência:** Documento pág. 20 e 44 (Figura 27).
 - **Descrição:** Atualmente existe apenas um container estático `"Digite aqui o cupom"` na tela de finalização de compra. É necessário transformar o campo em interativo, consultar a coleção de cupons no Firestore, validar data de validade/valor mínimo e aplicar o desconto no subtotal.
 - **Arquivos:** `lib/telas/cliente/tela_finalizacao_compra.dart`, Firestore (`cupons`).
@@ -34,7 +34,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 1.3 Redefinição de Senha com Envio de Código (PIN de 6 dígitos)
+### [x] 1.3 Redefinição de Senha com Envio de Código (PIN de 6 dígitos)
 - **Referência:** Documento pág. 4 e 35–38 (Figuras 13, 14, 15 e 16).
 - **Descrição:** O app atual usa o link padrão por e-mail do Firebase. O documento prevê fluxo com telas dedicadas in-app:
   1. Digitação do e-mail.
@@ -45,7 +45,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 1.4 Lazy Authentication com Persistência da Ação
+### [x] 1.4 Lazy Authentication com Persistência da Ação
 - **Referência:** Documento pág. 3.
 - **Descrição:** Ao navegar como visitante e clicar em ações protegidas (ex: adicionar ao carrinho, favoritar), após o usuário realizar o login, ele deve ser reconduzido automaticamente à mesma tela com a ação executada ou pronta para finalização.
 - **Arquivos:** `lib/utils/auth_wrapper.dart`, `lib/telas/auth/tela_login.dart`, `lib/telas/cliente/tela_detalhes_produto.dart`.
@@ -74,7 +74,7 @@ Tarefas cuja estrutura já existe no código, mas precisam de refinamento para c
 
 ---
 
-### [ ] 2.2 Chat Interno em Tempo Real (Cliente ↔ Lojista / Prestador)
+### [x] 2.2 Chat Interno em Tempo Real (Cliente ↔ Lojista / Prestador)
 - **Referência:** Documento pág. 23, 45 e 49 (Figuras 29 e 36).
 - **Descrição:** Criação de chat integrado in-app para que comprador e vendedor conversem sobre o status do pedido, troquem mensagens de texto e anexem imagens/comprovantes.
   - Botão no histórico de compras do cliente ("Entrar em chat com o vendedor").

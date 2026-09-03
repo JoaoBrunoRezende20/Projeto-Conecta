@@ -6,6 +6,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
+import '../../repositories/cupom_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
@@ -18,6 +19,7 @@ class TelaDadosEntrega extends StatefulWidget {
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
   final ProdutoRepository _produtoRepository = ProdutoRepository();
+  final CupomRepository _cupomRepository = CupomRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
 
@@ -36,12 +38,17 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final _bairroController = TextEditingController();
   final _numeroController = TextEditingController();
   final _observacaoController = TextEditingController();
+  final _cupomController = TextEditingController();
+
+  double _descontoCupom = 0.0;
+  String _codigoCupomAplicado = "";
+  bool _validandoCupom = false;
 
   double get _subtotal =>
       widget.valorTotal -
       5.0; // Desconta a taxa padrão para exibir separadamente
   double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
-  double get _totalGeral => _subtotal + _taxaEntrega;
+  double get _totalGeral => _subtotal + _taxaEntrega - _descontoCupom;
 
   @override
   void initState() {
@@ -61,6 +68,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     _bairroController.dispose();
     _numeroController.dispose();
     _observacaoController.dispose();
+    _cupomController.dispose();
     super.dispose();
   }
 
@@ -135,6 +143,22 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
                 ),
               ],
             ),
+            if (_descontoCupom > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Desconto",
+                    style: TextStyle(color: Colors.green, fontSize: 12),
+                  ),
+                  Text(
+                    "- R\$ ${_descontoCupom.toStringAsFixed(2).replaceAll('.', ',')}",
+                    style: const TextStyle(color: Colors.green, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -159,29 +183,59 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
               children: [
                 const Icon(Icons.discount_outlined, size: 20),
                 const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    "Adicionar cupom de desconto",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: TextField(
+                    controller: _cupomController,
+                    decoration: InputDecoration(
+                      hintText: "Digite aqui o cupom",
+                      hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                Container(
-                  width: 130,
-                  height: 25,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "Digite aqui o cupom",
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
-                  ),
-                ),
+                _validandoCupom
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton(
+                        onPressed: _aplicarCupom,
+                        child: const Text("Aplicar", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
               ],
             ),
+            if (_descontoCupom > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 5),
+                    Text(
+                      "Cupom $_codigoCupomAplicado aplicado! (- R\$ ${_descontoCupom.toStringAsFixed(2).replaceAll('.', ',')})",
+                      style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red, size: 16),
+                      onPressed: () {
+                        setState(() {
+                          _descontoCupom = 0.0;
+                          _codigoCupomAplicado = "";
+                          _cupomController.clear();
+                        });
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    )
+                  ],
+                ),
+              ),
             const SizedBox(height: 30),
 
             // --- ENTREGA ---
@@ -477,6 +531,50 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     );
   }
 
+  Future<void> _aplicarCupom() async {
+    final codigo = _cupomController.text.trim();
+    if (codigo.isEmpty) return;
+
+    setState(() {
+      _validandoCupom = true;
+    });
+
+    try {
+      final resultado = await _cupomRepository.validarCupom(codigo, _subtotal);
+      setState(() {
+        _descontoCupom = resultado!['desconto'];
+        _codigoCupomAplicado = resultado['codigo'];
+        
+        if (_descontoCupom > _subtotal + _taxaEntrega) {
+          _descontoCupom = _subtotal + _taxaEntrega;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Cupom aplicado com sucesso! Desconto de R\$ ${_descontoCupom.toStringAsFixed(2).replaceAll('.', ',')}."),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+      setState(() {
+        _descontoCupom = 0.0;
+        _codigoCupomAplicado = "";
+        _cupomController.clear();
+      });
+    } finally {
+      setState(() {
+        _validandoCupom = false;
+      });
+    }
+  }
+
   Future<void> _finalizarPedido() async {
     if (_telefoneController.text.trim().length < 14) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -565,6 +663,10 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
           'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
         },
         'pagamento': <String, dynamic>{'metodo': _metodoPagamento},
+        'cupom': _codigoCupomAplicado.isNotEmpty ? {
+          'codigo': _codigoCupomAplicado,
+          'desconto': _descontoCupom,
+        } : null,
         'observacao': _observacao,
       };
 
