@@ -42,8 +42,24 @@ class PedidoRepository {
         .snapshots();
   }
 
-  Future<void> atualizarStatusPedido(String pedidoId, String novoStatus) async {
-    await _firestore.collection('pedidos').doc(pedidoId).update({'status': novoStatus});
+  Future<void> atualizarStatusPedido(
+    String pedidoId,
+    String novoStatus, {
+    String? motivoRecusa,
+    Map<String, dynamic>? dadosAdicionais,
+  }) async {
+    final Map<String, dynamic> updateData = {
+      'status': novoStatus,
+      'dataAtualizacao': FieldValue.serverTimestamp(),
+    };
+    if (motivoRecusa != null && motivoRecusa.trim().isNotEmpty) {
+      updateData['motivoRecusa'] = motivoRecusa.trim();
+      updateData['dataRecusa'] = FieldValue.serverTimestamp();
+    }
+    if (dadosAdicionais != null) {
+      updateData.addAll(dadosAdicionais);
+    }
+    await _firestore.collection('pedidos').doc(pedidoId).update(updateData);
   }
 
   /// Envia uma notificação em tempo real para qualquer usuário (lojistas, prestadorServicos, usuarioComum)
@@ -54,20 +70,25 @@ class PedidoRepository {
     required String mensagem,
     required String tipo,
     String? pedidoId,
+    String? motivo,
   }) async {
     try {
-      await _firestore
-          .collection(colecaoDestinatario)
-          .doc(destinatarioId)
-          .collection('notificacoes')
-          .add({
+      final Map<String, dynamic> notificacaoData = {
         'titulo': titulo,
         'mensagem': mensagem,
         'tipo': tipo,
         'pedidoId': pedidoId,
         'data': FieldValue.serverTimestamp(),
         'lida': false,
-      });
+      };
+      if (motivo != null && motivo.trim().isNotEmpty) {
+        notificacaoData['motivo'] = motivo.trim();
+      }
+      await _firestore
+          .collection(colecaoDestinatario)
+          .doc(destinatarioId)
+          .collection('notificacoes')
+          .add(notificacaoData);
     } catch (e) {
       // Evita que qualquer erro ao emitir a notificação quebre a transação do pedido
     }

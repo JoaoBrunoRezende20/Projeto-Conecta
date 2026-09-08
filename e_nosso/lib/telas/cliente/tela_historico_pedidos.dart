@@ -62,18 +62,21 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                   return const Center(child: Text("Nenhum pedido encontrado."));
                 }
 
-                // Filtrar apenas finalizados: concluído
+                // Filtrar finalizados: concluído, cancelado ou rejeitado
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final status = (data['status'] ?? '')
                       .toString()
                       .toLowerCase();
-                  return status == 'concluído' || status == 'concluido';
+                  return status == 'concluído' ||
+                      status == 'concluido' ||
+                      status == 'cancelado' ||
+                      status == 'rejeitado';
                 }).toList();
 
                 if (docs.isEmpty) {
                   return const Center(
-                    child: Text("Nenhum serviço no histórico."),
+                    child: Text("Nenhum pedido no histórico."),
                   );
                 }
 
@@ -106,7 +109,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
   Widget _buildCard(String id, Map<String, dynamic> data) {
     final status = (data['status'] ?? '').toString().toLowerCase();
     final bool concluido = status == 'concluído' || status == 'concluido';
-    final bool cancelado = status == 'cancelado';
+    final bool isRecusado = status == 'cancelado' || status == 'rejeitado';
+    final String? motivoRecusa =
+        data['motivoRecusa'] ?? data['motivoCancelamento'] ?? data['motivo'];
 
     final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
@@ -151,10 +156,10 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final String tipoAlvo = isPrestador ? "prestador" : "lojista";
 
     Color statusColor =
-        concluido ? Colors.green : (cancelado ? Colors.red : Colors.grey);
+        concluido ? Colors.green : (isRecusado ? Colors.red : Colors.grey);
     String statusLabel = concluido
         ? "Pedido Concluído"
-        : (cancelado ? "Cancelado" : "Finalizado");
+        : (isRecusado ? "Pedido Recusado" : "Finalizado");
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -259,6 +264,46 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               ),
             ],
           ),
+          if (isRecusado && motivoRecusa != null && motivoRecusa.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.red.shade700),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Motivo da recusa:",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    motivoRecusa,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.red.shade900,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (concluido && !avaliado) ...[
             const SizedBox(height: 20),
             SizedBox(
