@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/produto_repository.dart';
+import '../../../utils/usuario_util.dart';
+import '../tela_cadastro_produto_lojista.dart';
 import '../tela_inicial_lojista.dart'; // Para acessar a classe Produto
 
 class AbaProdutosLojista extends StatefulWidget {
@@ -15,67 +17,30 @@ class AbaProdutosLojista extends StatefulWidget {
 class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
   final ProdutoRepository _produtoRepository = ProdutoRepository();
 
-  void _abrirDialogAdicionarProduto(BuildContext context) {
-    final nomeController = TextEditingController();
-    final estoqueController = TextEditingController();
-    final precoController = TextEditingController();
-    final descricaoController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Adicionar Produto'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nomeController,
-                decoration: const InputDecoration(labelText: 'Nome do Produto'),
-              ),
-              TextField(
-                controller: descricaoController,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-              ),
-              TextField(
-                controller: precoController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Preço (R\$)'),
-              ),
-              TextField(
-                controller: estoqueController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Estoque'),
-              ),
-            ],
-          ),
+  void _abrirCadastroNovoProduto(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TelaCadastroProdutoLojista(
+          lojistaId: widget.lojistaId,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nomeController.text.isNotEmpty &&
-                  precoController.text.isNotEmpty &&
-                  estoqueController.text.isNotEmpty) {
-                int estoque = int.tryParse(estoqueController.text) ?? 0;
-                await _produtoRepository.adicionarProduto({
-                  'lojistaId': widget.lojistaId,
-                  'nome': nomeController.text,
-                  'descricao': descricaoController.text,
-                  'preco': double.tryParse(precoController.text) ?? 0,
-                  'estoque': estoque,
-                  'ativo': estoque > 0,
-                });
-                if (!context.mounted) return;
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
+      ),
+    );
+  }
+
+  void _abrirEdicaoProduto(BuildContext context, Produto produto) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TelaCadastroProdutoLojista(
+          produtoId: produto.id,
+          lojistaId: widget.lojistaId,
+          nomeAtual: produto.nome,
+          descricaoAtual: produto.descricao,
+          precoAtual: produto.preco,
+          estoqueAtual: produto.estoque,
+          imagemUrlAtual: produto.imagemUrl,
+        ),
       ),
     );
   }
@@ -114,7 +79,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
-        onPressed: () => _abrirDialogAdicionarProduto(context),
+        onPressed: () => _abrirCadastroNovoProduto(context),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Padding(
@@ -123,7 +88,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Gerencie seus produtos: edite estoque, adicione informações e controle disponibilidade.",
+              "Gerencie seus produtos: edite características, fotos, estoque e controle a disponibilidade.",
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -138,6 +103,14 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     return StreamBuilder<QuerySnapshot>(
       stream: _produtoRepository.getProdutosPorLojista(widget.lojistaId),
       builder: (_, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              "Erro ao carregar produtos: ${snapshot.error}",
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -161,6 +134,9 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
   }
 
   Widget _buildProductTile(Produto produto) {
+    final bool temImagem =
+        produto.imagemUrl != null && produto.imagemUrl!.trim().isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -170,45 +146,82 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
       ),
       child: Row(
         children: [
+          // Imagem do Produto
           Container(
-            width: 60,
-            height: 60,
+            width: 65,
+            height: 65,
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.shopping_bag, color: Colors.grey),
+            child: temImagem
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: UsuarioUtil.buildImageWidget(
+                      produto.imagemUrl!,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 30),
           ),
           const SizedBox(width: 12),
+
+          // Informações do Produto
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  produto.nome,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            child: InkWell(
+              onTap: () => _abrirEdicaoProduto(context, produto),
+              borderRadius: BorderRadius.circular(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    produto.nome,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  "R\$ ${produto.preco.toStringAsFixed(2)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  produto.estoque > 0 ? "Disponível" : "Indisponível",
-                  style: TextStyle(
-                    color: produto.estoque > 0 ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
+                  if (produto.descricao.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      produto.descricao,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    "R\$ ${produto.preco.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    produto.estoque > 0 ? "Disponível" : "Indisponível",
+                    style: TextStyle(
+                      color: produto.estoque > 0 ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+
+          // Controles (Editar, +/- Estoque, Excluir)
           Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -217,28 +230,45 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                     icon: const Icon(
                       Icons.remove_circle_outline,
                       color: Colors.red,
+                      size: 22,
                     ),
+                    visualDensity: VisualDensity.compact,
                     onPressed: () => _atualizarEstoque(produto, -1),
                   ),
                   Text(
                     produto.estoque.toString(),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(
                       Icons.add_circle_outline,
                       color: Colors.green,
+                      size: 22,
                     ),
+                    visualDensity: VisualDensity.compact,
                     onPressed: () => _atualizarEstoque(produto, 1),
                   ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _excluirProduto(produto.id, produto.nome),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Editar Produto',
+                    onPressed: () => _abrirEdicaoProduto(context, produto),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Excluir Produto',
+                    onPressed: () => _excluirProduto(produto.id, produto.nome),
+                  ),
+                ],
               ),
             ],
           ),
@@ -247,3 +277,4 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     );
   }
 }
+

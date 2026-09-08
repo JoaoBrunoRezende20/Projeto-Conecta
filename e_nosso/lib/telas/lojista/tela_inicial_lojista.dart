@@ -17,6 +17,7 @@ class Produto {
   final double preco;
   final int estoque;
   bool ativo;
+  final String? imagemUrl;
 
   Produto({
     required this.id,
@@ -25,6 +26,7 @@ class Produto {
     required this.preco,
     required this.estoque,
     required this.ativo,
+    this.imagemUrl,
   });
 
   factory Produto.fromFirestore(DocumentSnapshot doc) {
@@ -36,6 +38,7 @@ class Produto {
       preco: (data['preco'] ?? 0).toDouble(),
       estoque: data['estoque'] ?? 0,
       ativo: data['ativo'] ?? false,
+      imagemUrl: data['imagemUrl'] ?? data['imagemBase64'] ?? data['fotoUrl'],
     );
   }
 }
