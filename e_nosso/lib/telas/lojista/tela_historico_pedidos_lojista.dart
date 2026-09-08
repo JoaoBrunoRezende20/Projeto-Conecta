@@ -160,6 +160,10 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
       statusLabel = "Pedido Recusado";
     }
 
+    final String? motivoRecusa =
+        pedido['motivoRecusa'] ?? pedido['motivoCancelamento'] ?? pedido['motivo'];
+    final bool isRecusado = status == 'cancelado' || status == 'rejeitado';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -264,6 +268,46 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
               ),
             ],
           ),
+          if (isRecusado && motivoRecusa != null && motivoRecusa.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.red.shade700),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Motivo da recusa informado:",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    motivoRecusa,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.red.shade900,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

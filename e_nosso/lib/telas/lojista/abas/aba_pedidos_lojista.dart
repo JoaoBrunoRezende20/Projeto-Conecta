@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/pedido_repository.dart';
 import '../../../repositories/produto_repository.dart';
+import '../../../widgets/modal_recusa_pedido.dart';
 import '../../chat/tela_chat.dart';
 
 class AbaPedidosLojista extends StatefulWidget {
@@ -46,8 +47,13 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
     String novoStatus,
     Map<String, dynamic> itens, {
     String? clienteId,
+    String? motivoRecusa,
   }) async {
-    await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
+    await _pedidoRepository.atualizarStatusPedido(
+      pedidoId,
+      novoStatus,
+      motivoRecusa: motivoRecusa,
+    );
 
     // Envia notificação em tempo real para o cliente
     if (clienteId != null && clienteId.isNotEmpty) {
@@ -71,13 +77,18 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           pedidoId: pedidoId,
         );
       } else if (novoStatus == 'cancelado' || novoStatus == 'rejeitado') {
+        final String mensagemRecusa = motivoRecusa != null && motivoRecusa.trim().isNotEmpty
+            ? 'Infelizmente seu pedido na loja $nomeExibicaoLoja foi recusado.\nMotivo: $motivoRecusa'
+            : 'Infelizmente seu pedido na loja $nomeExibicaoLoja não pôde ser atendido.';
+
         await _pedidoRepository.enviarNotificacao(
           destinatarioId: clienteId,
           colecaoDestinatario: 'usuarioComum',
           titulo: 'Pedido Recusado',
-          mensagem: 'Infelizmente seu pedido na loja $nomeExibicaoLoja não pôde ser atendido.',
+          mensagem: mensagemRecusa,
           tipo: 'pedido_recusado',
           pedidoId: pedidoId,
+          motivo: motivoRecusa,
         );
       }
     }
@@ -89,6 +100,42 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
         final itemData = entry.value as Map<String, dynamic>;
         final quantidade = (itemData['quantidade'] as num).toInt();
         await _produtoRepository.devolverEstoqueProduto(produtoId, quantidade);
+      }
+    }
+  }
+
+  Future<void> _recusarPedidoComMotivo(
+    String pedidoId,
+    Map<String, dynamic> itens, {
+    String? clienteId,
+  }) async {
+    final motivo = await ModalRecusaPedido.exibir(context);
+    if (motivo == null || motivo.trim().isEmpty) return;
+
+    try {
+      await _atualizarStatusPedido(
+        pedidoId,
+        'cancelado',
+        itens,
+        clienteId: clienteId,
+        motivoRecusa: motivo.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pedido recusado com sucesso e cliente notificado.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao recusar pedido: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -299,9 +346,8 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _atualizarStatusPedido(
+                onPressed: () => _recusarPedidoComMotivo(
                   pedidoId,
-                  'cancelado',
                   pedido['itens'] is Map
                       ? Map<String, dynamic>.from(pedido['itens'] as Map)
                       : {},
