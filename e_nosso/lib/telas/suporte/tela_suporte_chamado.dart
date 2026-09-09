@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../utils/suporte_config.dart';
 
 class TelaSuporteChamado extends StatefulWidget {
   final bool isVisitante;
@@ -52,10 +54,37 @@ class _TelaSuporteChamadoState extends State<TelaSuporteChamado> {
 
       await FirebaseFirestore.instance.collection('chamados').add(dadosChamado);
 
+      // Redireciona para o e-mail da administração pré-formatado
+      final emailContato = widget.isVisitante
+          ? _emailContatoController.text.trim()
+          : (user?.email ?? 'Não informado');
+      final nomeUsuario = user?.displayName ?? 'Usuário';
+
+      final Uri emailUri = SuporteConfig.gerarUriMailto(
+        assunto: '[Suporte Conecta] - $_categoriaSelecionada',
+        corpo: 'Olá, equipe de administração Conecta!\n\n'
+            'Gostaria de solicitar suporte para o seguinte chamado:\n'
+            '• Categoria: $_categoriaSelecionada\n'
+            '• Nome: $nomeUsuario\n'
+            '• E-mail de Contato: $emailContato\n'
+            '• ID de Usuário: ${user?.uid ?? "Visitante"}\n\n'
+            'Descrição do Problema / Dúvida:\n'
+            '${_descricaoController.text.trim()}\n\n'
+            '---\nChamado registrado no aplicativo Conecta.',
+      );
+
+      try {
+        if (await canLaunchUrl(emailUri)) {
+          await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+        }
+      } catch (e) {
+        debugPrint('Aviso: Não foi possível abrir o cliente de e-mail: $e');
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Chamado enviado com sucesso! Nossa equipe entrará em contato."),
+            content: Text("Chamado registrado e encaminhado para a administração!"),
             backgroundColor: Colors.green,
           ),
         );
@@ -123,7 +152,7 @@ class _TelaSuporteChamadoState extends State<TelaSuporteChamado> {
               ],
 
               DropdownButtonFormField<String>(
-                value: _categoriaSelecionada,
+                initialValue: _categoriaSelecionada,
                 decoration: InputDecoration(
                   labelText: "Categoria",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

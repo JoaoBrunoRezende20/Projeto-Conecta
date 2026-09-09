@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../utils/suporte_config.dart';
+import 'tela_suporte_chamado.dart';
 
 class TelaFaq extends StatelessWidget {
   const TelaFaq({super.key});
@@ -92,14 +95,41 @@ class TelaFaq extends StatelessWidget {
                   style: TextStyle(fontSize: 12),
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    // Lógica futura para abrir WhatsApp ou E-mail de suporte
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Em breve: Redirecionamento para o WhatsApp de suporte.')),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.email_outlined),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    final Uri emailUri = SuporteConfig.gerarUriMailto(
+                      assunto: '[Suporte Conecta] - Dúvida via FAQ',
+                      corpo: 'Olá, equipe de administração Conecta!\n\n'
+                          'Estava consultando as dúvidas frequentes do aplicativo e gostaria de suporte sobre:\n\n',
                     );
+                    try {
+                      if (await canLaunchUrl(emailUri)) {
+                        await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+                      } else {
+                        if (!context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TelaSuporteChamado(isVisitante: false),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TelaSuporteChamado(isVisitante: false),
+                        ),
+                      );
+                    }
                   },
-                  child: const Text("Falar com o Suporte"),
+                  label: const Text("Falar com o Suporte"),
                 ),
               ],
             ),
