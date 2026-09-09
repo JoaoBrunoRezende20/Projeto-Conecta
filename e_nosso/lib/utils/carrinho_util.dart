@@ -19,8 +19,8 @@ class CarrinhoUtil {
     final jsonString = jsonEncode(carrinho);
     await prefs.setString(_carrinhoKey, jsonString);
     
-    if (lojaId != null) {
-      await prefs.setString(_lojaIdKey, lojaId);
+    if (lojaId != null && lojaId.trim().isNotEmpty) {
+      await prefs.setString(_lojaIdKey, lojaId.trim());
     } else {
       await prefs.remove(_lojaIdKey);
     }
@@ -35,12 +35,16 @@ class CarrinhoUtil {
 
     Map<String, Map<String, dynamic>> carrinhoCarregado = {};
     
-    if (jsonString != null) {
+    if (jsonString != null && jsonString.trim().isNotEmpty) {
       try {
-        final Map<String, dynamic> decoded = jsonDecode(jsonString);
-        decoded.forEach((key, value) {
-          carrinhoCarregado[key] = Map<String, dynamic>.from(value);
-        });
+        final dynamic decoded = jsonDecode(jsonString);
+        if (decoded is Map) {
+          decoded.forEach((key, value) {
+            if (value is Map) {
+              carrinhoCarregado[key.toString()] = Map<String, dynamic>.from(value);
+            }
+          });
+        }
       } catch (e) {
         // Ignora erros de parsing e retorna vazio
       }
@@ -48,7 +52,7 @@ class CarrinhoUtil {
 
     return {
       'carrinho': carrinhoCarregado,
-      'lojaId': lojaId,
+      'lojaId': (lojaId != null && lojaId.trim().isNotEmpty) ? lojaId.trim() : null,
     };
   }
 
@@ -59,3 +63,4 @@ class CarrinhoUtil {
     await prefs.remove(_lojaIdKey);
   }
 }
+

@@ -4,6 +4,7 @@ import '../auth/tela_login.dart';
 import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
 import '../../services/carrinho_service.dart';
+import '../../utils/usuario_util.dart';
 
 class TelaRevisaoCarrinho extends StatefulWidget {
   final String lojaName;
@@ -19,6 +20,12 @@ class TelaRevisaoCarrinho extends StatefulWidget {
 
 class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
   final CarrinhoService _carrinhoService = CarrinhoService();
+
+  @override
+  void initState() {
+    super.initState();
+    _carrinhoService.inicializar();
+  }
 
   double get _total {
     double total = 0.0;
@@ -36,8 +43,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
 
   void _atualizarQuantidade(String id, int delta) {
     if (delta > 0) {
-      // O item já existe, basta adicionar mais 1 na quantidade
-      _carrinhoService.adicionarItem(id, {'quantidade': 1}, _carrinhoService.lojaId ?? '');
+      final item = _carrinhoService.itens[id];
+      final itemLojaId = (item != null ? item['lojaId'] as String? : null) ??
+          _carrinhoService.lojaId ??
+          '';
+      _carrinhoService.adicionarItem(id, {'quantidade': 1}, itemLojaId);
     } else {
       _carrinhoService.decrementarItem(id);
     }
@@ -48,6 +58,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     return ListenableBuilder(
       listenable: _carrinhoService,
       builder: (context, _) {
+        final String nomeLojaExibida = (_carrinhoService.isNotEmpty &&
+                widget.lojaName == "Sua Sacola")
+            ? (_carrinhoService.itens.values.first['lojaNome'] as String? ?? widget.lojaName)
+            : widget.lojaName;
+
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
@@ -63,11 +78,48 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
             centerTitle: true,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
             ),
           ),
           body: _carrinhoService.isEmpty
-              ? const Center(child: Text("Sua sacola está vazia"))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined,
+                          size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Sua sacola está vazia",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text("Continuar Comprando"),
+                      ),
+                    ],
+                  ),
+                )
               : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
                   child: Column(
@@ -83,6 +135,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                               color: Colors.grey[300],
                               shape: BoxShape.circle,
                             ),
+                            child: const Icon(Icons.storefront, color: Colors.black54),
                           ),
                           const SizedBox(width: 15),
                           Expanded(
@@ -90,18 +143,26 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  widget.lojaName,
+                                  nomeLojaExibida,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  "Adicionar mais itens",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
+                                InkWell(
+                                  onTap: () {
+                                    if (Navigator.canPop(context)) {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                  child: const Text(
+                                    "Adicionar mais itens",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Colors.deepPurple,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -141,12 +202,13 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
 
   Widget _cardItemCarrinho(Map<String, dynamic> item, String id) {
     final double precoTotal = ((item['preco'] ?? 0.0) as num).toDouble() * ((item['quantidade'] ?? 0) as num).toInt();
+    final String? imagem = item['imagem'] as String?;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 25),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // IMAGEM PLACEHOLDER
           Container(
             width: 60,
             height: 60,
@@ -154,6 +216,15 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(10),
             ),
+            child: (imagem != null && imagem.isNotEmpty)
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: UsuarioUtil.buildImageWidget(
+                      imagem,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
           ),
           const SizedBox(width: 15),
           // INFOS DO PRODUTO
@@ -290,7 +361,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                 ),
                               ),
                             ).then((sucesso) {
-                              if (sucesso == true) {
+                              if (sucesso == true && mounted) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -314,7 +385,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                 ),
                               ),
                             ).then((sucesso) {
-                              if (sucesso == true) {
+                              if (sucesso == true && mounted) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

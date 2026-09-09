@@ -3,6 +3,7 @@ import 'tela_inicial_comum.dart';
 import 'tela_lojas_favoritas.dart';
 import 'tela_pedidos_pendentes_cliente.dart';
 import 'tela_carrinho.dart';
+import '../../services/carrinho_service.dart';
 
 class TelaBaseCliente extends StatefulWidget {
   const TelaBaseCliente({super.key});
@@ -13,6 +14,12 @@ class TelaBaseCliente extends StatefulWidget {
 
 class _TelaBaseClienteState extends State<TelaBaseCliente> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    CarrinhoService().inicializar();
+  }
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),

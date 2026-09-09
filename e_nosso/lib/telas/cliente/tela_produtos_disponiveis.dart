@@ -151,7 +151,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
           ),
           body: _buildListaProdutos(),
           bottomNavigationBar:
-              (_carrinhoService.isNotEmpty && _carrinhoService.lojaId == widget.lojaId)
+              _carrinhoService.isNotEmpty
               ? _buildBarraCarrinho()
               : null,
         );

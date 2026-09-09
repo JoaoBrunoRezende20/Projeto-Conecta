@@ -9,11 +9,14 @@ import 'telas/categorias/categoria_outros.dart';
 import 'telas/categorias/categoria_comidas.dart';
 import 'telas/categorias/categoria_servicos.dart';
 
+import 'services/carrinho_service.dart';
+
 // Telas importadas não são todas necessárias se o AuthWrapper cuidar disso, mas mantemos por segurança.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await CarrinhoService().inicializar();
   runApp(const MyApp());
 }
 

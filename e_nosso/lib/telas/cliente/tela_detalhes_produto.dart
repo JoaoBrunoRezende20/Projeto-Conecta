@@ -502,16 +502,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
       return;
     }
 
-    final itemAdicionado = {
-      'nome': dadosLive['nome'] ?? 'Produto',
-      'preco': dadosLive['preco'] ?? 0.0,
-      'quantidade': qtd,
-    };
-
-    await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);
-
-    if (!mounted) return;
-    // Buscar nome da loja para a tela de carrinho
+    // Buscar nome da loja para salvar nos metadados do item e passar para o carrinho
     String storeName = "Loja";
     try {
       final doc = await FirebaseFirestore.instance.collection('lojistas').doc(widget.lojaId).get();
@@ -520,6 +511,17 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
         storeName = data['razaoSocial'] ?? data['nomeFantasia'] ?? "Loja";
       }
     } catch (_) {}
+
+    final itemAdicionado = {
+      'nome': dadosLive['nome'] ?? 'Produto',
+      'preco': ((dadosLive['preco'] ?? 0.0) as num).toDouble(),
+      'quantidade': qtd,
+      'lojaId': widget.lojaId,
+      'lojaNome': storeName,
+      'imagem': (dadosLive['imagemUrl'] ?? dadosLive['imagemBase64']) as String?,
+    };
+
+    await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);
 
     if (!mounted) return;
     
@@ -570,7 +572,10 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
-                Navigator.pop(context); // Fecha modal e fica na tela
+                Navigator.pop(context); // Fecha modal
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context); // Volta para a tela anterior para continuar comprando
+                }
               },
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
