@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -85,32 +86,38 @@ class _TelaCadastroServicoPrestadorState
       String? urlFinal = _imagemUrl;
 
       if (_imagemBytes != null) {
-        debugPrint('>>> [SERVICO] Enviando foto do serviço para o Storage...');
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('servicos')
-            .child(prestadorId)
-            .child('img_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        try {
+          debugPrint('>>> [SERVICO] Enviando foto do serviço para o Storage...');
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('servicos')
+              .child(prestadorId)
+              .child('img_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-        final uploadTask = ref.putData(
-          _imagemBytes!,
-          SettableMetadata(contentType: 'image/jpeg'),
-        );
-        final snapshot = await uploadTask.timeout(
-          const Duration(seconds: 15),
-          onTimeout: () => throw TimeoutException('Tempo limite esgotado ao enviar foto do serviço.'),
-        );
-        urlFinal = await snapshot.ref.getDownloadURL().timeout(
-          const Duration(seconds: 10),
-          onTimeout: () => throw TimeoutException('Tempo limite ao obter URL da foto do serviço.'),
-        );
-        debugPrint('>>> [SERVICO] Foto enviada com sucesso: $urlFinal');
+          final uploadTask = ref.putData(
+            _imagemBytes!,
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+          final snapshot = await uploadTask.timeout(
+            const Duration(seconds: 8),
+            onTimeout: () => throw TimeoutException('Tempo limite esgotado ao enviar foto do serviço.'),
+          );
+          urlFinal = await snapshot.ref.getDownloadURL().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw TimeoutException('Tempo limite ao obter URL da foto do serviço.'),
+          );
+          debugPrint('>>> [SERVICO] Foto enviada com sucesso para Storage: $urlFinal');
+        } catch (e) {
+          debugPrint('>>> [SERVICO] Falha no Firebase Storage ($e). Utilizando fallback Base64...');
+          urlFinal = base64Encode(_imagemBytes!);
+        }
       }
 
       final Map<String, dynamic> dadosServico = {
         'nome': _nomeController.text.trim(),
         'preco': preco,
         'imagemUrl': urlFinal,
+        'imagemBase64': urlFinal,
         'prestadorId': prestadorId,
       };
 

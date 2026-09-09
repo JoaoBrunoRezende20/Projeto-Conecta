@@ -16,6 +16,7 @@ class Produto {
   final String descricao;
   final double preco;
   final int estoque;
+  final String? imagem;
   bool ativo;
   final String? imagemUrl;
 
@@ -25,21 +26,38 @@ class Produto {
     required this.descricao,
     required this.preco,
     required this.estoque,
+    this.imagem,
     required this.ativo,
     this.imagemUrl,
   });
 
-  factory Produto.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
+  factory Produto.fromMap(Map<dynamic, dynamic> data, String id) {
     return Produto(
-      id: doc.id,
+      id: id,
       nome: data['nome'] ?? 'Nome indisponível',
       descricao: data['descricao'] ?? '',
       preco: (data['preco'] ?? 0).toDouble(),
       estoque: data['estoque'] ?? 0,
+      imagem: (data['imagemUrl'] ?? data['imagemBase64'] ?? data['imagem']) as String?,
       ativo: data['ativo'] ?? false,
       imagemUrl: data['imagemUrl'] ?? data['imagemBase64'] ?? data['fotoUrl'],
     );
+  }
+
+  factory Produto.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
+    return Produto.fromMap(data, doc.id);
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'nome': nome,
+      'descricao': descricao,
+      'preco': preco,
+      'estoque': estoque,
+      'imagem': imagem,
+      'ativo': ativo,
+    };
   }
 }
 

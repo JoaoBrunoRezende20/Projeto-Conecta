@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart'; // NOVO: Import do Storage
@@ -405,51 +406,67 @@ class _TelaCadastroState extends State<TelaCadastro> {
     });
   }
 
-  // NOVO: Função para enviar imagens para o Firebase Storage
+  // NOVO: Função para enviar imagens para o Firebase Storage com fallback em Base64
   Future<List<String>> _uploadImagensFirebase(
     List<Uint8List> imagens,
     String pasta,
     String uid,
   ) async {
     List<String> urls = [];
+    bool storageDisponivel = true;
+
     for (int i = 0; i < imagens.length; i++) {
       debugPrint(
-        '>>> [STORAGE] Iniciando upload imagem ${i + 1}/${imagens.length} para pasta "$pasta"...',
-      );
-      // Cria um caminho único para cada imagem no Storage
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('usuarios')
-          .child(uid)
-          .child(pasta)
-          .child('img_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
-
-      // Faz o upload dos bytes
-      final uploadTask = ref.putData(
-        imagens[i],
-        SettableMetadata(contentType: 'image/jpeg'),
+        '>>> [STORAGE] Processando imagem ${i + 1}/${imagens.length} para pasta "$pasta"...',
       );
 
-      // Aguarda com timeout para não travar indefinidamente em caso de bloqueio de CORS no Web
-      final snapshot = await uploadTask.timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException(
-            'Tempo esgotado ao enviar imagem para o Firebase Storage. '
-            'Se estiver rodando no navegador (Web), verifique se o CORS foi configurado no Storage ou realize o teste no Emulador Android.',
+      if (storageDisponivel) {
+        try {
+          // Cria um caminho único para cada imagem no Storage
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('usuarios')
+              .child(uid)
+              .child(pasta)
+              .child('img_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+
+          // Faz o upload dos bytes
+          final uploadTask = ref.putData(
+            imagens[i],
+            SettableMetadata(contentType: 'image/jpeg'),
           );
-        },
-      );
 
-      // Obtém o link público para salvar no Firestore
-      final url = await snapshot.ref.getDownloadURL().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw TimeoutException(
-          'Tempo esgotado ao obter link da imagem salva.',
-        ),
-      );
-      urls.add(url);
-      debugPrint('>>> [STORAGE] Imagem ${i + 1} enviada com sucesso: $url');
+          // Aguarda com timeout para não travar
+          final snapshot = await uploadTask.timeout(
+            const Duration(seconds: 4),
+            onTimeout: () {
+              throw TimeoutException(
+                'Tempo esgotado ao enviar imagem para o Firebase Storage.',
+              );
+            },
+          );
+
+          // Obtém o link público para salvar no Firestore
+          final url = await snapshot.ref.getDownloadURL().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => throw TimeoutException(
+              'Tempo esgotado ao obter link da imagem salva.',
+            ),
+          );
+          urls.add(url);
+          debugPrint('>>> [STORAGE] Imagem ${i + 1} enviada com sucesso para Storage: $url');
+          continue;
+        } catch (storageErr) {
+          debugPrint(
+            '>>> [STORAGE] Falha no Firebase Storage ($storageErr). Desativando Storage para as próximas fotos e aplicando fallback Base64 instantâneo...',
+          );
+          storageDisponivel = false;
+        }
+      }
+
+      // Fallback seguro: converte para Base64 instantaneamente
+      urls.add(base64Encode(imagens[i]));
+      debugPrint('>>> [STORAGE] Imagem ${i + 1} convertida para Base64.');
     }
     return urls;
   }
@@ -1018,6 +1035,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         double preco =
             double.tryParse(_faixaPrecosController.text.replaceAll(',', '.')) ??
             0.0;
+        final String cnpjPrestador = _cnpjPrestadorController.text.trim();
 
         return _usuarioRepository.salvarDadosUsuario(uid, 'prestadorServicos', {
           'nome': _nomeController.text.trim(),
@@ -1031,7 +1049,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'disponibilidadeAtendimento': disponibilidadeFinal,
           'faixaPrecos': preco,
           'qualificacoes': _qualificacoesController.text.trim(),
-          'cnpj': _cnpjPrestadorController.text.trim(),
+          if (cnpjPrestador.isNotEmpty) 'cnpj': cnpjPrestador,
           'registroProfissional': _registroProfissionalController.text.trim(),
           'portfolio': portfolioUrls, // Salva as URLs
           'documentosUrl': documentosUrls, // Salva as URLs

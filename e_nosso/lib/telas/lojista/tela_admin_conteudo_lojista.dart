@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../repositories/produto_repository.dart';
+import '../../utils/usuario_util.dart';
 
 class TelaAdminConteudoLojista extends StatelessWidget {
   final String lojistaId;
@@ -51,11 +52,21 @@ class TelaAdminConteudoLojista extends StatelessWidget {
             itemBuilder: (context, index) {
               final dados = produtos[index].data() as Map<String, dynamic>;
               final idProd = produtos[index].id;
+              final imagem = (dados['imagemUrl'] ?? dados['imagemBase64']) as String?;
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 child: ListTile(
-                  leading: const Icon(Icons.shopping_bag),
+                  leading: (imagem != null && imagem.isNotEmpty)
+                      ? SizedBox(
+                          width: 45,
+                          height: 45,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: UsuarioUtil.buildImageWidget(imagem, fit: BoxFit.cover),
+                          ),
+                        )
+                      : const Icon(Icons.shopping_bag),
                   title: Text(dados['nome'] ?? 'Produto sem nome'),
                   subtitle: Text('R\$ ${dados['preco']?.toString() ?? '0.00'} | Qtd: ${dados['estoque']}'),
                   trailing: IconButton(

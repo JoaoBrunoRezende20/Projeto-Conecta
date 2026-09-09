@@ -151,6 +151,7 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
     final status = pedido['status']?.toString().toLowerCase() ?? 'pendente';
     final valorTotal = (pedido['valorTotal'] ?? 0.0).toDouble();
     final dataCriacao = pedido['dataCriacao'] as Timestamp?;
+    final observacao = pedido['observacao']?.toString();
 
     String pagamentoStr = "Crédito";
     if (pedido['pagamento'] != null && pedido['pagamento']['metodo'] != null) {
@@ -298,6 +299,41 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
               ),
             ],
           ),
+
+          if (observacao != null && observacao.trim().isNotEmpty) ...[
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Observação do Cliente:",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    observacao,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           const SizedBox(height: 15),
 

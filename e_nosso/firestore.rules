@@ -11,9 +11,9 @@ service cloud.firestore {
       return !('preco' in data) || (data.preco is number && data.preco >= 0);
     }
 
-    // Helper: Valida o formato/tamanho do CNPJ (14 sem máscara, 18 com máscara)
+    // Helper: Valida o formato/tamanho do CNPJ (14 sem máscara, 18 com máscara, ou vazio/nulo)
     function isCnpjValido(data) {
-      return !('cnpj' in data) || (data.cnpj is string && (data.cnpj.size() == 14 || data.cnpj.size() == 18));
+      return !('cnpj' in data) || data.cnpj == null || (data.cnpj is string && (data.cnpj.size() == 0 || data.cnpj.size() == 14 || data.cnpj.size() == 18));
     }
 
     // Helper: Valida o formato/tamanho do CPF (11 sem máscara, 14 com máscara)
