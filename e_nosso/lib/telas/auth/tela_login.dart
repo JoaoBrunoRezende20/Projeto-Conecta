@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/utils/firebase_errors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../repositories/usuario_repository.dart';
@@ -9,9 +10,9 @@ import '../../utils/auth_wrapper.dart';
 class TelaLogin extends StatefulWidget {
   final String tipoUsuario;
   final bool returnOnSuccess;
-  
+
   const TelaLogin({
-    super.key, 
+    super.key,
     required this.tipoUsuario,
     this.returnOnSuccess = false,
   });
@@ -34,104 +35,123 @@ class _TelaLoginState extends State<TelaLogin> {
     super.dispose();
   }
 
-// --- LÓGICA DE LOGIN ---
+  // --- LÓGICA DE LOGIN ---
   Future<void> _login() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
     try {
       final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _senhaController.text.trim(),
-        );
+        email: _emailController.text.trim(),
+        password: _senhaController.text.trim(),
+      );
 
-        // --- DOUBLE OPT-IN: VERIFICAÇÃO DE E-MAIL ---
-        final bool isEmailDeTeste = _emailController.text.trim().toLowerCase().endsWith('@teste.com') || _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
-        if (credencial.user != null && !credencial.user!.emailVerified && !isEmailDeTeste) {
-          await FirebaseAuth.instance.signOut();
-          
-          if (mounted) {
-            setState(() => _isLoading = false);
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('E-mail não verificado'),
-                content: const Text('Você precisa confirmar seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada ou pasta de spam.'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('CANCELAR'),
+      // --- DOUBLE OPT-IN: VERIFICAÇÃO DE E-MAIL ---
+      final bool isEmailDeTeste =
+          _emailController.text.trim().toLowerCase().endsWith('@teste.com') ||
+          _emailController.text.trim().toLowerCase() == 'admin@conecta.com';
+      if (credencial.user != null &&
+          !credencial.user!.emailVerified &&
+          !isEmailDeTeste) {
+        await FirebaseAuth.instance.signOut();
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('E-mail não verificado'),
+              content: const Text(
+                'Você precisa confirmar seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada ou pasta de spam.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('CANCELAR'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      try {
-                        final tempCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
-                          email: _emailController.text.trim(),
-                          password: _senhaController.text.trim(),
-                        );
-                        await tempCred.user!.sendEmailVerification();
-                        await FirebaseAuth.instance.signOut();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('E-mail reenviado com sucesso! Verifique sua caixa de entrada.'), backgroundColor: Colors.green),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final tempCred = await FirebaseAuth.instance
+                          .signInWithEmailAndPassword(
+                            email: _emailController.text.trim(),
+                            password: _senhaController.text.trim(),
                           );
-                        }
-                      } catch (e) {
-                         if (mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(
-                             const SnackBar(content: Text('Erro ao reenviar e-mail. Tente novamente mais tarde.'), backgroundColor: Colors.red),
-                           );
-                         }
+                      await tempCred.user!.sendEmailVerification();
+                      await FirebaseAuth.instance.signOut();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'E-mail reenviado com sucesso! Verifique sua caixa de entrada.',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                       }
-                    },
-                    child: const Text('REENVIAR E-MAIL'),
-                  )
-                ]
-              )
-            );
-          }
-          return; // Interrompe o fluxo de login
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Erro ao reenviar e-mail. Tente novamente mais tarde.',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('REENVIAR E-MAIL'),
+                ),
+              ],
+            ),
+          );
         }
+        return; // Interrompe o fluxo de login
+      }
 
-        // --- ATUALIZA A FLAG NO BANCO DE DADOS ---
-        if (credencial.user != null && credencial.user!.emailVerified) {
-           try {
-             final colecao = await UsuarioRepository().descobrirPerfilUsuario(credencial.user!.uid);
-             if (colecao != null) {
-                await FirebaseFirestore.instance.collection(colecao).doc(credencial.user!.uid).update({'email_verified': true});
-             }
-           } catch (e) {
-             debugPrint('Erro ao atualizar flag de email: $e');
-           }
+      // --- ATUALIZA A FLAG NO BANCO DE DADOS ---
+      if (credencial.user != null && credencial.user!.emailVerified) {
+        try {
+          final colecao = await UsuarioRepository().descobrirPerfilUsuario(
+            credencial.user!.uid,
+          );
+          if (colecao != null) {
+            await FirebaseFirestore.instance
+                .collection(colecao)
+                .doc(credencial.user!.uid)
+                .update({'email_verified': true});
+          }
+        } catch (e) {
+          debugPrint('Erro ao atualizar flag de email: $e');
         }
-      
+      }
+
       // >>> ALTERAÇÃO AQUI <<<
       // Se returnOnSuccess for true, apenas fechamos a tela retornando sucesso
       if (mounted) {
         if (widget.returnOnSuccess) {
           Navigator.pop(context, true);
         } else {
-          // Ao invés de usar popUntil (que volta pra tela inicial), 
+          // Ao invés de usar popUntil (que volta pra tela inicial),
           // enviamos o usuário para o AuthWrapper, que vai ler o banco de dados e enviá-lo para a tela correta.
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => AuthWrapper()),
-            (route) => false, // Remove o histórico para não voltar ao login clicando em "Voltar"
+            (route) =>
+                false, // Remove o histórico para não voltar ao login clicando em "Voltar"
           );
         }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        String mensagemErro;
-        if (e.code == 'user-not-found') {
-          mensagemErro = 'Usuário não encontrado.';
-        } else if (e.code == 'wrong-password') {
-          mensagemErro = 'Senha incorreta.';
-        } else {
-          mensagemErro = 'Erro no login: ${e.message}';
-        }
+        String mensagemErro = FirebaseErrors.getMessage(e.code);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(mensagemErro)));
@@ -225,9 +245,10 @@ class _TelaLoginState extends State<TelaLogin> {
                 } on FirebaseAuthException catch (e) {
                   if (mounted) Navigator.of(context).pop();
                   if (mounted) {
+                    String mensagemErro = FirebaseErrors.getMessage(e.code);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Erro ao enviar: ${e.message}'),
+                        content: Text('Erro ao enviar: $mensagemErro'),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -333,7 +354,7 @@ class _TelaLoginState extends State<TelaLogin> {
                                 ),
                               ),
                             ).then((sucesso) {
-                              // Se o cadastro foi bem sucedido e precisamos retornar sucesso, 
+                              // Se o cadastro foi bem sucedido e precisamos retornar sucesso,
                               // fechamos o login também propagando o sucesso.
                               if (sucesso == true && widget.returnOnSuccess) {
                                 Navigator.pop(context, true);
@@ -521,8 +542,3 @@ class WaveClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-
-
-
-
-

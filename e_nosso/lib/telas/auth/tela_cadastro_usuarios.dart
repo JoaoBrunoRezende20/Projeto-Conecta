@@ -7,6 +7,7 @@ import '../../repositories/auth_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '/utils/firebase_errors.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/formatadores.dart';
 
@@ -454,7 +455,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
             ),
           );
           urls.add(url);
-          debugPrint('>>> [STORAGE] Imagem ${i + 1} enviada com sucesso para Storage: $url');
+          debugPrint(
+            '>>> [STORAGE] Imagem ${i + 1} enviada com sucesso para Storage: $url',
+          );
           continue;
         } catch (storageErr) {
           debugPrint(
@@ -684,7 +687,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
         return;
       }
-
     }
 
     if (widget.tipoUsuario == 'lojista' && _categoriaSelecionadaCnae == null) {
@@ -768,11 +770,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
         String nomeCompleto =
             '${_nomeController.text.trim()} ${_sobrenomeController.text.trim()}'
                 .trim();
-        await user.updateDisplayName(nomeCompleto).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () =>
-              debugPrint('>>> [REENVIO] Timeout ao atualizar displayName.'),
-        );
+        await user
+            .updateDisplayName(nomeCompleto)
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () =>
+                  debugPrint('>>> [REENVIO] Timeout ao atualizar displayName.'),
+            );
 
         debugPrint('>>> [REENVIO] Cadastro reenviado com sucesso!');
         if (mounted) {
@@ -966,8 +970,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         '>>> [CADASTRO] FirebaseAuthException: ${e.code} - ${e.message}',
       );
       if (mounted) {
+        String mensagemErro = FirebaseErrors.getMessage(e.code);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro no cadastro: ${e.message}')),
+          SnackBar(content: Text('Erro no cadastro: $mensagemErro')),
         );
       }
     } catch (e) {
@@ -1010,7 +1015,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
           },
           'areaAtendimento': _bairrosSelecionados.isNotEmpty
               ? _bairrosSelecionados
-              : (_bairroLojistaSelecionado != null ? [_bairroLojistaSelecionado!] : _listaBairros),
+              : (_bairroLojistaSelecionado != null
+                    ? [_bairroLojistaSelecionado!]
+                    : _listaBairros),
           'dadosDoResponsavel': {
             'nome': _nomeController.text.trim(),
             'sobrenome': _sobrenomeController.text.trim(),
@@ -1267,12 +1274,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
           controller: _cpfController,
           inputFormatters: [AppFormatadores.maskCPF],
           validator: (v) {
-            if (v != null && v.isNotEmpty && v.length < 14) return "CPF incompleto";
+            if (v != null && v.isNotEmpty && v.length < 14)
+              return "CPF incompleto";
             return null;
           },
-          decoration: const InputDecoration(
-            labelText: 'CPF',
-          ),
+          decoration: const InputDecoration(labelText: 'CPF'),
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
@@ -1280,9 +1286,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           controller: _cnpjController,
           inputFormatters: [AppFormatadores.maskCNPJ],
           validator: AppFormatadores.validarCNPJOpcional,
-          decoration: const InputDecoration(
-            labelText: 'CNPJ',
-          ),
+          decoration: const InputDecoration(labelText: 'CNPJ'),
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
@@ -1361,8 +1365,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
               _bairrosSelecionados.isEmpty
                   ? 'Selecione os bairros de entrega'
                   : (_bairrosSelecionados.length == _listaBairros.length
-                      ? 'Todos os bairros selecionados (${_listaBairros.length})'
-                      : _bairrosSelecionados.join(', ')),
+                        ? 'Todos os bairros selecionados (${_listaBairros.length})'
+                        : _bairrosSelecionados.join(', ')),
               style: TextStyle(
                 color: _bairrosSelecionados.isEmpty
                     ? Colors.grey.shade600
@@ -1583,9 +1587,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             labelText: isRegistroObrigatorio
                 ? 'Número do ${_getLabelRegistroProfissional()}'
                 : 'Registro Profissional (Opcional)',
-            helperText: isRegistroObrigatorio
-                ? 'Obrigatório.'
-                : null,
+            helperText: isRegistroObrigatorio ? 'Obrigatório.' : null,
           ),
           validator: (v) {
             if (isRegistroObrigatorio && (v == null || v.isEmpty)) {
@@ -1739,7 +1741,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   Widget build(BuildContext context) {
     final String tituloAppBar = widget.isReenvio
-        ? 'Reenviar Cadastro - ${widget.tipoUsuario == 'lojista' ? 'Lojista' : widget.tipoUsuario == 'prestador' ? 'Prestador' : widget.tipoUsuario}'
+        ? 'Reenviar Cadastro - ${widget.tipoUsuario == 'lojista'
+              ? 'Lojista'
+              : widget.tipoUsuario == 'prestador'
+              ? 'Prestador'
+              : widget.tipoUsuario}'
         : 'Cadastro - ${widget.tipoUsuario}';
 
     return Scaffold(
