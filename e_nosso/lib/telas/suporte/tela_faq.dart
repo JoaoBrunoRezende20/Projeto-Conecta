@@ -34,11 +34,11 @@ class TelaFaq extends StatelessWidget {
           _buildSecaoTitulo('Conta e Cadastro'),
           _buildFaqItem(
             'Como recupero a minha senha?',
-            'Na tela de login, clique em "Esqueci a minha senha" e siga as instruções enviadas para o seu e-mail de registo.',
+            'Na tela de login, clique em "Esqueci a minha senha" e siga as instruções enviadas para o seu e-mail de cadastro.',
           ),
           _buildFaqItem(
             'Porque o meu perfil está "Em Análise"?',
-            'Para garantir a segurança de todos, os cadastros de Lojistas e Prestadores de Serviço passam por uma verificação manual da nossa equipa de administração. Assim que aprovado, o seu acesso é liberado instantaneamente.',
+            'Para garantir a segurança de todos, os cadastros de Lojistas e Prestadores de Serviço passam por uma verificação manual da nossa equipe de administração. Assim que aprovado, o seu acesso é liberado instantaneamente.',
           ),
 
           // --- CATEGORIA: CLIENTES ---
