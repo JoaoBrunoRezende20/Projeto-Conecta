@@ -60,7 +60,7 @@ class TelaFaq extends StatelessWidget {
           ),
           _buildFaqItem(
             'Como encontro um profissional para a minha loja?',
-            'Basta aceder à aba "Serviços" no seu painel. Lá encontrará o nosso catálogo de profissionais verificados, como eletricistas, técnicos e pintores, com o respetivo contacto.',
+            'Basta acessar a aba "Serviços" em seu painel. Lá você encontrará nosso catálogo de profissionais verificados, como eletricistas, técnicos e pintores, com os respectivos contatos.',
           ),
 
           // --- CATEGORIA: PRESTADORES ---
