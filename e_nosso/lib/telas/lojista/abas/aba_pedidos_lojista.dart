@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/pedido_repository.dart';
-import '../../../repositories/produto_repository.dart';
 import '../../../widgets/modal_recusa_pedido.dart';
 import '../../chat/tela_chat.dart';
 
@@ -16,7 +15,6 @@ class AbaPedidosLojista extends StatefulWidget {
 
 class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
-  final ProdutoRepository _produtoRepository = ProdutoRepository();
   String? _nomeLoja;
 
   @override
@@ -93,16 +91,6 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           pedidoId: pedidoId,
           motivo: motivoRecusa,
         );
-      }
-    }
-
-    // Devolve estoque quando lojista cancela ou recusa o pedido
-    if (novoStatus == 'cancelado' || novoStatus == 'rejeitado') {
-      for (final entry in itens.entries) {
-        final produtoId = entry.key;
-        final itemData = entry.value as Map<String, dynamic>;
-        final quantidade = (itemData['quantidade'] as num).toInt();
-        await _produtoRepository.devolverEstoqueProduto(produtoId, quantidade);
       }
     }
   }
@@ -341,17 +329,6 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           const SizedBox(height: 15),
 
           if (status == 'pendente') ...[
-            const Center(
-              child: Text(
-                "Produto disponível no estoque!",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

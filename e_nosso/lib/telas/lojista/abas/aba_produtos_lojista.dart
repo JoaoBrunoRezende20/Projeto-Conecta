@@ -79,12 +79,6 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     if (confirmar == true) await _produtoRepository.deletarProduto(id);
   }
 
-  Future<void> _atualizarEstoque(Produto produto, int delta) async {
-    int novoEstoque = produto.estoque + delta;
-    if (novoEstoque < 0) novoEstoque = 0;
-    await _produtoRepository.atualizarEstoque(produto.id, novoEstoque);
-  }
-
   void _abrirDialogoTaxaEntrega(BuildContext context, double taxaAtual) {
     final TextEditingController controller = TextEditingController(
       text: taxaAtual > 0 ? taxaAtual.toStringAsFixed(2).replaceAll('.', ',') : '0,00',
@@ -348,7 +342,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
             ),
             const SizedBox(height: 16),
             const Text(
-              "Gerencie seus produtos: edite características, fotos, estoque e controle a disponibilidade.",
+              "Gerencie seus produtos: edite características, fotos e controle a disponibilidade.",
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const SizedBox(height: 14),
@@ -466,9 +460,9 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    produto.estoque > 0 ? "Disponível" : "Indisponível",
+                    produto.ativo != false ? "Disponível" : "Indisponível",
                     style: TextStyle(
-                      color: produto.estoque > 0 ? Colors.green : Colors.red,
+                      color: produto.ativo != false ? Colors.green : Colors.red,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -478,57 +472,21 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
             ),
           ),
 
-          // Controles (Editar, +/- Estoque, Excluir)
-          Column(
+          // Controles (Editar, Excluir)
+          Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.remove_circle_outline,
-                      color: Colors.red,
-                      size: 22,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _atualizarEstoque(produto, -1),
-                  ),
-                  Text(
-                    produto.estoque.toString(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.add_circle_outline,
-                      color: Colors.green,
-                      size: 22,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _atualizarEstoque(produto, 1),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Editar Produto',
+                onPressed: () => _abrirEdicaoProduto(context, produto),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Editar Produto',
-                    onPressed: () => _abrirEdicaoProduto(context, produto),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Excluir Produto',
-                    onPressed: () => _excluirProduto(produto.id, produto.nome),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Excluir Produto',
+                onPressed: () => _excluirProduto(produto.id, produto.nome),
               ),
             ],
           ),

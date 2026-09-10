@@ -64,21 +64,18 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
             dadosLive = {...liveMap, 'id': widget.produto['id']};
           }
 
-          final int estoque = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
           final bool ativo = dadosLive['ativo'] ?? true;
-          final bool isIndisponivel = estoque <= 0 || !ativo;
+          final bool isIndisponivel = !ativo;
           final String nome = dadosLive['nome'] ?? "Pão de queijo";
           final String descricao = dadosLive['descricao'] ?? "Descrição do produto";
           final double preco = ((dadosLive['preco'] ?? 0) as num).toDouble();
           final String? imagem = (dadosLive['imagemUrl'] ?? dadosLive['imagemBase64']) as String?;
 
-          // Ajusta a quantidade automaticamente caso o estoque mude no banco
+          // Quantidade ajustada livremente pelo consumidor
           int qtdAjustada = quantidade;
           if (isIndisponivel) {
             qtdAjustada = 0;
-          } else if (qtdAjustada > estoque) {
-            qtdAjustada = estoque;
-          } else if (qtdAjustada <= 0 && estoque > 0) {
+          } else if (qtdAjustada <= 0) {
             qtdAjustada = 1;
           }
 
@@ -224,10 +221,10 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.inventory_2_outlined, color: Colors.green[700], size: 13),
+                                        Icon(Icons.check_circle_outline, color: Colors.green[700], size: 13),
                                         const SizedBox(width: 4),
                                         Text(
-                                          "Em estoque: $estoque un.",
+                                          "Disponível",
                                           style: TextStyle(
                                             color: Colors.green[800],
                                             fontWeight: FontWeight.w600,
@@ -277,13 +274,13 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                   ),
                                 ),
                                 IconButton(
-                                  onPressed: (isIndisponivel || qtdAjustada >= estoque)
+                                  onPressed: isIndisponivel
                                       ? null
                                       : () => setState(() => quantidade = qtdAjustada + 1),
                                   icon: Icon(
                                     Icons.add,
                                     size: 18,
-                                    color: (isIndisponivel || qtdAjustada >= estoque) ? Colors.grey : Colors.black,
+                                    color: isIndisponivel ? Colors.grey : Colors.black,
                                   ),
                                 ),
                               ],
@@ -481,22 +478,12 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     final String? id = dadosLive['id'];
     if (id == null) return;
 
-    final int estoqueAtual = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
-    if (estoqueAtual <= 0 || qtd <= 0) {
+    final bool ativo = dadosLive['ativo'] ?? true;
+    if (!ativo || qtd <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Este produto está indisponível para compra no momento."),
           backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (qtd > estoqueAtual) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Quantidade máxima disponível em estoque: $estoqueAtual."),
-          backgroundColor: Colors.orange,
         ),
       );
       return;

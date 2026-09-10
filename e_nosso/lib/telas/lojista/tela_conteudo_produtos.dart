@@ -117,7 +117,7 @@ class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Gerencie seus produtos: adicione, altere estoque, marque como disponíveis ou remova.',
+              'Gerencie seus produtos: adicione, marque como disponíveis ou remova.',
               style: TextStyle(fontSize: 14, color: Colors.grey[800]),
             ),
             const SizedBox(height: 12),
@@ -197,47 +197,6 @@ class _ControleProdutosLojistaState extends State<ControleProdutosLojista> {
                                                 const Text('Indisponível'),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Text(
-                                            'Estoque: ',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.remove_circle_outline,
-                                            ),
-                                            onPressed: () {
-                                              setState(() {
-                                                if (produto.quantidade > 0) {
-                                                  produto.quantidade--;
-                                                }
-                                              });
-                                            },
-                                          ),
-                                          Text(
-                                            '${produto.quantidade}',
-                                            style: TextStyle(
-                                              color: getQuantidadeColor(
-                                                produto.quantidade,
-                                              ),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.add_circle_outline,
-                                            ),
-                                            onPressed: () {
-                                              setState(() {
-                                                produto.quantidade++;
-                                              });
-                                            },
                                           ),
                                         ],
                                       ),

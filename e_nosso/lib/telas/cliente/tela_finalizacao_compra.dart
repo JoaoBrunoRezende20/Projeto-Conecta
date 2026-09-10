@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
-import '../../repositories/produto_repository.dart';
 import '../../repositories/cupom_repository.dart';
 import '../../utils/cupom_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,7 +34,6 @@ class TelaDadosEntrega extends StatefulWidget {
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
-  final ProdutoRepository _produtoRepository = ProdutoRepository();
   final CupomRepository _cupomRepository = CupomRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
@@ -723,10 +721,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         itensCopia[key] = Map<String, dynamic>.from(value);
       });
 
-      // --- CENÁRIO A: Validação prévia de estoque ---
-      // Bloqueia o pedido antes de qualquer gravação se o estoque for insuficiente.
-      await _produtoRepository.validarEstoqueItens(itensCopia);
-
       String nomeCliente = "Cliente";
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
@@ -778,15 +772,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
       // Salva no banco de dados
       await _pedidoRepository.criarPedido(pedidoData);
-
-      // --- CENÁRIO B: Dedução atômica (validação + update dentro da Transaction) ---
-      // Protege contra race condition: se dois clientes tentarem ao mesmo tempo,
-      // o segundo terá a transação abortada com exceção ao detectar estoque 0.
-      for (final entry in itensCopia.entries) {
-        final produtoId = entry.key;
-        final quantidade = (entry.value['quantidade'] as num).toInt();
-        await _produtoRepository.reduzirEstoqueProduto(produtoId, quantidade);
-      }
 
       await carrinhoService.limparCarrinho();
       

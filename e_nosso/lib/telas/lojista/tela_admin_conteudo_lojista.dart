@@ -68,7 +68,7 @@ class TelaAdminConteudoLojista extends StatelessWidget {
                         )
                       : const Icon(Icons.shopping_bag),
                   title: Text(dados['nome'] ?? 'Produto sem nome'),
-                  subtitle: Text('R\$ ${dados['preco']?.toString() ?? '0.00'} | Qtd: ${dados['estoque']}'),
+                  subtitle: Text('R\$ ${dados['preco']?.toString() ?? '0.00'}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => _excluirProduto(context, idProd, dados['nome']),

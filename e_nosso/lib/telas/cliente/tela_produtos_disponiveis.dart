@@ -232,9 +232,8 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   }
 
   Widget _produtoCard(Map<String, dynamic> produto, String id) {
-    final int estoqueDisponivel = (produto["estoque"] as num?)?.toInt() ?? 0;
     final bool ativo = produto["ativo"] ?? true;
-    final bool isIndisponivel = estoqueDisponivel <= 0 || !ativo;
+    final bool isIndisponivel = !ativo;
     final String nome = produto["nome"] ?? "Produto";
     final String descricao = produto["descricao"] ?? "Descrição do produto";
     final double preco = ((produto["preco"] ?? 0) as num).toDouble();
@@ -304,7 +303,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                       ),
                       alignment: Alignment.center,
                       child: const Text(
-                        "ESGOTADO",
+                        "INDISPONÍVEL",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -343,23 +342,23 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(
-                        isIndisponivel ? Icons.cancel_outlined : Icons.inventory_2_outlined,
-                        size: 13,
-                        color: isIndisponivel ? Colors.red : Colors.green[700],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isIndisponivel
-                            ? "Indisponível"
-                            : "$estoqueDisponivel em estoque",
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isIndisponivel ? Colors.red : Colors.green[800],
+                      if (isIndisponivel) ...[
+                        const Icon(
+                          Icons.cancel_outlined,
+                          size: 13,
+                          color: Colors.red,
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 4),
+                        const Text(
+                          "Indisponível",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       const Icon(
                         Icons.star,
                         size: 13,
@@ -369,8 +368,8 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                       Text(
                         avaliacao.toStringAsFixed(1).replaceAll('.', ','),
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
