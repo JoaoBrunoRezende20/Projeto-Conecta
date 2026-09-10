@@ -28,6 +28,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   final _documentoController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _descricaoController = TextEditingController();
+  final _taxaEntregaController = TextEditingController();
 
   final _ruaController = TextEditingController();
   final _numeroController = TextEditingController();
@@ -83,6 +84,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     _documentoController.dispose();
     _telefoneController.dispose();
     _descricaoController.dispose();
+    _taxaEntregaController.dispose();
     _ruaController.dispose();
     _numeroController.dispose();
     _complementoController.dispose();
@@ -156,6 +158,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           _nomeController.text = data['razaoSocial'] ?? '';
           _documentoController.text = data['cnpj'] ?? '';
           _telefoneController.text = data['telefoneComercial'] ?? '';
+          final double taxa = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
+          _taxaEntregaController.text = taxa.toStringAsFixed(2).replaceAll('.', ',');
         } else {
           _nomeController.text =
               data['nome'] ?? data['nomeCompleto'] ?? data['razaoSocial'] ?? '';
@@ -283,6 +287,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         dadosAtualizados['telefoneComercial'] = _telefoneController.text.trim();
         dadosAtualizados['emailComercial'] = _emailController.text.trim();
         dadosAtualizados['endereco'] = enderecoMap;
+        final taxaStr = _taxaEntregaController.text.replaceAll(',', '.').trim();
+        dadosAtualizados['taxaEntrega'] = double.tryParse(taxaStr) ?? 5.0;
       } else if (_colecaoUsuario == 'usuarioComum') {
         dadosAtualizados['nomeCompleto'] = _nomeController.text.trim();
         dadosAtualizados['cpf'] = _documentoController.text.trim();
@@ -575,6 +581,39 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       },
                     ),
                     const SizedBox(height: 16),
+                    if (_colecaoUsuario == 'lojistas') ...[
+                      const Text(
+                        "Telefone Comercial:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _telefoneController,
+                        inputFormatters: [_telefoneFormatter],
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "(00) 00000-0000",
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Taxa de Entrega Padrão (R\$):",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _taxaEntregaController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          prefixText: "R\$ ",
+                          hintText: "Ex: 5,00 (0,00 para grátis)",
+                          helperText: "Valor cobrado quando o cliente escolhe receber no endereço",
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (_colecaoUsuario != 'lojistas') ...[
                       const Text(
                         "Telefone:",

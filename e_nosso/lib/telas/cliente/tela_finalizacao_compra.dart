@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
-import '../../repositories/produto_repository.dart';
 import '../../repositories/cupom_repository.dart';
 import '../../utils/cupom_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +14,8 @@ class TelaDadosEntrega extends StatefulWidget {
   final double? descontoCupom;
   final String? tipoDesconto;
   final double? valorDesconto;
+  final double? taxaEntregaPadrao;
+  final String? lojaId;
 
   const TelaDadosEntrega({
     super.key,
@@ -23,6 +24,8 @@ class TelaDadosEntrega extends StatefulWidget {
     this.descontoCupom,
     this.tipoDesconto,
     this.valorDesconto,
+    this.taxaEntregaPadrao,
+    this.lojaId,
   });
 
   @override
@@ -31,10 +34,10 @@ class TelaDadosEntrega extends StatefulWidget {
 
 class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
-  final ProdutoRepository _produtoRepository = ProdutoRepository();
   final CupomRepository _cupomRepository = CupomRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
+  double _taxaEntregaLoja = 5.0;
 
   // Dados do usuário
   String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
@@ -70,15 +73,17 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       });
       return total;
     }
-    return (widget.valorTotal - 5.0 + (widget.descontoCupom ?? 0.0)).clamp(0.0, double.infinity);
+    return (widget.valorTotal - _taxaEntregaLoja + (widget.descontoCupom ?? 0.0)).clamp(0.0, double.infinity);
   }
 
-  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
+  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : _taxaEntregaLoja;
   double get _totalGeral => ((_subtotal - _descontoCupom).clamp(0.0, double.infinity)) + _taxaEntrega;
 
   @override
   void initState() {
     super.initState();
+    _taxaEntregaLoja = widget.taxaEntregaPadrao ?? 5.0;
+    _carregarTaxaEntregaLoja();
     if (widget.cupomCodigo != null && widget.cupomCodigo!.isNotEmpty) {
       _codigoCupomAplicado = widget.cupomCodigo!;
       _cupomController.text = widget.cupomCodigo!;
@@ -93,6 +98,25 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     _enderecoController.addListener(_saveData);
     _bairroController.addListener(_saveData);
     _numeroController.addListener(_saveData);
+  }
+
+  Future<void> _carregarTaxaEntregaLoja() async {
+    final lojaId = widget.lojaId ?? CarrinhoService().lojaId;
+    if (lojaId != null && lojaId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('lojistas').doc(lojaId).get();
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          if (data.containsKey('taxaEntrega') && mounted) {
+            setState(() {
+              _taxaEntregaLoja = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint("Erro ao carregar taxa de entrega da loja: $e");
+      }
+    }
   }
   
   @override
@@ -719,10 +743,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         itensCopia[key] = Map<String, dynamic>.from(value);
       });
 
-      // --- CENÁRIO A: Validação prévia de estoque ---
-      // Bloqueia o pedido antes de qualquer gravação se o estoque for insuficiente.
-      await _produtoRepository.validarEstoqueItens(itensCopia);
-
       String nomeCliente = "Cliente";
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
@@ -761,7 +781,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         'dadosEntrega': <String, dynamic>{
           'tipoEntrega': _tipoEntrega,
           'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
+          'taxaEntrega': _taxaEntrega,
         },
+        'taxaEntrega': _taxaEntrega,
         'pagamento': <String, dynamic>{'metodo': _metodoPagamento},
         'cupom': _codigoCupomAplicado.isNotEmpty ? {
           'codigo': _codigoCupomAplicado,
@@ -772,15 +794,6 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
       // Salva no banco de dados
       await _pedidoRepository.criarPedido(pedidoData);
-
-      // --- CENÁRIO B: Dedução atômica (validação + update dentro da Transaction) ---
-      // Protege contra race condition: se dois clientes tentarem ao mesmo tempo,
-      // o segundo terá a transação abortada com exceção ao detectar estoque 0.
-      for (final entry in itensCopia.entries) {
-        final produtoId = entry.key;
-        final quantidade = (entry.value['quantidade'] as num).toInt();
-        await _produtoRepository.reduzirEstoqueProduto(produtoId, quantidade);
-      }
 
       await carrinhoService.limparCarrinho();
       

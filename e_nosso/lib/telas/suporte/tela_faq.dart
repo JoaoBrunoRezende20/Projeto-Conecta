@@ -34,11 +34,11 @@ class TelaFaq extends StatelessWidget {
           _buildSecaoTitulo('Conta e Cadastro'),
           _buildFaqItem(
             'Como recupero a minha senha?',
-            'Na tela de login, clique em "Esqueci a minha senha" e siga as instruções enviadas para o seu e-mail de registo.',
+            'Na tela de login, clique em "Esqueci a minha senha" e siga as instruções enviadas para o seu e-mail de cadastro.',
           ),
           _buildFaqItem(
             'Porque o meu perfil está "Em Análise"?',
-            'Para garantir a segurança de todos, os cadastros de Lojistas e Prestadores de Serviço passam por uma verificação manual da nossa equipa de administração. Assim que aprovado, o seu acesso é liberado instantaneamente.',
+            'Para garantir a segurança de todos, os cadastros de Lojistas e Prestadores de Serviço passam por uma verificação manual da nossa equipe de administração. Assim que aprovado, o seu acesso é liberado instantaneamente.',
           ),
 
           // --- CATEGORIA: CLIENTES ---
@@ -56,22 +56,22 @@ class TelaFaq extends StatelessWidget {
           _buildSecaoTitulo('Para Lojistas'),
           _buildFaqItem(
             'Como adiciono ou edito produtos?',
-            'Na aba "Produtos" da sua tela inicial, clique no botão "+" verde para adicionar. Para editar o estoque, use os botões de "+" e "-" diretamente na lista.',
+            'Na aba "Produtos" da sua tela inicial, clique no botão "+" verde para adicionar novos produtos ou toque sobre um item para editá-lo.',
           ),
           _buildFaqItem(
             'Como encontro um profissional para a minha loja?',
-            'Basta aceder à aba "Serviços" no seu painel. Lá encontrará o nosso catálogo de profissionais verificados, como eletricistas, técnicos e pintores, com o respetivo contacto.',
+            'Basta acessar a aba "Serviços" em seu painel. Lá você encontrará nosso catálogo de profissionais verificados, como eletricistas, técnicos e pintores, com os respectivos contatos.',
           ),
 
           // --- CATEGORIA: PRESTADORES ---
           _buildSecaoTitulo('Para Prestadores de Serviço'),
           _buildFaqItem(
-            'Como serei contactado pelos clientes?',
-            'O seu perfil (com as suas especialidades e telefone) fica disponível no nosso "Catálogo de Serviços". Os lojistas e clientes interessados entrarão em contacto direto consigo via telefone ou WhatsApp.',
+            'Como serei contatado pelos clientes?',
+            'O seu perfil (com as suas especialidades e telefone) fica disponível no nosso "Catálogo de Serviços". Os lojistas e clientes interessados entrarão em contato direto com você via telefone ou WhatsApp.',
           ),
           _buildFaqItem(
-            'Preciso anexar o Alvará ou Registo Profissional?',
-            'Não é obrigatório! O anexo de documentos ou certificados é opcional para prestadores de serviço.',
+            'Preciso anexar o Alvará ou Registro Profissional?',
+            'A obrigatoriedade depende da sua área de atuação. Para profissões regulamentadas (como médicos, dentistas, advogados, etc.), o envio do documento profissional é essencial e obrigatório. Nesses casos, a falta da documentação resultará na recusa do cadastro pela nossa equipe de administração. Para outras profissões em geral, o anexo de certificados é opcional e não impedirá a sua aprovação.',
           ),
 
           const SizedBox(height: 40),
@@ -90,7 +90,7 @@ class TelaFaq extends StatelessWidget {
                 const Text("Ainda com dúvidas?", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 const Text(
-                  "Se não encontrou a resposta que procurava, entre em contacto com o nosso suporte técnico.",
+                  "Se não encontrou a resposta que procurava, entre em contato com o nosso suporte técnico.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12),
                 ),

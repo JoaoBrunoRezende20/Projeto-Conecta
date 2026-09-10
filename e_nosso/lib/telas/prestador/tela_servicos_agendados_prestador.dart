@@ -47,6 +47,7 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
       // Notifica o cliente em tempo real
       if (clienteId != null && clienteId.isNotEmpty) {
         final nomePrestador = _nomeUsuario ?? "O prestador";
+        final user = FirebaseAuth.instance.currentUser;
         await _pedidoRepository.enviarNotificacao(
           destinatarioId: clienteId,
           colecaoDestinatario: 'usuarioComum',
@@ -54,6 +55,9 @@ class _TelaServicosAgendadosPrestadorState extends State<TelaServicosAgendadosPr
           mensagem: '$nomePrestador finalizou seu atendimento. Não esqueça de avaliar o serviço!',
           tipo: 'servico_concluido',
           pedidoId: pedidoId,
+          alvoId: user?.uid,
+          nomeAlvo: nomePrestador,
+          tipoAlvo: 'prestador',
         );
       }
       

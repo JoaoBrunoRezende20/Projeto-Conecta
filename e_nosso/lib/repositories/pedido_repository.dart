@@ -71,6 +71,9 @@ class PedidoRepository {
     required String tipo,
     String? pedidoId,
     String? motivo,
+    String? alvoId,
+    String? nomeAlvo,
+    String? tipoAlvo,
   }) async {
     try {
       final Map<String, dynamic> notificacaoData = {
@@ -83,6 +86,15 @@ class PedidoRepository {
       };
       if (motivo != null && motivo.trim().isNotEmpty) {
         notificacaoData['motivo'] = motivo.trim();
+      }
+      if (alvoId != null && alvoId.trim().isNotEmpty) {
+        notificacaoData['alvoId'] = alvoId.trim();
+      }
+      if (nomeAlvo != null && nomeAlvo.trim().isNotEmpty) {
+        notificacaoData['nomeAlvo'] = nomeAlvo.trim();
+      }
+      if (tipoAlvo != null && tipoAlvo.trim().isNotEmpty) {
+        notificacaoData['tipoAlvo'] = tipoAlvo.trim();
       }
       await _firestore
           .collection(colecaoDestinatario)

@@ -86,7 +86,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
 
           final int estoque = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
           final bool ativo = dadosLive['ativo'] ?? true;
-          final bool isIndisponivel = estoque <= 0 || !ativo;
+          final bool isIndisponivel = (estoque <= 0 && dadosLive.containsKey('estoque')) || !ativo;
           final String nome = dadosLive['nome'] ?? "Pão de queijo";
           final String descricao =
               dadosLive['descricao'] ?? "Descrição do produto";
@@ -300,7 +300,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          "Em estoque: $estoque un.",
+                                          "Disponível",
                                           style: TextStyle(
                                             color: Colors.green[800],
                                             fontWeight: FontWeight.w600,
@@ -411,8 +411,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                   ),
                                 ),
                                 IconButton(
-                                  onPressed:
-                                      (isIndisponivel ||
+                                  onPressed: (isIndisponivel ||
                                           limiteSacolaAtingido ||
                                           qtdAjustada >= disponivelRestante)
                                       ? null
@@ -422,8 +421,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                   icon: Icon(
                                     Icons.add,
                                     size: 18,
-                                    color:
-                                        (isIndisponivel ||
+                                    color: (isIndisponivel ||
                                             limiteSacolaAtingido ||
                                             qtdAjustada >= disponivelRestante)
                                         ? Colors.grey
@@ -670,7 +668,8 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
     if (id == null) return;
 
     final int estoqueAtual = (dadosLive['estoque'] as num?)?.toInt() ?? 0;
-    if (estoqueAtual <= 0 || qtd <= 0) {
+    final bool ativo = dadosLive['ativo'] ?? true;
+    if ((estoqueAtual <= 0 && dadosLive.containsKey('estoque')) || !ativo || qtd <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(

@@ -79,10 +79,118 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     if (confirmar == true) await _produtoRepository.deletarProduto(id);
   }
 
-  Future<void> _atualizarEstoque(Produto produto, int delta) async {
-    int novoEstoque = produto.estoque + delta;
-    if (novoEstoque < 0) novoEstoque = 0;
-    await _produtoRepository.atualizarEstoque(produto.id, novoEstoque);
+  void _abrirDialogoTaxaEntrega(BuildContext context, double taxaAtual) {
+    final TextEditingController controller = TextEditingController(
+      text: taxaAtual > 0 ? taxaAtual.toStringAsFixed(2).replaceAll('.', ',') : '0,00',
+    );
+    bool entregaGratis = taxaAtual == 0;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.delivery_dining, color: Colors.teal, size: 26),
+                  SizedBox(width: 8),
+                  Text("Taxa de Entrega", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Defina o valor fixo cobrado dos clientes quando escolherem receber o pedido no endereço.",
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("Oferecer Entrega Grátis", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text("Isenta a taxa de frete para todos os pedidos da sua loja.", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    value: entregaGratis,
+                    activeThumbColor: Colors.teal,
+                    onChanged: (val) {
+                      setModalState(() {
+                        entregaGratis = val;
+                        if (val) {
+                          controller.text = "0,00";
+                        } else if (controller.text == "0,00") {
+                          controller.text = "5,00";
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  if (!entregaGratis)
+                    TextField(
+                      controller: controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: "Valor do Frete (R\$)",
+                        prefixText: "R\$ ",
+                        hintText: "Ex: 5,00",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.teal, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () async {
+                    double novoValor = 0.0;
+                    if (!entregaGratis) {
+                      final strLimpa = controller.text.replaceAll(',', '.').trim();
+                      novoValor = double.tryParse(strLimpa) ?? 0.0;
+                    }
+
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('lojistas')
+                          .doc(widget.lojistaId)
+                          .update({'taxaEntrega': novoValor});
+
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              novoValor == 0
+                                  ? "Entrega Grátis configurada com sucesso!"
+                                  : "Taxa de entrega atualizada para R\$ ${novoValor.toStringAsFixed(2).replaceAll('.', ',')}!",
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint("Erro ao atualizar taxa de entrega: $e");
+                    }
+                  },
+                  child: const Text("Salvar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -148,9 +256,93 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+
+            // Card de gestão da Taxa de Entrega
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('lojistas')
+                  .doc(widget.lojistaId)
+                  .snapshots(),
+              builder: (context, snap) {
+                final data = snap.data?.data() as Map<String, dynamic>?;
+                final double taxa = ((data?['taxaEntrega'] ?? 5.0) as num).toDouble();
+
+                return InkWell(
+                  onTap: () => _abrirDialogoTaxaEntrega(context, taxa),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade700, Colors.teal.shade500],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.teal.withAlpha(50),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delivery_dining, color: Colors.white, size: 26),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Text(
+                                    "Taxa de Entrega: ",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      taxa == 0
+                                          ? "Grátis"
+                                          : "R\$ ${taxa.toStringAsFixed(2).replaceAll('.', ',')}",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                "Toque para alterar o valor de frete da sua loja",
+                                style: TextStyle(color: Colors.white70, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.edit, color: Colors.white70, size: 16),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 16),
             const Text(
-              "Gerencie seus produtos: edite características, fotos, estoque e controle a disponibilidade.",
+              "Gerencie seus produtos: edite características, fotos e controle a disponibilidade.",
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const SizedBox(height: 14),
@@ -268,9 +460,9 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    produto.estoque > 0 ? "Disponível" : "Indisponível",
+                    produto.ativo != false ? "Disponível" : "Indisponível",
                     style: TextStyle(
-                      color: produto.estoque > 0 ? Colors.green : Colors.red,
+                      color: produto.ativo != false ? Colors.green : Colors.red,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -280,57 +472,21 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
             ),
           ),
 
-          // Controles (Editar, +/- Estoque, Excluir)
-          Column(
+          // Controles (Editar, Excluir)
+          Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.remove_circle_outline,
-                      color: Colors.red,
-                      size: 22,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _atualizarEstoque(produto, -1),
-                  ),
-                  Text(
-                    produto.estoque.toString(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.add_circle_outline,
-                      color: Colors.green,
-                      size: 22,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _atualizarEstoque(produto, 1),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Editar Produto',
+                onPressed: () => _abrirEdicaoProduto(context, produto),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Editar Produto',
-                    onPressed: () => _abrirEdicaoProduto(context, produto),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Excluir Produto',
-                    onPressed: () => _excluirProduto(produto.id, produto.nome),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Excluir Produto',
+                onPressed: () => _excluirProduto(produto.id, produto.nome),
               ),
             ],
           ),

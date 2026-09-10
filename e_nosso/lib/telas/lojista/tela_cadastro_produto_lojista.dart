@@ -9,7 +9,7 @@ import '../../repositories/produto_repository.dart';
 import '../../utils/usuario_util.dart';
 import '../../widgets/modal_enquadrar_foto.dart';
 
-/// Tela para criação e edição completa de produtos do lojista (nome, preço, descrição, foto e estoque).
+/// Tela para criação e edição completa de produtos do lojista (nome, preço, descrição e foto).
 class TelaCadastroProdutoLojista extends StatefulWidget {
   final String? produtoId;
   final String? lojistaId;
@@ -41,7 +41,6 @@ class _TelaCadastroProdutoLojistaState
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
   final TextEditingController _precoController = TextEditingController();
-  final TextEditingController _estoqueController = TextEditingController();
 
   final ProdutoRepository _produtoRepository = ProdutoRepository();
   final ImagePicker _picker = ImagePicker();
@@ -60,9 +59,6 @@ class _TelaCadastroProdutoLojistaState
     if (widget.precoAtual != null) {
       _precoController.text = widget.precoAtual!.toStringAsFixed(2);
     }
-    if (widget.estoqueAtual != null) {
-      _estoqueController.text = widget.estoqueAtual.toString();
-    }
     if (widget.imagemUrlAtual != null && widget.imagemUrlAtual!.isNotEmpty) {
       _imagemUrl = widget.imagemUrlAtual;
     }
@@ -73,7 +69,6 @@ class _TelaCadastroProdutoLojistaState
     _nomeController.dispose();
     _descricaoController.dispose();
     _precoController.dispose();
-    _estoqueController.dispose();
     super.dispose();
   }
 
@@ -120,8 +115,6 @@ class _TelaCadastroProdutoLojistaState
             _precoController.text.replaceAll(',', '.').trim(),
           ) ??
           0.0;
-      final int estoque =
-          int.tryParse(_estoqueController.text.trim()) ?? 0;
 
       String? urlFinal = _imagemUrl;
 
@@ -157,8 +150,8 @@ class _TelaCadastroProdutoLojistaState
         'nome': _nomeController.text.trim(),
         'descricao': _descricaoController.text.trim(),
         'preco': preco,
-        'estoque': estoque,
-        'ativo': estoque > 0,
+        'estoque': 999999,
+        'ativo': true,
         'imagemUrl': urlFinal,
         'lojistaId': lojistaId,
       };
@@ -330,62 +323,32 @@ class _TelaCadastroProdutoLojistaState
                     ),
                     const SizedBox(height: 16),
 
-                    // Linha Preço e Estoque
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _precoController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Preço (R\$) *',
-                              hintText: '0.00',
-                              prefixText: 'R\$ ',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Informe o preço';
-                              }
-                              final precoNum = double.tryParse(
-                                value.replaceAll(',', '.').trim(),
-                              );
-                              if (precoNum == null || precoNum < 0) {
-                                return 'Valor inválido';
-                              }
-                              return null;
-                            },
-                          ),
+                    // Campo Preço
+                    TextFormField(
+                      controller: _precoController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Preço (R\$) *',
+                        hintText: '0.00',
+                        prefixText: 'R\$ ',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _estoqueController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Estoque (Unid.) *',
-                              hintText: '0',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Informe o estoque';
-                              }
-                              final estoqueNum = int.tryParse(value.trim());
-                              if (estoqueNum == null || estoqueNum < 0) {
-                                return 'Estoque inválido';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Informe o preço';
+                        }
+                        final precoNum = double.tryParse(
+                          value.replaceAll(',', '.').trim(),
+                        );
+                        if (precoNum == null || precoNum < 0) {
+                          return 'Valor inválido';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 32),
 

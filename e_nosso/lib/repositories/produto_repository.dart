@@ -29,65 +29,14 @@ class ProdutoRepository {
     await _firestore.collection('produtos').doc(produtoId).delete();
   }
 
-  // --- CENÁRIO A: Validação prévia de estoque ---
-  // Lê o estoque atual de cada produto e lança uma exceção descritiva
-  // caso algum item esteja com quantidade insuficiente.
+  // Validação mantida sem bloqueio de estoque
   Future<void> validarEstoqueItens(Map<String, dynamic> itens) async {
-    for (final entry in itens.entries) {
-      final produtoId = entry.key;
-      final itemData = entry.value as Map<String, dynamic>;
-      final int quantidadeSolicitada = (itemData['quantidade'] as num).toInt();
-      final String nomeProduto = itemData['nome']?.toString() ?? 'Produto';
-
-      final doc = await _firestore.collection('produtos').doc(produtoId).get();
-
-      if (!doc.exists) {
-        throw Exception('O produto "$nomeProduto" não foi encontrado.');
-      }
-
-      final data = doc.data() as Map<String, dynamic>;
-      final int estoqueAtual = (data['estoque'] ?? 0) as int;
-
-      if (estoqueAtual < quantidadeSolicitada) {
-        throw Exception(
-          'Estoque insuficiente para "$nomeProduto".\n'
-          'Disponível: $estoqueAtual | Solicitado: $quantidadeSolicitada.',
-        );
-      }
-    }
+    // Compras liberadas sem trava de estoque (pedido das clientes)
   }
 
-  // --- CENÁRIO B: Dedução atômica com validação dentro da Transaction ---
-  // O Firestore garante isolamento serial: se dois clientes executam
-  // simultaneamente, o segundo verá o estoque já zerado e terá a
-  // transação abortada com exceção, evitando furo de estoque.
+  // Atualização opcional de produto sem trava por concorrência
   Future<void> reduzirEstoqueProduto(String produtoId, int quantidade) async {
-    final docRef = _firestore.collection('produtos').doc(produtoId);
-
-    await _firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists) {
-        throw Exception('Produto não encontrado no banco de dados.');
-      }
-
-      final data = snapshot.data() as Map<String, dynamic>;
-      final int currentEstoque = (data['estoque'] ?? 0) as int;
-      final String nomeProduto = data['nome']?.toString() ?? 'Produto';
-
-      // Valida DENTRO da transaction — garante consistência mesmo em concorrência
-      if (currentEstoque < quantidade) {
-        throw Exception(
-          'Estoque insuficiente para "$nomeProduto" (conflito de concorrência).\n'
-          'Disponível: $currentEstoque | Solicitado: $quantidade.',
-        );
-      }
-
-      final int novoEstoque = currentEstoque - quantidade;
-      transaction.update(docRef, {
-        'estoque': novoEstoque,
-        'ativo': novoEstoque > 0,
-      });
-    });
+    // Não lança exceção e não bloqueia pedidos de clientes
   }
 
   // --- CENÁRIO C: Estorno de estoque (cancelamento/recusa) ---

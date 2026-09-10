@@ -13,6 +13,7 @@ import '../telas/lojista/tela_historico_pedidos_lojista.dart';
 import '../telas/lojista/tela_cupons_lojista.dart';
 import '../telas/cliente/tela_pedidos_pendentes_cliente.dart';
 import '../telas/perfil/tela_planos_anuncios.dart';
+import 'modal_avaliacoes.dart';
 
 class MenuLateral extends StatelessWidget {
   final String nomeUsuario;
@@ -325,6 +326,26 @@ class MenuLateral extends StatelessWidget {
                       ),
                     ],
                     if (colecaoUsuario == 'lojistas' || colecaoUsuario == 'prestadorServicos') ...[
+                      ListTile(
+                        leading: const Icon(Icons.star_rate_rounded, color: Colors.amber),
+                        title: const Text("Minhas Avaliações"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TelaAvaliacoes(
+                                alvoId: user.uid,
+                                nomeAlvo: nomeUsuario,
+                                tipoAlvo: colecaoUsuario == 'lojistas' ? 'lojista' : 'prestador',
+                                isDono: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       ListTile(
                         leading: const Icon(Icons.campaign, color: Colors.orange),
                         title: const Text(
