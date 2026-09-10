@@ -7,10 +7,27 @@ import '../../services/carrinho_service.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
 import '../../repositories/cupom_repository.dart';
+import '../../utils/cupom_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class TelaDadosEntrega extends StatefulWidget {
   final double valorTotal;
-  const TelaDadosEntrega({super.key, required this.valorTotal});
+  final String? cupomCodigo;
+  final double? descontoCupom;
+  final String? tipoDesconto;
+  final double? valorDesconto;
+  final double? taxaEntregaPadrao;
+  final String? lojaId;
+
+  const TelaDadosEntrega({
+    super.key,
+    required this.valorTotal,
+    this.cupomCodigo,
+    this.descontoCupom,
+    this.tipoDesconto,
+    this.valorDesconto,
+    this.taxaEntregaPadrao,
+    this.lojaId,
+  });
 
   @override
   State<TelaDadosEntrega> createState() => _TelaDadosEntregaState();
@@ -22,6 +39,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final CupomRepository _cupomRepository = CupomRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
+  double _taxaEntregaLoja = 5.0;
 
   // Dados do usuário
   String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
@@ -42,17 +60,39 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
   double _descontoCupom = 0.0;
   String _codigoCupomAplicado = "";
+  String? _tipoDescontoAplicado;
+  double? _valorDescontoOriginal;
   bool _validandoCupom = false;
 
-  double get _subtotal =>
-      widget.valorTotal -
-      5.0; // Desconta a taxa padrão para exibir separadamente
-  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
-  double get _totalGeral => _subtotal + _taxaEntrega - _descontoCupom;
+  double get _subtotal {
+    final carrinho = CarrinhoService();
+    if (carrinho.isNotEmpty) {
+      double total = 0.0;
+      carrinho.itens.forEach((key, value) {
+        final preco = ((value['preco'] ?? 0.0) as num).toDouble();
+        final qtd = ((value['quantidade'] ?? 0) as num).toInt();
+        total += (preco * qtd);
+      });
+      return total;
+    }
+    return (widget.valorTotal - _taxaEntregaLoja + (widget.descontoCupom ?? 0.0)).clamp(0.0, double.infinity);
+  }
+
+  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : _taxaEntregaLoja;
+  double get _totalGeral => ((_subtotal - _descontoCupom).clamp(0.0, double.infinity)) + _taxaEntrega;
 
   @override
   void initState() {
     super.initState();
+    _taxaEntregaLoja = widget.taxaEntregaPadrao ?? 5.0;
+    _carregarTaxaEntregaLoja();
+    if (widget.cupomCodigo != null && widget.cupomCodigo!.isNotEmpty) {
+      _codigoCupomAplicado = widget.cupomCodigo!;
+      _cupomController.text = widget.cupomCodigo!;
+      _descontoCupom = widget.descontoCupom ?? 0.0;
+      _tipoDescontoAplicado = widget.tipoDesconto;
+      _valorDescontoOriginal = widget.valorDesconto;
+    }
     _loadSavedData();
     _carregarDadosUsuario();
     
@@ -60,6 +100,25 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     _enderecoController.addListener(_saveData);
     _bairroController.addListener(_saveData);
     _numeroController.addListener(_saveData);
+  }
+
+  Future<void> _carregarTaxaEntregaLoja() async {
+    final lojaId = widget.lojaId ?? CarrinhoService().lojaId;
+    if (lojaId != null && lojaId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('lojistas').doc(lojaId).get();
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          if (data.containsKey('taxaEntrega') && mounted) {
+            setState(() {
+              _taxaEntregaLoja = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint("Erro ao carregar taxa de entrega da loja: $e");
+      }
+    }
   }
   
   @override
@@ -573,19 +632,29 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     });
 
     try {
-      final resultado = await _cupomRepository.validarCupom(codigo, _subtotal);
+      final resultado = await _cupomRepository.validarCupom(
+        codigo,
+        _subtotal,
+        lojistaId: CarrinhoService().lojaId,
+      );
       setState(() {
         _descontoCupom = resultado!['desconto'];
         _codigoCupomAplicado = resultado['codigo'];
+        _tipoDescontoAplicado = resultado['tipoDesconto'];
+        _valorDescontoOriginal = resultado['valorDesconto'];
         
-        if (_descontoCupom > _subtotal + _taxaEntrega) {
-          _descontoCupom = _subtotal + _taxaEntrega;
+        if (_descontoCupom > _subtotal) {
+          _descontoCupom = _subtotal;
         }
       });
       if (mounted) {
+        final textoDesc = CupomUtil.formatarTextoDesconto(
+          _tipoDescontoAplicado ?? 'valor',
+          _valorDescontoOriginal ?? _descontoCupom,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Cupom aplicado com sucesso! Desconto de R\$ ${_descontoCupom.toStringAsFixed(2).replaceAll('.', ',')}."),
+            content: Text("Cupom aplicado com sucesso! Desconto de $textoDesc (R\$ ${_descontoCupom.toStringAsFixed(2).replaceAll('.', ',')})."),
             backgroundColor: Colors.green,
           ),
         );
@@ -599,6 +668,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       setState(() {
         _descontoCupom = 0.0;
         _codigoCupomAplicado = "";
+        _tipoDescontoAplicado = null;
+        _valorDescontoOriginal = null;
         _cupomController.clear();
       });
     } finally {
@@ -694,7 +765,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         'dadosEntrega': <String, dynamic>{
           'tipoEntrega': _tipoEntrega,
           'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
+          'taxaEntrega': _taxaEntrega,
         },
+        'taxaEntrega': _taxaEntrega,
         'pagamento': <String, dynamic>{'metodo': _metodoPagamento},
         'cupom': _codigoCupomAplicado.isNotEmpty ? {
           'codigo': _codigoCupomAplicado,

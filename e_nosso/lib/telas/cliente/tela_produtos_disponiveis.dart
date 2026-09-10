@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/carrinho_service.dart';
 import 'tela_carrinho.dart';
 import 'tela_detalhes_produto.dart';
 import '../../repositories/produto_repository.dart';
 import '../../utils/usuario_util.dart';
+import '../../widgets/modal_avaliacoes.dart';
 
 // --- TELA DE PRODUTOS DISPONÍVEIS ---
 class TelaProdutosDisponiveis extends StatefulWidget {
@@ -68,6 +68,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 double liveRating = widget.rating;
                 int qtdAvaliacoes = 0;
                 String liveName = widget.storeName;
+                double taxaEntrega = 5.0;
 
                 bool isAutonomo = false;
 
@@ -76,6 +77,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   liveRating = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? widget.rating) as num).toDouble();
                   qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   liveName = data['razaoSocial'] ?? data['nomeFantasia'] ?? widget.storeName;
+                  taxaEntrega = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
                   
                   final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
                   isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
@@ -116,8 +118,39 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                           const SizedBox(width: 4),
                           const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
 
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: taxaEntrega == 0 ? Colors.green.shade50 : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: taxaEntrega == 0 ? Colors.green.shade300 : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delivery_dining,
+                                  size: 13,
+                                  color: taxaEntrega == 0 ? Colors.green.shade700 : Colors.black87,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  taxaEntrega == 0 ? "Entrega Grátis" : "Entrega R\$ ${taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')}",
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: taxaEntrega == 0 ? Colors.green.shade700 : Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                           if (isAutonomo) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             GestureDetector(
                               onTap: () {
                                 showDialog(
@@ -425,217 +458,13 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
   }
 
   void _mostrarModalAvaliacoes(BuildContext context, String nomeLoja, double media, int total) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.65,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Avaliações de $nomeLoja",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              media > 0 ? media.toStringAsFixed(1) : "Sem avaliações",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (total > 0) ...[
-                              const SizedBox(width: 6),
-                              Text(
-                                "($total avaliações)",
-                                style: const TextStyle(color: Colors.grey, fontSize: 14),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 25),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('avaliacoes')
-                      .where('alvoId', isEqualTo: widget.lojaId)
-                      .orderBy('data', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          "Esta loja ainda não possui comentários.",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    }
-                    final reviews = snapshot.data!.docs;
-                    return ListView.separated(
-                      itemCount: reviews.length,
-                      separatorBuilder: (_, index) => const Divider(),
-                      itemBuilder: (context, i) {
-                        final r = reviews[i].data() as Map<String, dynamic>;
-                        final reviewId = reviews[i].id;
-                        final double stars = ((r['estrelas'] ?? 5) as num).toDouble();
-                        final String autor = r['nomeAvaliador'] ?? 'Cliente';
-                        final String comentario = r['comentario'] ?? '';
-                        final String resposta = r['resposta'] ?? '';
-                        final bool isDono = FirebaseAuth.instance.currentUser?.uid == widget.lojaId;
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Row(
-                            children: [
-                              Text(autor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              const Spacer(),
-                              ...List.generate(5, (starIndex) {
-                                return Icon(
-                                  starIndex < stars ? Icons.star : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 14,
-                                );
-                              }),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (comentario.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(comentario, style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                                ),
-                              if (resposta.isNotEmpty)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 8),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.reply, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          "Resposta da Loja:\n$resposta",
-                                          style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (isDono && resposta.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: GestureDetector(
-                                    onTap: () => _responderAvaliacao(context, reviewId),
-                                    child: const Text("Responder", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _responderAvaliacao(BuildContext context, String reviewId) {
-    final TextEditingController respController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text("Responder Avaliação"),
-          content: TextField(
-            controller: respController,
-            decoration: const InputDecoration(
-              hintText: "Digite sua resposta...",
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () async {
-                if (respController.text.trim().isEmpty) return;
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('avaliacoes')
-                      .doc(reviewId)
-                      .update({'resposta': respController.text.trim()});
-                  
-                  // Atualiza também na subcoleção do lojista
-                  await FirebaseFirestore.instance
-                      .collection('lojistas')
-                      .doc(widget.lojaId)
-                      .collection('avaliacoes')
-                      .doc(reviewId)
-                      .update({'resposta': respController.text.trim()});
-                      
-                  if (context.mounted) Navigator.pop(ctx);
-                } catch (e) {
-                  debugPrint("Erro ao salvar resposta: $e");
-                }
-              },
-              child: const Text("Enviar", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+    ModalAvaliacoes.exibir(
+      context,
+      alvoId: widget.lojaId,
+      nomeAlvo: nomeLoja,
+      tipoAlvo: 'lojista',
+      media: media,
+      total: total,
     );
   }
 }

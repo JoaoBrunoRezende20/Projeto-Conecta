@@ -9,6 +9,7 @@ import '/widgets/botao_notificacao.dart';
 import 'tela_cadastro_servico_prestador.dart';
 import 'tela_gerenciar_servicos_prestador.dart';
 import '../../utils/usuario_util.dart';
+import '../../widgets/modal_avaliacoes.dart';
 
 // --- Modelos de Dados ---
 class PrestadorProfile {
@@ -16,12 +17,16 @@ class PrestadorProfile {
   final String nome;
   final String areaAtuacao;
   final bool isOnline;
+  final double mediaEstrelas;
+  final int quantidadeAvaliacoes;
 
   PrestadorProfile({
     required this.uid,
     required this.nome,
     required this.areaAtuacao,
     required this.isOnline,
+    this.mediaEstrelas = 0.0,
+    this.quantidadeAvaliacoes = 0,
   });
 }
 
@@ -101,11 +106,15 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
           colecao: 'prestadorServicos',
         );
         final areaAtuacao = data['areaAtuacao'] ?? "Profissão não definida";
+        final media = (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
+        final qtd = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
         final prestador = PrestadorProfile(
           uid: user.uid,
           nome: nomeFormatado, 
           areaAtuacao: areaAtuacao,
           isOnline: data['isOnline'] ?? false,
+          mediaEstrelas: media,
+          quantidadeAvaliacoes: qtd,
         );
 
         return _buildTelaAprovada(prestador);
@@ -302,6 +311,87 @@ class _TelaInicialPrestadorState extends State<TelaInicialPrestador> {
                   }
                 }
               },
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                ModalAvaliacoes.exibir(
+                  context,
+                  alvoId: prestador.uid,
+                  nomeAlvo: prestador.nome,
+                  tipoAlvo: 'prestador',
+                  media: prestador.mediaEstrelas,
+                  total: prestador.quantidadeAvaliacoes,
+                  isDono: true,
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.amber.shade50, Colors.orange.shade50],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.star_rounded, color: Colors.amber, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                prestador.mediaEstrelas > 0
+                                    ? prestador.mediaEstrelas.toStringAsFixed(1)
+                                    : "Sem avaliações",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              if (prestador.quantidadeAvaliacoes > 0) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  "(${prestador.quantidadeAvaliacoes} ${prestador.quantidadeAvaliacoes == 1 ? 'avaliação' : 'avaliações'})",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "Toque para ver comentários e responder clientes",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[800],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(

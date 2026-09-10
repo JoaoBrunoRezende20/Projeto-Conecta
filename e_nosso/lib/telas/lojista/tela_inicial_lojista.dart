@@ -8,6 +8,7 @@ import '/widgets/botao_notificacao.dart';
 import 'package:e_nosso/widgets/menu_lateral.dart';
 import 'abas/aba_produtos_lojista.dart';
 import 'abas/aba_pedidos_lojista.dart';
+import '../../widgets/modal_avaliacoes.dart';
 
 // --- CLASSE PRODUTO ---
 class Produto {
@@ -138,7 +139,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
         }
 
         // Se Aprovado, mostra o App Completo
-        return _buildTelaAprovada();
+        return _buildTelaAprovada(dadosLojista);
       },
     );
   }
@@ -251,7 +252,7 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
   }
 
   // --- O PAINEL DE TRABALHO COMPLETO ---
-  Widget _buildTelaAprovada() {
+  Widget _buildTelaAprovada(Map<String, dynamic> dadosLojista) {
     String tituloApp = 'Meus Produtos';
     if (_indiceAbaAtual == 1) tituloApp = 'Pedidos Recebidos';
 
@@ -285,6 +286,24 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
 
         title: Text(tituloApp, style: const TextStyle(color: Colors.black)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.star_rate_rounded, color: Colors.amber),
+            tooltip: "Ver avaliações e comentários",
+            onPressed: () {
+              final nomeLoja = dadosLojista['nomeFantasia'] ?? dadosLojista['nome'] ?? 'Minha Loja';
+              final double media = ((dadosLojista['mediaEstrelas'] ?? 0.0) as num).toDouble();
+              final int total = ((dadosLojista['quantidadeAvaliacoes'] ?? 0) as num).toInt();
+              ModalAvaliacoes.exibir(
+                context,
+                alvoId: lojistaId!,
+                nomeAlvo: nomeLoja,
+                tipoAlvo: 'lojista',
+                media: media,
+                total: total,
+                isDono: true,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: _signOut,
