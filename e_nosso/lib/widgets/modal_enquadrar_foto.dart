@@ -6,15 +6,31 @@ import 'package:flutter/rendering.dart';
 /// Modal interativo para enquadramento e recorte de fotos em proporção fixa 1:1.
 class ModalEnquadrarFoto extends StatefulWidget {
   final Uint8List imageBytes;
+  final String titulo;
+  final String descricao;
 
-  const ModalEnquadrarFoto({super.key, required this.imageBytes});
+  const ModalEnquadrarFoto({
+    super.key,
+    required this.imageBytes,
+    this.titulo = 'Enquadrar Foto',
+    this.descricao = 'Arraste e use o gesto de pinça/zoom para enquadrar a foto na moldura quadrada fixa (1:1).',
+  });
 
   /// Método estático utilitário para exibir o enquadrador e retornar os bytes recortados.
-  static Future<Uint8List?> exibir(BuildContext context, Uint8List imageBytes) {
+  static Future<Uint8List?> exibir(
+    BuildContext context,
+    Uint8List imageBytes, {
+    String titulo = 'Enquadrar Foto',
+    String descricao = 'Arraste e use o gesto de pinça/zoom para enquadrar a foto na moldura quadrada fixa (1:1).',
+  }) {
     return showDialog<Uint8List>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => ModalEnquadrarFoto(imageBytes: imageBytes),
+      builder: (context) => ModalEnquadrarFoto(
+        imageBytes: imageBytes,
+        titulo: titulo,
+        descricao: descricao,
+      ),
     );
   }
 
@@ -90,10 +106,10 @@ class _ModalEnquadrarFotoState extends State<ModalEnquadrarFoto> {
               children: [
                 const Icon(Icons.crop, color: Colors.white, size: 24),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Enquadrar Foto do Produto',
-                    style: TextStyle(
+                    widget.titulo,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -107,9 +123,9 @@ class _ModalEnquadrarFotoState extends State<ModalEnquadrarFoto> {
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Arraste e use o gesto de pinça/zoom para enquadrar a foto na moldura quadrada fixa (1:1).',
-              style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.3),
+            Text(
+              widget.descricao,
+              style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.3),
               textAlign: TextAlign.start,
             ),
             const SizedBox(height: 20),

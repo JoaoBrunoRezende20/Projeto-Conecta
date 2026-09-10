@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'tela_detalhes_servico.dart';
+import '../../utils/usuario_util.dart';
 
 class TelaPerfilPrestador extends StatefulWidget {
   final String prestadorId;
@@ -180,20 +181,29 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                   child: Row(
                     children: [
                       // Avatar
-                      CircleAvatar(
-                        radius: 36,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage:
-                            fotoPerfilUrl != null && fotoPerfilUrl.isNotEmpty
-                            ? NetworkImage(fotoPerfilUrl)
-                            : null,
-                        child: fotoPerfilUrl == null || fotoPerfilUrl.isEmpty
-                            ? const Icon(
-                                Icons.person,
-                                size: 36,
-                                color: Colors.white,
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                          border: Border.all(color: Colors.deepPurple.shade100, width: 2),
+                        ),
+                        child: (fotoPerfilUrl != null && fotoPerfilUrl.isNotEmpty)
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(36),
+                                child: UsuarioUtil.buildImageWidget(
+                                  fotoPerfilUrl,
+                                  fit: BoxFit.cover,
+                                ),
                               )
-                            : null,
+                            : const Center(
+                                child: Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 14),
                       // Nome, avaliação e tipo

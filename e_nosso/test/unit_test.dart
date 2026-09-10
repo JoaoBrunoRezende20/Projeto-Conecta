@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:e_nosso/utils/suporte_config.dart';
 import 'package:e_nosso/utils/carrinho_util.dart';
 import 'package:e_nosso/utils/cupom_util.dart';
+import 'package:e_nosso/utils/usuario_util.dart';
 import 'package:e_nosso/services/carrinho_service.dart';
 import 'package:e_nosso/telas/lojista/tela_inicial_lojista.dart';
 
@@ -263,6 +264,24 @@ void main() {
       expect(carrinho.itens.containsKey('prod_antigo'), isTrue);
       expect(carrinho.itens['prod_antigo']!['nome'], equals('Bolo Salvo'));
       expect(carrinho.lojaId, equals('loja_x'));
+    });
+  });
+
+  group('UsuarioUtil & Imagens Profile/Logo Tests', () {
+    test('Obtém nome de lojista e prestador corretamente', () {
+      final lojistaMap = {'razaoSocial': 'Padaria Pão Dourado', 'tipo': 'lojista'};
+      expect(UsuarioUtil.getNomeCompleto(lojistaMap, tipo: 'lojista'), equals('Padaria Pão Dourado'));
+
+      final prestadorMap = {'nome': 'Carlos', 'sobrenome': 'Silva', 'tipo': 'prestador'};
+      expect(UsuarioUtil.getNomeCompleto(prestadorMap, tipo: 'prestador'), equals('Carlos Silva'));
+    });
+
+    test('Decodifica Base64 com segurança mesmo com data URI prefix', () {
+      // "hello world" em Base64 é "aGVsbG8gd29ybGQ="
+      const dataUri = 'data:image/jpeg;base64,aGVsbG8gd29ybGQ=';
+      final bytes = UsuarioUtil.decodificarBase64(dataUri);
+      expect(bytes, isNotEmpty);
+      expect(String.fromCharCodes(bytes), equals('hello world'));
     });
   });
 }

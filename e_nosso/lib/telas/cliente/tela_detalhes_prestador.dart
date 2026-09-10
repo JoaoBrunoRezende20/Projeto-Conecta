@@ -47,7 +47,11 @@ class TelaDetalhesPrestador extends StatelessWidget {
           final telefone = data['telefone'] ?? 'Não informado';
           final descricao = data['descricaoServicos'] ?? data['descricao'] ?? 'O prestador ainda não adicionou uma descrição.';
           final disponibilidade = data['disponibilidadeAtendimento'] ?? 'Não informado';
-          final urlFoto = data['urlFotoPerfil'] ?? data['fotoPerfil'] ?? data['fotoUrl'];
+          final urlFoto = (data['fotoPerfilUrl'] ??
+                  data['urlFotoPerfil'] ??
+                  data['fotoPerfil'] ??
+                  data['fotoUrl'] ??
+                  data['logoUrl']) as String?;
           
           List<dynamic> portfolioImagens = data['portfolio'] ?? [];
 
@@ -59,11 +63,25 @@ class TelaDetalhesPrestador extends StatelessWidget {
                 // Cabecalho com Avatar e Nome
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: urlFoto != null ? NetworkImage(urlFoto) : null,
-                      child: urlFoto == null ? const Icon(Icons.person, size: 40, color: Colors.grey) : null,
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[200],
+                        border: Border.all(color: Colors.deepPurple.shade100, width: 2),
+                      ),
+                      child: (urlFoto != null && urlFoto.isNotEmpty)
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: UsuarioUtil.buildImageWidget(
+                                urlFoto,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(Icons.person, size: 44, color: Colors.grey),
+                            ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(

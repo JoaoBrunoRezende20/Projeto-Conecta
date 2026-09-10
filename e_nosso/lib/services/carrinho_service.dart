@@ -17,10 +17,12 @@ class CarrinhoService extends ChangeNotifier {
   Map<String, Map<String, dynamic>> get itens => _itens;
   String? get lojaId => _lojaId;
   bool get isInicializado => _inicializado;
-  
+
   int get quantidadeTotal => _itens.values.fold(
-      0, (sum, item) => sum + ((item['quantidade'] ?? 0) as num).toInt());
-  
+    0,
+    (sum, item) => sum + ((item['quantidade'] ?? 0) as num).toInt(),
+  );
+
   bool get isEmpty => _itens.isEmpty;
   bool get isNotEmpty => _itens.isNotEmpty;
 
@@ -54,7 +56,10 @@ class CarrinhoService extends ChangeNotifier {
   }
 
   Future<void> adicionarItem(
-      String id, Map<String, dynamic> item, String lojaId) async {
+    String id,
+    Map<String, dynamic> item,
+    String lojaId,
+  ) async {
     if (!_inicializado) {
       await inicializar();
     }
@@ -138,4 +143,3 @@ class CarrinhoService extends ChangeNotifier {
     await CarrinhoUtil.limparCarrinho();
   }
 }
-

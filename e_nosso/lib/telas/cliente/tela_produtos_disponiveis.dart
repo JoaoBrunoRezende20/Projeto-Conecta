@@ -71,11 +71,14 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
 
                 bool isAutonomo = false;
 
+                String? fotoUrl;
+
                 if (snapshot.hasData && snapshot.data!.exists) {
                   final data = snapshot.data!.data() as Map<String, dynamic>;
                   liveRating = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? widget.rating) as num).toDouble();
                   qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   liveName = data['razaoSocial'] ?? data['nomeFantasia'] ?? widget.storeName;
+                  fotoUrl = (data['fotoPerfilUrl'] ?? data['logoUrl'] ?? data['imagemUrl']) as String?;
                   
                   final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
                   isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
@@ -83,65 +86,90 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
 
                 return InkWell(
                   onTap: () => _mostrarModalAvaliacoes(context, liveName, liveRating, qtdAvaliacoes),
-                  child: Column(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        liveName,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            liveRating > 0 ? liveRating.toStringAsFixed(1) : "Novo",
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
+                        Container(
+                          width: 36,
+                          height: 36,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
                           ),
-                          if (qtdAvaliacoes > 0) ...[
-                            const SizedBox(width: 4),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(7),
+                            child: UsuarioUtil.buildImageWidget(fotoUrl, fit: BoxFit.cover),
+                          ),
+                        ),
+                      ],
+                      Flexible(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
                             Text(
-                              "($qtdAvaliacoes)",
-                              style: const TextStyle(color: Colors.black54, fontSize: 12),
-                            ),
-                          ],
-                          const SizedBox(width: 4),
-                          const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
-
-                          if (isAutonomo) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text("Vendedor Autônomo"),
-                                    content: const Text("Este lojista atua de forma autônoma (sem CNPJ cadastrado). A plataforma Conecta não se responsabiliza por emissão de nota fiscal para estas compras."),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Entendi")),
-                                    ],
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[100],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text("Autônomo", style: TextStyle(fontSize: 10, color: Colors.blue)),
+                              liveName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star, color: Colors.amber, size: 14),
+                                const SizedBox(width: 3),
+                                Text(
+                                  liveRating > 0 ? liveRating.toStringAsFixed(1) : "Novo",
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (qtdAvaliacoes > 0) ...[
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    "($qtdAvaliacoes)",
+                                    style: const TextStyle(color: Colors.black54, fontSize: 11),
+                                  ),
+                                ],
+                                const SizedBox(width: 3),
+                                const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
+
+                                if (isAutonomo) ...[
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text("Vendedor Autônomo"),
+                                          content: const Text("Este lojista atua de forma autônoma (sem CNPJ cadastrado). A plataforma Conecta não se responsabiliza por emissão de nota fiscal para estas compras."),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Entendi")),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[100],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text("Autônomo", style: TextStyle(fontSize: 10, color: Colors.blue)),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
-                        ],
+                        ),
                       ),
                     ],
                   ),

@@ -106,10 +106,24 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     super.dispose();
   }
 
+  void _setTelefoneTexto(String texto) {
+    final digitos = texto.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitos.isEmpty) {
+      _telefoneController.text = '';
+      return;
+    }
+    final formatado = _telefoneFormatter.maskText(digitos);
+    _telefoneController.value = TextEditingValue(
+      text: formatado,
+      selection: TextSelection.collapsed(offset: formatado.length),
+    );
+  }
+
   Future<void> _loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      _telefoneController.text = prefs.getString('checkout_telefone') ?? '';
+      _setTelefoneTexto(prefs.getString('checkout_telefone') ?? '');
       _enderecoController.text = prefs.getString('checkout_endereco') ?? '';
       _bairroController.text = prefs.getString('checkout_bairro') ?? '';
       _numeroController.text = prefs.getString('checkout_numero') ?? '';
@@ -121,7 +135,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
 
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('checkout_telefone', _telefoneController.text);
+    final digitosTel = _telefoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final telSalvo = digitosTel.isNotEmpty ? _telefoneFormatter.maskText(digitosTel) : '';
+    await prefs.setString('checkout_telefone', telSalvo);
     await prefs.setString('checkout_endereco', _enderecoController.text);
     await prefs.setString('checkout_bairro', _bairroController.text);
     await prefs.setString('checkout_numero', _numeroController.text);
@@ -140,8 +156,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         
-        if (data['telefone'] != null) {
-          _telefoneController.text = data['telefone'];
+        if (data['telefone'] != null && data['telefone'].toString().isNotEmpty) {
+          _setTelefoneTexto(data['telefone'].toString());
         }
 
         final endereco = data['endereco'];
@@ -654,7 +670,8 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   }
 
   Future<void> _finalizarPedido() async {
-    if (_telefoneController.text.trim().length < 14) {
+    final digitosTelefone = _telefoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitosTelefone.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -663,6 +680,11 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         ),
       );
       return;
+    }
+
+    final telefoneFormatado = _telefoneFormatter.maskText(digitosTelefone);
+    if (_telefoneController.text != telefoneFormatado) {
+      _setTelefoneTexto(digitosTelefone);
     }
 
     if (_tipoEntrega == 'Entrega') {
@@ -734,7 +756,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         'dataCriacao': FieldValue.serverTimestamp(),
         'dadosCliente': <String, dynamic>{
           'nome': nomeCliente,
-          'telefone': _telefoneController.text.trim(),
+          'telefone': telefoneFormatado,
         },
         'dadosEntrega': <String, dynamic>{
           'tipoEntrega': _tipoEntrega,

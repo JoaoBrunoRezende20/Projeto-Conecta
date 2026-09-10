@@ -440,11 +440,62 @@ class _TelaDetalhesCadastroState extends State<TelaDetalhesCadastro> {
           List<dynamic> docsImagens = data['documentosUrl'] ?? [];
           List<dynamic> portfolioImagens = data['portfolio'] ?? [];
 
+          final String? fotoUrl = (data['fotoPerfilUrl'] ??
+                  data['logoUrl'] ??
+                  data['imagemUrl']) as String?;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
+                  Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _verImagemTelaCheia(fotoUrl, 'fotoPerfilUrl'),
+                          child: Container(
+                            width: 110,
+                            height: 110,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              shape: isLojista ? BoxShape.rectangle : BoxShape.circle,
+                              borderRadius: isLojista ? BorderRadius.circular(16) : null,
+                              border: Border.all(color: Colors.deepPurple, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: isLojista
+                                  ? BorderRadius.circular(14)
+                                  : BorderRadius.circular(55),
+                              child: UsuarioUtil.buildImageWidget(
+                                fotoUrl,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          isLojista ? "Logotipo da Loja" : "Foto do Perfil (Rosto)",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ],
                 _buildSecaoTitulo('Dados Principais'),
                 if (isLojista) ...[
                   _buildInfoRow('Razão Social', data['razaoSocial'] ?? '-'),

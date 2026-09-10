@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../cliente/tela_perfil_prestador.dart';
 import '../../repositories/categoria_repository.dart';
+import '../../utils/usuario_util.dart';
 
 class CategoriaServicos extends StatefulWidget {
   const CategoriaServicos({super.key});
@@ -113,12 +114,18 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                         .toString();
                     final bool isOnline = data["isOnline"] ?? false;
 
+                    final fotoUrl = (data["fotoPerfilUrl"] ??
+                            data["fotoUrl"] ??
+                            data["imagemUrl"] ??
+                            data["logoUrl"]) as String?;
+
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
                       nome: nome,
                       telefone: telefone,
                       isOnline: isOnline,
+                      fotoUrl: fotoUrl,
                     );
                   },
                 );
@@ -136,6 +143,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
     required String nome,
     required String telefone,
     required bool isOnline,
+    String? fotoUrl,
   }) {
     return GestureDetector(
       onTap: () {
@@ -162,8 +170,19 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
               width: 60,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
+                shape: BoxShape.circle,
               ),
+              child: (fotoUrl != null && fotoUrl.isNotEmpty)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: UsuarioUtil.buildImageWidget(
+                        fotoUrl,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.person, color: Colors.grey, size: 34),
+                    ),
             ),
             const SizedBox(width: 12),
 

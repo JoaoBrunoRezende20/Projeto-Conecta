@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:e_nosso/telas/perfil/tela_perfil.dart';
 import 'package:flutter/material.dart';
 import '../utils/auth_wrapper.dart';
@@ -6,6 +7,7 @@ import '../telas/suporte/tela_faq.dart';
 import '../telas/suporte/tela_suporte_chamado.dart';
 import '../telas/perfil/tela_notificacoes.dart';
 import '../telas/cliente/tela_historico_pedidos.dart';
+import '../utils/usuario_util.dart';
 
 import '../telas/lojista/tela_historico_pedidos_lojista.dart';
 import '../telas/lojista/tela_cupons_lojista.dart';
@@ -104,36 +106,130 @@ class MenuLateral extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // 1. CABEÇALHO (FIXO NO TOPO)
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              color: Colors.grey.shade300,
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: (!isVisitante && urlFotoPerfil != null)
-                        ? NetworkImage(urlFotoPerfil!)
-                        : null,
-                    child: isVisitante ? const Icon(Icons.person) : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isVisitante ? "Visitante" : nomeUsuario,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+            // 1. CABEÇALHO (FIXO NO TOPO COM DADOS DINÂMICOS DO FIRESTORE)
+            Builder(
+              builder: (context) {
+                final user = FirebaseAuth.instance.currentUser;
+                if (isVisitante || user == null) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    width: double.infinity,
+                    color: Colors.grey.shade300,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey.shade400,
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isVisitante ? "Visitante" : nomeUsuario,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+                  );
+                }
+
+                return StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection(colecaoUsuario)
+                      .doc(user.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    String nomeExibido = nomeUsuario;
+                    String? fotoUrlFinal = urlFotoPerfil;
+
+                    if (snapshot.hasData && snapshot.data!.exists) {
+                      final data = snapshot.data!.data() as Map<String, dynamic>?;
+                      if (data != null) {
+                        nomeExibido = data['razaoSocial'] ??
+                            data['nomeFantasia'] ??
+                            data['nome'] ??
+                            data['nomeCompleto'] ??
+                            nomeUsuario;
+                        fotoUrlFinal = (data['fotoPerfilUrl'] ??
+                                data['logoUrl'] ??
+                                data['imagemUrl'])
+                            ?.toString() ??
+                            urlFotoPerfil;
+                      }
+                    }
+
+                    final bool isLojistaOuPrestador =
+                        colecaoUsuario == 'lojistas' ||
+                        colecaoUsuario == 'prestadorServicos';
+                    final bool temFoto = isLojistaOuPrestador &&
+                        fotoUrlFinal != null &&
+                        fotoUrlFinal.isNotEmpty;
+
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      width: double.infinity,
+                      color: Colors.grey.shade300,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade400,
+                              border: Border.all(
+                                color: temFoto
+                                    ? Colors.deepPurple
+                                    : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: temFoto
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: UsuarioUtil.buildImageWidget(
+                                      fotoUrlFinal,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              nomeExibido,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
 
             // 2. CONTEÚDO SCROLLABLE (SÓ OPÇÕES DE PERFIL)

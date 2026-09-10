@@ -9,6 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/formatadores.dart';
+import '../../utils/usuario_util.dart';
+import '../../widgets/modal_enquadrar_foto.dart';
 
 class TelaCadastro extends StatefulWidget {
   final String tipoUsuario;
@@ -56,6 +58,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final List<Uint8List> _imagensDocumentosBytes = [];
   final List<String> _documentosUrlsExistentes = [];
   final List<String> _portfolioUrlsExistentes = [];
+
+  // FOTO DE PERFIL (PRESTADOR) / LOGO (LOJISTA)
+  Uint8List? _fotoPerfilBytes;
+  String? _fotoPerfilUrlExistente;
 
   // --- VALIDAÇÃO DE SENHA ---
   bool _temMinimoCaracteres = false;
@@ -230,6 +236,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
       _complementoController.text = end['complemento']?.toString() ?? '';
     }
 
+    final fotoUrl = (data['fotoPerfilUrl'] ?? data['logoUrl'] ?? data['imagemUrl'])?.toString();
+    if (fotoUrl != null && fotoUrl.isNotEmpty) {
+      _fotoPerfilUrlExistente = fotoUrl;
+    }
+
     if (widget.tipoUsuario == 'lojista') {
       // Dados do responsável
       if (data['dadosDoResponsavel'] is Map) {
@@ -367,6 +378,72 @@ class _TelaCadastroState extends State<TelaCadastro> {
         _temMinuscula &&
         _temNumero &&
         _temEspecial;
+  }
+
+  // --- FOTO DE PERFIL COM ENQUADRAMENTO 1:1 ---
+  Future<void> _selecionarFotoPerfilOuLogo(bool isLojista) async {
+    try {
+      final XFile? imagemSelecionada = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (imagemSelecionada == null) return;
+
+      final bytes = await imagemSelecionada.readAsBytes();
+      if (!mounted) return;
+
+      final bytesEnquadrados = await ModalEnquadrarFoto.exibir(
+        context,
+        bytes,
+        titulo: 'Enquadrar Foto de Perfil',
+        descricao: 'Enquadre a imagem na moldura quadrada fixa 1:1.',
+      );
+      if (bytesEnquadrados == null) return;
+
+      setState(() {
+        _fotoPerfilBytes = bytesEnquadrados;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao selecionar foto: $e')),
+        );
+      }
+    }
+  }
+
+  void _removerFotoPerfilOuLogo() {
+    setState(() {
+      _fotoPerfilBytes = null;
+      _fotoPerfilUrlExistente = null;
+    });
+  }
+
+  Future<String?> _uploadFotoUnicaFirebase(
+    Uint8List fotoBytes,
+    String pasta,
+    String uid,
+  ) async {
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('usuarios')
+          .child(uid)
+          .child(pasta)
+          .child('perfil_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      final uploadTask = ref.putData(
+        fotoBytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      final snapshot = await uploadTask.timeout(const Duration(seconds: 5));
+      final url = await snapshot.ref.getDownloadURL().timeout(const Duration(seconds: 4));
+      return url;
+    } catch (e) {
+      debugPrint('>>> [STORAGE] Fallback para Base64 na foto ($e)');
+      return base64Encode(fotoBytes);
+    }
   }
 
   // --- FUNÇÕES DE IMAGEM CORRIGIDAS (SEM BASE64) ---
@@ -720,6 +797,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
         // 1. Upload de novas fotos para o Storage (se houver)
         List<String> novasUrlsDocs = [];
         List<String> novasUrlsPort = [];
+        String? urlFotoPerfilFinal = _fotoPerfilUrlExistente;
+
+        if (_fotoPerfilBytes != null) {
+          debugPrint('>>> [REENVIO] Fazendo upload da nova foto de perfil/logo...');
+          urlFotoPerfilFinal = await _uploadFotoUnicaFirebase(
+            _fotoPerfilBytes!,
+            widget.tipoUsuario == 'lojista' ? 'logos' : 'fotosPerfil',
+            uid,
+          );
+        }
 
         if (_imagensDocumentosBytes.isNotEmpty) {
           debugPrint(
@@ -757,6 +844,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           uid,
           documentosFinais,
           portfolioFinal,
+          fotoPerfilUrl: urlFotoPerfilFinal,
         ).timeout(
           const Duration(seconds: 15),
           onTimeout: () => throw TimeoutException(
@@ -851,8 +939,18 @@ class _TelaCadastroState extends State<TelaCadastro> {
       // 2. Faz o upload das imagens para o Storage
       List<String> urlsDocumentos = [];
       List<String> urlsPortfolio = [];
+      String? urlFotoPerfilFinal = _fotoPerfilUrlExistente;
 
       try {
+        if (_fotoPerfilBytes != null) {
+          debugPrint('>>> [CADASTRO] Fazendo upload da foto de perfil/logo...');
+          urlFotoPerfilFinal = await _uploadFotoUnicaFirebase(
+            _fotoPerfilBytes!,
+            widget.tipoUsuario == 'lojista' ? 'logos' : 'fotosPerfil',
+            uid,
+          );
+        }
+
         if (_imagensDocumentosBytes.isNotEmpty) {
           debugPrint(
             '>>> [CADASTRO] 3. Fazendo upload de ${_imagensDocumentosBytes.length} documento(s)...',
@@ -881,6 +979,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           uid,
           urlsDocumentos,
           urlsPortfolio,
+          fotoPerfilUrl: urlFotoPerfilFinal,
         ).timeout(
           const Duration(seconds: 15),
           onTimeout: () => throw TimeoutException(
@@ -989,8 +1088,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   Future<void> _salvarDadosNoFirestore(
     String uid,
     List<String> documentosUrls,
-    List<String> portfolioUrls,
-  ) {
+    List<String> portfolioUrls, {
+    String? fotoPerfilUrl,
+  }) {
     switch (widget.tipoUsuario) {
       case 'lojista':
         return _usuarioRepository.salvarDadosUsuario(uid, 'lojistas', {
@@ -1019,6 +1119,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
             'telefone': _telefoneController.text.trim(),
           },
           'documentosUrl': documentosUrls, // Salva as URLs
+          if (fotoPerfilUrl != null && fotoPerfilUrl.isNotEmpty) ...{
+            'fotoPerfilUrl': fotoPerfilUrl,
+            'logoUrl': fotoPerfilUrl,
+            'imagemUrl': fotoPerfilUrl,
+          },
           'dataCriacao': FieldValue.serverTimestamp(),
           'status': false,
           'statusCadastro': 'pendente',
@@ -1053,6 +1158,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
           'registroProfissional': _registroProfissionalController.text.trim(),
           'portfolio': portfolioUrls, // Salva as URLs
           'documentosUrl': documentosUrls, // Salva as URLs
+          if (fotoPerfilUrl != null && fotoPerfilUrl.isNotEmpty) ...{
+            'fotoPerfilUrl': fotoPerfilUrl,
+            'logoUrl': fotoPerfilUrl,
+            'imagemUrl': fotoPerfilUrl,
+          },
           'status': false,
           'statusCadastro': 'pendente',
           'motivosRejeicao': '',
@@ -1240,6 +1350,143 @@ class _TelaCadastroState extends State<TelaCadastro> {
               style: TextStyle(
                 color: atendido ? Colors.green[900] : Colors.grey[700],
                 fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecaoFotoPerfilOuLogo({required bool isLojista}) {
+    final bool temImagem = _fotoPerfilBytes != null ||
+        (_fotoPerfilUrlExistente != null && _fotoPerfilUrlExistente!.isNotEmpty);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(
+                Icons.account_circle,
+                color: Colors.deepPurple,
+                size: 22,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Foto de Perfil',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Adicione uma foto de perfil ou logotipo (Enquadramento 1:1).',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black54, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Preview
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: isLojista ? BoxShape.rectangle : BoxShape.circle,
+                    borderRadius: isLojista ? BorderRadius.circular(16) : null,
+                    border: Border.all(
+                      color: temImagem ? Colors.deepPurple : Colors.grey.shade400,
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: isLojista
+                        ? BorderRadius.circular(14)
+                        : BorderRadius.circular(60),
+                    child: _fotoPerfilBytes != null
+                        ? Image.memory(_fotoPerfilBytes!, fit: BoxFit.cover)
+                        : (_fotoPerfilUrlExistente != null &&
+                                _fotoPerfilUrlExistente!.isNotEmpty
+                            ? UsuarioUtil.buildImageWidget(
+                                _fotoPerfilUrlExistente!,
+                                fit: BoxFit.cover,
+                              )
+                            : Center(
+                                child: Icon(
+                                  isLojista
+                                      ? Icons.store_mall_directory_outlined
+                                      : Icons.person_outline,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                              )),
+                  ),
+                ),
+                // Botão de deletar/limpar se tiver imagem
+                if (temImagem)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: InkWell(
+                      onTap: _removerFotoPerfilOuLogo,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: () => _selecionarFotoPerfilOuLogo(isLojista),
+              icon: Icon(
+                temImagem ? Icons.crop_rotate : Icons.add_photo_alternate,
+                size: 18,
+              ),
+              label: Text(
+                temImagem
+                    ? 'Trocar / Reenquadrar Foto de Perfil'
+                    : 'Selecionar Foto de Perfil',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.deepPurple,
+                side: const BorderSide(color: Colors.deepPurple),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
             ),
           ),
@@ -1752,6 +1999,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                if (widget.tipoUsuario == 'lojista' || widget.tipoUsuario == 'prestador') ...[
+                  _buildSecaoFotoPerfilOuLogo(isLojista: widget.tipoUsuario == 'lojista'),
+                  const SizedBox(height: 16),
+                ],
                 const Text(
                   'Dados Pessoais',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

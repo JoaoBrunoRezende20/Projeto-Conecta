@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../auth/tela_login.dart';
 import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
@@ -27,6 +28,19 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     _carrinhoService.inicializar();
   }
 
+  String? _getLojaId() {
+    if (_carrinhoService.lojaId != null && _carrinhoService.lojaId!.isNotEmpty) {
+      return _carrinhoService.lojaId;
+    }
+    if (_carrinhoService.itens.isNotEmpty) {
+      final firstItem = _carrinhoService.itens.values.first;
+      return (firstItem['lojaId'] as String?)?.isNotEmpty == true
+          ? firstItem['lojaId'] as String
+          : null;
+    }
+    return null;
+  }
+
   double get _total {
     double total = 0.0;
     _carrinhoService.itens.forEach((key, value) {
@@ -41,15 +55,44 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     return _carrinhoService.quantidadeTotal;
   }
 
-  void _atualizarQuantidade(String id, int delta) {
+  Future<void> _atualizarQuantidade(String id, int delta) async {
     if (delta > 0) {
       final item = _carrinhoService.itens[id];
       final itemLojaId = (item != null ? item['lojaId'] as String? : null) ??
           _carrinhoService.lojaId ??
           '';
-      _carrinhoService.adicionarItem(id, {'quantidade': 1}, itemLojaId);
+      final int qtdAtual = ((item?['quantidade'] ?? 0) as num).toInt();
+
+      // Consulta o estoque atual do produto no Firestore
+      try {
+        final doc = await FirebaseFirestore.instance.collection('produtos').doc(id).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          final int estoque = (data['estoque'] as num?)?.toInt() ?? 0;
+          if (qtdAtual + delta > estoque) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    estoque <= 0
+                        ? "Este produto está esgotado."
+                        : "Limite de estoque atingido ($estoque unidade${estoque > 1 ? 's' : ''}).",
+                  ),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint("Erro ao checar estoque no carrinho: $e");
+      }
+
+      await _carrinhoService.adicionarItem(id, {'quantidade': 1}, itemLojaId);
     } else {
-      _carrinhoService.decrementarItem(id);
+      await _carrinhoService.decrementarItem(id);
     }
   }
 
@@ -126,49 +169,79 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // --- CABEÇALHO DA LOJA ---
-                      Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.storefront, color: Colors.black54),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  nomeLojaExibida,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                  ),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: (_getLojaId() != null && _getLojaId()!.isNotEmpty)
+                            ? FirebaseFirestore.instance
+                                .collection('lojistas')
+                                .doc(_getLojaId())
+                                .snapshots()
+                            : const Stream.empty(),
+                        builder: (context, snapshot) {
+                          String? fotoLoja;
+                          String nomeFinal = nomeLojaExibida;
+
+                          if (snapshot.hasData && snapshot.data!.exists) {
+                            final data = snapshot.data!.data() as Map<String, dynamic>;
+                            nomeFinal = data['razaoSocial'] ?? data['nomeFantasia'] ?? nomeFinal;
+                            fotoLoja = (data['fotoPerfilUrl'] ?? data['logoUrl'] ?? data['imagemUrl']) as String?;
+                          } else if (_carrinhoService.isNotEmpty) {
+                            fotoLoja = _carrinhoService.itens.values.first['lojaLogoUrl'] as String?;
+                          }
+
+                          return Row(
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey.shade300),
                                 ),
-                                const SizedBox(height: 4),
-                                InkWell(
-                                  onTap: () {
-                                    if (Navigator.canPop(context)) {
-                                      Navigator.pop(context);
-                                    }
-                                  },
-                                  child: const Text(
-                                    "Adicionar mais itens",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Colors.deepPurple,
+                                child: (fotoLoja != null && fotoLoja.isNotEmpty)
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: UsuarioUtil.buildImageWidget(
+                                          fotoLoja,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : const Icon(Icons.storefront, color: Colors.black54, size: 30),
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      nomeFinal,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 4),
+                                    InkWell(
+                                      onTap: () {
+                                        if (Navigator.canPop(context)) {
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      child: const Text(
+                                        "Adicionar mais itens",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.deepPurple,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 40),
                       // --- ITENS ADICIONADOS ---
@@ -204,7 +277,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     final double precoTotal =
         ((item['preco'] ?? 0.0) as num).toDouble() *
             ((item['quantidade'] ?? 0) as num).toInt();
-    final String? imagem = item['imagem'] as String?;
+    final String? imagem = (item['imagem'] ?? item['imagemUrl'] ?? item['imagemBase64'] ?? item['fotoUrl']) as String?;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 25),
@@ -215,12 +288,13 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Colors.grey[200],
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
             ),
             child: (imagem != null && imagem.isNotEmpty)
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(9),
                     child: UsuarioUtil.buildImageWidget(
                       imagem,
                       fit: BoxFit.cover,
