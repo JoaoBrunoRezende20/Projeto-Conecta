@@ -196,12 +196,14 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                 ),
           bottomNavigationBar: _carrinhoService.isEmpty ? null : _buildBottomBar(),
         );
-      }
+      },
     );
   }
 
   Widget _cardItemCarrinho(Map<String, dynamic> item, String id) {
-    final double precoTotal = ((item['preco'] ?? 0.0) as num).toDouble() * ((item['quantidade'] ?? 0) as num).toInt();
+    final double precoTotal =
+        ((item['preco'] ?? 0.0) as num).toDouble() *
+            ((item['quantidade'] ?? 0) as num).toInt();
     final String? imagem = item['imagem'] as String?;
 
     return Padding(
@@ -343,7 +345,9 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text("Autenticação necessária"),
-                      content: const Text("Você precisa entrar na sua conta ou se cadastrar para finalizar o pedido."),
+                      content: const Text(
+                        "Você precisa entrar na sua conta ou se cadastrar para finalizar o pedido.",
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
@@ -365,7 +369,8 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                                    builder: (context) =>
+                                        TelaDadosEntrega(valorTotal: _total + 5),
                                   ),
                                 );
                               }
@@ -389,7 +394,8 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                                    builder: (context) =>
+                                        TelaDadosEntrega(valorTotal: _total + 5),
                                   ),
                                 );
                               }
@@ -404,17 +410,19 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => TelaDadosEntrega(valorTotal: _total + 5),
+                      builder: (context) =>
+                          TelaDadosEntrega(valorTotal: _total + 5),
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A4A4A), // Cinza escuro como na imagem
+                backgroundColor: const Color(0xFF4A4A4A),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
                 elevation: 0,
               ),
               child: const Text(

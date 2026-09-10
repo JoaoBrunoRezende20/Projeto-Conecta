@@ -2,11 +2,124 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:e_nosso/utils/suporte_config.dart';
 import 'package:e_nosso/utils/carrinho_util.dart';
+import 'package:e_nosso/utils/cupom_util.dart';
 import 'package:e_nosso/services/carrinho_service.dart';
 import 'package:e_nosso/telas/lojista/tela_inicial_lojista.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Cupom & Regras de Desconto Tests', () {
+    test('Calcula desconto por porcentagem corretamente', () {
+      // 10% de R$ 100,00 = R$ 10,00
+      final desc1 = CupomUtil.calcularDesconto(
+        tipoDesconto: 'porcentagem',
+        valorDesconto: 10.0,
+        valorCompra: 100.0,
+      );
+      expect(desc1, equals(10.0));
+
+      // 25% de R$ 80,00 = R$ 20,00
+      final desc2 = CupomUtil.calcularDesconto(
+        tipoDesconto: 'porcentagem',
+        valorDesconto: 25.0,
+        valorCompra: 80.0,
+      );
+      expect(desc2, equals(20.0));
+
+      // 15.5% de R$ 200,00 = R$ 31,00
+      final desc3 = CupomUtil.calcularDesconto(
+        tipoDesconto: 'porcentagem',
+        valorDesconto: 15.5,
+        valorCompra: 200.0,
+      );
+      expect(desc3, equals(31.0));
+    });
+
+    test('Calcula desconto por valor fixo corretamente', () {
+      // R$ 15,00 em compra de R$ 50,00 = R$ 15,00
+      final desc1 = CupomUtil.calcularDesconto(
+        tipoDesconto: 'valor',
+        valorDesconto: 15.0,
+        valorCompra: 50.0,
+      );
+      expect(desc1, equals(15.0));
+
+      // R$ 30,00 em compra de R$ 120,50 = R$ 30,00
+      final desc2 = CupomUtil.calcularDesconto(
+        tipoDesconto: 'valor',
+        valorDesconto: 30.0,
+        valorCompra: 120.5,
+      );
+      expect(desc2, equals(30.0));
+    });
+
+    test('Desconto nunca ultrapassa o valor total da compra (clamp)', () {
+      // Cupom de R$ 100,00 em compra de R$ 40,00 -> Desconto limitado a R$ 40,00
+      final descFixo = CupomUtil.calcularDesconto(
+        tipoDesconto: 'valor',
+        valorDesconto: 100.0,
+        valorCompra: 40.0,
+      );
+      expect(descFixo, equals(40.0));
+
+      // 150% de R$ 50,00 -> Desconto limitado a R$ 50,00
+      final descPorcentagem = CupomUtil.calcularDesconto(
+        tipoDesconto: 'porcentagem',
+        valorDesconto: 150.0,
+        valorCompra: 50.0,
+      );
+      expect(descPorcentagem, equals(50.0));
+    });
+
+    test('Valores zerados ou negativos retornam desconto 0', () {
+      expect(
+        CupomUtil.calcularDesconto(
+          tipoDesconto: 'porcentagem',
+          valorDesconto: 0,
+          valorCompra: 100,
+        ),
+        equals(0.0),
+      );
+
+      expect(
+        CupomUtil.calcularDesconto(
+          tipoDesconto: 'valor',
+          valorDesconto: 10,
+          valorCompra: 0,
+        ),
+        equals(0.0),
+      );
+    });
+
+    test('Formata textos de desconto corretamente para o usuário', () {
+      expect(CupomUtil.formatarTextoDesconto('porcentagem', 10.0), equals('10% OFF'));
+      expect(CupomUtil.formatarTextoDesconto('porcentagem', 12.5), equals('12,5% OFF'));
+      expect(CupomUtil.formatarTextoDesconto('valor', 15.0), equals('R\$ 15,00 OFF'));
+      expect(CupomUtil.formatarTextoDesconto('valor', 7.5), equals('R\$ 7,50 OFF'));
+    });
+
+    test('Verifica expiração de cupom por data corretamente', () {
+      // Cupom sem data de validade -> nunca expira
+      expect(CupomUtil.isExpirado(null), isFalse);
+
+      // Data de ontem -> expirado
+      final ontem = DateTime.now().subtract(const Duration(days: 1));
+      expect(CupomUtil.isExpirado(ontem), isTrue);
+
+      // Data de 30 dias atrás -> expirado
+      final passado = DateTime.now().subtract(const Duration(days: 30));
+      expect(CupomUtil.isExpirado(passado), isTrue);
+
+      // Data de amanhã -> NÃO expirado
+      final amanha = DateTime.now().add(const Duration(days: 1));
+      expect(CupomUtil.isExpirado(amanha), isFalse);
+
+      // Data de hoje (válido até 23:59:59 de hoje) -> NÃO expirado
+      final hoje = DateTime.now();
+      expect(CupomUtil.isExpirado(DateTime(hoje.year, hoje.month, hoje.day)), isFalse);
+    });
+  });
 
   group('SuporteConfig Tests', () {
     test('Verifica e-mail principal configurado', () {
