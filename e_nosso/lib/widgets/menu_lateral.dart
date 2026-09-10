@@ -8,6 +8,7 @@ import '../telas/perfil/tela_notificacoes.dart';
 import '../telas/cliente/tela_historico_pedidos.dart';
 
 import '../telas/lojista/tela_historico_pedidos_lojista.dart';
+import '../telas/lojista/tela_cupons_lojista.dart';
 import '../telas/cliente/tela_pedidos_pendentes_cliente.dart';
 import '../telas/perfil/tela_planos_anuncios.dart';
 
@@ -208,6 +209,22 @@ class MenuLateral extends StatelessWidget {
                               builder: (context) => const TelaHistoricoPedidosLojista(),
                             ),
                           );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.discount_outlined, color: Colors.deepPurple),
+                        title: const Text("Cupons de Desconto"),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final uid = FirebaseAuth.instance.currentUser?.uid;
+                          if (uid != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TelaCuponsLojista(lojistaId: uid),
+                              ),
+                            );
+                          }
                         },
                       ),
                     ],

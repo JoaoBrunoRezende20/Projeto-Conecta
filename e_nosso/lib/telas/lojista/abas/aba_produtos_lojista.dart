@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/produto_repository.dart';
 import '../../../utils/usuario_util.dart';
 import '../tela_cadastro_produto_lojista.dart';
+import '../tela_cupons_lojista.dart';
 import '../tela_inicial_lojista.dart'; // Para acessar a classe Produto
 
 class AbaProdutosLojista extends StatefulWidget {
@@ -22,6 +23,17 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
       context,
       MaterialPageRoute(
         builder: (_) => TelaCadastroProdutoLojista(
+          lojistaId: widget.lojistaId,
+        ),
+      ),
+    );
+  }
+
+  void _abrirCupons(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TelaCuponsLojista(
           lojistaId: widget.lojistaId,
         ),
       ),
@@ -87,11 +99,61 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Card de atalho para Cupons Promocionais
+            InkWell(
+              onTap: () => _abrirCupons(context),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.deepPurple.shade600, Colors.deepPurple.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.deepPurple.withAlpha(50),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.discount_outlined, color: Colors.white, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Cupons de Desconto",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "Crie códigos em % ou R\$ para seus clientes",
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             const Text(
               "Gerencie seus produtos: edite características, fotos, estoque e controle a disponibilidade.",
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Expanded(child: _buildProductList()),
           ],
         ),
