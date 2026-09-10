@@ -56,7 +56,7 @@ class TelaFaq extends StatelessWidget {
           _buildSecaoTitulo('Para Lojistas'),
           _buildFaqItem(
             'Como adiciono ou edito produtos?',
-            'Na aba "Produtos" da sua tela inicial, clique no botão "+" verde para adicionar. Para editar o estoque, use os botões de "+" e "-" diretamente na lista.',
+            'Na aba "Produtos" da sua tela inicial, clique no botão "+" verde para adicionar novos produtos ou toque sobre um item para editá-lo.',
           ),
           _buildFaqItem(
             'Como encontro um profissional para a minha loja?',
