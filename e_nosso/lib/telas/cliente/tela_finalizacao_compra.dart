@@ -15,6 +15,8 @@ class TelaDadosEntrega extends StatefulWidget {
   final double? descontoCupom;
   final String? tipoDesconto;
   final double? valorDesconto;
+  final double? taxaEntregaPadrao;
+  final String? lojaId;
 
   const TelaDadosEntrega({
     super.key,
@@ -23,6 +25,8 @@ class TelaDadosEntrega extends StatefulWidget {
     this.descontoCupom,
     this.tipoDesconto,
     this.valorDesconto,
+    this.taxaEntregaPadrao,
+    this.lojaId,
   });
 
   @override
@@ -35,6 +39,7 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
   final CupomRepository _cupomRepository = CupomRepository();
   String _tipoEntrega = 'Entrega';
   String _metodoPagamento = 'Cartão';
+  double _taxaEntregaLoja = 5.0;
 
   // Dados do usuário
   String _enderecoCompleto = "Rua xxxxxxxx, 99, Bairro";
@@ -70,15 +75,17 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
       });
       return total;
     }
-    return (widget.valorTotal - 5.0 + (widget.descontoCupom ?? 0.0)).clamp(0.0, double.infinity);
+    return (widget.valorTotal - _taxaEntregaLoja + (widget.descontoCupom ?? 0.0)).clamp(0.0, double.infinity);
   }
 
-  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : 5.0;
+  double get _taxaEntrega => _tipoEntrega == 'Irei buscar' ? 0.0 : _taxaEntregaLoja;
   double get _totalGeral => ((_subtotal - _descontoCupom).clamp(0.0, double.infinity)) + _taxaEntrega;
 
   @override
   void initState() {
     super.initState();
+    _taxaEntregaLoja = widget.taxaEntregaPadrao ?? 5.0;
+    _carregarTaxaEntregaLoja();
     if (widget.cupomCodigo != null && widget.cupomCodigo!.isNotEmpty) {
       _codigoCupomAplicado = widget.cupomCodigo!;
       _cupomController.text = widget.cupomCodigo!;
@@ -93,6 +100,25 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
     _enderecoController.addListener(_saveData);
     _bairroController.addListener(_saveData);
     _numeroController.addListener(_saveData);
+  }
+
+  Future<void> _carregarTaxaEntregaLoja() async {
+    final lojaId = widget.lojaId ?? CarrinhoService().lojaId;
+    if (lojaId != null && lojaId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('lojistas').doc(lojaId).get();
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          if (data.containsKey('taxaEntrega') && mounted) {
+            setState(() {
+              _taxaEntregaLoja = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint("Erro ao carregar taxa de entrega da loja: $e");
+      }
+    }
   }
   
   @override
@@ -739,7 +765,9 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         'dadosEntrega': <String, dynamic>{
           'tipoEntrega': _tipoEntrega,
           'endereco': _tipoEntrega == 'Entrega' ? _enderecoCompleto : '',
+          'taxaEntrega': _taxaEntrega,
         },
+        'taxaEntrega': _taxaEntrega,
         'pagamento': <String, dynamic>{'metodo': _metodoPagamento},
         'cupom': _codigoCupomAplicado.isNotEmpty ? {
           'codigo': _codigoCupomAplicado,

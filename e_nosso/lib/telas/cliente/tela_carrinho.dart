@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/tela_login.dart';
 import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/carrinho_service.dart';
 import '../../utils/usuario_util.dart';
 
@@ -20,11 +21,36 @@ class TelaRevisaoCarrinho extends StatefulWidget {
 
 class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
   final CarrinhoService _carrinhoService = CarrinhoService();
+  double _taxaEntrega = 5.0;
+  String? _lojaIdCarregada;
+  bool _carregandoTaxa = false;
 
   @override
   void initState() {
     super.initState();
     _carrinhoService.inicializar();
+  }
+
+  Future<void> _carregarTaxaEntrega(String lojaId) async {
+    if (_lojaIdCarregada == lojaId || _carregandoTaxa) return;
+    _carregandoTaxa = true;
+    _lojaIdCarregada = lojaId;
+    try {
+      final doc = await FirebaseFirestore.instance.collection('lojistas').doc(lojaId).get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final taxa = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
+        if (mounted) {
+          setState(() {
+            _taxaEntrega = taxa;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar taxa de entrega da loja: $e");
+    } finally {
+      _carregandoTaxa = false;
+    }
   }
 
   double get _total {
@@ -36,6 +62,13 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     });
     return total;
   }
+
+  String? get _lojaIdAtual => _carrinhoService.lojaId ??
+      (_carrinhoService.isNotEmpty
+          ? _carrinhoService.itens.values.first['lojaId'] as String?
+          : null);
+
+  double get _totalComEntrega => _total + _taxaEntrega;
 
   int get _totalItens {
     return _carrinhoService.quantidadeTotal;
@@ -58,6 +91,10 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     return ListenableBuilder(
       listenable: _carrinhoService,
       builder: (context, _) {
+        if (_lojaIdAtual != null && _lojaIdAtual!.isNotEmpty && _lojaIdCarregada != _lojaIdAtual) {
+          _carregarTaxaEntrega(_lojaIdAtual!);
+        }
+
         final String nomeLojaExibida = (_carrinhoService.isNotEmpty &&
                 widget.lojaName == "Sua Sacola")
             ? (_carrinhoService.itens.values.first['lojaNome'] as String? ?? widget.lojaName)
@@ -305,9 +342,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Total com a entrega",
-                  style: TextStyle(
+                Text(
+                  _taxaEntrega == 0
+                      ? "Total (Entrega Grátis)"
+                      : "Total com entrega (R\$ ${_taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')})",
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
@@ -315,7 +354,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                 const SizedBox(height: 2),
                 RichText(
                   text: TextSpan(
-                    text: "R\$${_total.toStringAsFixed(2).replaceAll('.', ',')} ",
+                    text: "R\$${_totalComEntrega.toStringAsFixed(2).replaceAll('.', ',')} ",
                     style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.w500,
@@ -370,7 +409,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        TelaDadosEntrega(valorTotal: _total + 5),
+                                        TelaDadosEntrega(
+                                          valorTotal: _totalComEntrega,
+                                          taxaEntregaPadrao: _taxaEntrega,
+                                          lojaId: _lojaIdAtual,
+                                        ),
                                   ),
                                 );
                               }
@@ -395,7 +438,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        TelaDadosEntrega(valorTotal: _total + 5),
+                                        TelaDadosEntrega(
+                                          valorTotal: _totalComEntrega,
+                                          taxaEntregaPadrao: _taxaEntrega,
+                                          lojaId: _lojaIdAtual,
+                                        ),
                                   ),
                                 );
                               }
@@ -411,7 +458,11 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          TelaDadosEntrega(valorTotal: _total + 5),
+                          TelaDadosEntrega(
+                            valorTotal: _totalComEntrega,
+                            taxaEntregaPadrao: _taxaEntrega,
+                            lojaId: _lojaIdAtual,
+                          ),
                     ),
                   );
                 }

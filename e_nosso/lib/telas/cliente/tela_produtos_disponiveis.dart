@@ -68,6 +68,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                 double liveRating = widget.rating;
                 int qtdAvaliacoes = 0;
                 String liveName = widget.storeName;
+                double taxaEntrega = 5.0;
 
                 bool isAutonomo = false;
 
@@ -76,6 +77,7 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                   liveRating = ((data['mediaEstrelas'] ?? data['avaliacao'] ?? widget.rating) as num).toDouble();
                   qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   liveName = data['razaoSocial'] ?? data['nomeFantasia'] ?? widget.storeName;
+                  taxaEntrega = ((data['taxaEntrega'] ?? 5.0) as num).toDouble();
                   
                   final cnpjStr = (data['cnpj'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
                   isAutonomo = cnpjStr.isNotEmpty && cnpjStr.length <= 11;
@@ -116,8 +118,39 @@ class _TelaProdutosDisponiveisState extends State<TelaProdutosDisponiveis> {
                           const SizedBox(width: 4),
                           const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
 
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: taxaEntrega == 0 ? Colors.green.shade50 : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: taxaEntrega == 0 ? Colors.green.shade300 : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delivery_dining,
+                                  size: 13,
+                                  color: taxaEntrega == 0 ? Colors.green.shade700 : Colors.black87,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  taxaEntrega == 0 ? "Entrega Grátis" : "Entrega R\$ ${taxaEntrega.toStringAsFixed(2).replaceAll('.', ',')}",
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: taxaEntrega == 0 ? Colors.green.shade700 : Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                           if (isAutonomo) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             GestureDetector(
                               onTap: () {
                                 showDialog(
