@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/usuario_util.dart';
+import '../../widgets/modal_avaliacoes.dart';
 
 class TelaDetalhesPrestador extends StatelessWidget {
   final String prestadorId;
@@ -48,6 +49,8 @@ class TelaDetalhesPrestador extends StatelessWidget {
           final descricao = data['descricaoServicos'] ?? data['descricao'] ?? 'O prestador ainda não adicionou uma descrição.';
           final disponibilidade = data['disponibilidadeAtendimento'] ?? 'Não informado';
           final urlFoto = data['urlFotoPerfil'] ?? data['fotoPerfil'] ?? data['fotoUrl'];
+          final mediaAvaliacoes = (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
+          final int qtdAvaliacoes = (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
           
           List<dynamic> portfolioImagens = data['portfolio'] ?? [];
 
@@ -84,6 +87,43 @@ class TelaDetalhesPrestador extends StatelessWidget {
                               fontSize: 15,
                               color: Colors.grey[700],
                               fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          InkWell(
+                            onTap: () {
+                              ModalAvaliacoes.exibir(
+                                context,
+                                alvoId: prestadorId,
+                                nomeAlvo: nomeCompleto.isEmpty ? 'Prestador' : nomeCompleto,
+                                tipoAlvo: 'prestador',
+                                media: mediaAvaliacoes,
+                                total: qtdAvaliacoes,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.star, color: Colors.amber, size: 18),
+                                const SizedBox(width: 4),
+                                Text(
+                                  mediaAvaliacoes > 0 ? mediaAvaliacoes.toStringAsFixed(1) : "Sem avaliações",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                if (qtdAvaliacoes > 0) ...[
+                                  const SizedBox(width: 4),
+                                  Text("($qtdAvaliacoes)", style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  "• Ver avaliações",
+                                  style: TextStyle(
+                                    color: Colors.blue[700],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

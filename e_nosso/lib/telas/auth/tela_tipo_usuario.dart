@@ -1,7 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tela_login.dart';
-import '../cliente/tela_base_cliente.dart';
 import '../suporte/tela_faq.dart';
 
 class TelaTipoUsuario extends StatelessWidget {

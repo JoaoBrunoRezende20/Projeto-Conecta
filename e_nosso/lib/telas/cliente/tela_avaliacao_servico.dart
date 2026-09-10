@@ -397,16 +397,23 @@ class _TelaAvaliacaoServicoState extends State<TelaAvaliacaoServico> {
 
         // 3. Documento de avaliação na coleção global 'avaliacoes'
         final novaAvaliacaoRef = avaliacoesGlobalRef.doc();
+        final String nomeCliente = user.displayName?.trim().isNotEmpty == true
+            ? user.displayName!
+            : 'Cliente';
         final Map<String, dynamic> dadosAvaliacao = {
           'id': novaAvaliacaoRef.id,
           'pedidoId': widget.pedidoId,
           'clienteId': user.uid,
+          'nomeAvaliador': nomeCliente,
+          'nomeCliente': nomeCliente,
           'alvoId': widget.prestadorId,
           'tipoAlvo': widget.tipoAlvo,
           'nomeAlvo': widget.nomePrestador,
           'nota': _nota,
+          'estrelas': _nota,
           'comentario': _comentarioController.text.trim(),
           'gostouEntrega': _gostouEntrega,
+          'data': FieldValue.serverTimestamp(),
           'createdAt': FieldValue.serverTimestamp(),
         };
 
