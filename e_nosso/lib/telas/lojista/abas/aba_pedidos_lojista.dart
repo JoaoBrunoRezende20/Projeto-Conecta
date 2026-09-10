@@ -75,6 +75,9 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           mensagem: 'Seu pedido na loja $nomeExibicaoLoja foi finalizado. Não se esqueça de avaliar a sua experiência!',
           tipo: 'pedido_concluido',
           pedidoId: pedidoId,
+          alvoId: widget.lojistaId,
+          nomeAlvo: nomeExibicaoLoja,
+          tipoAlvo: 'lojista',
         );
       } else if (novoStatus == 'cancelado' || novoStatus == 'rejeitado') {
         final String mensagemRecusa = motivoRecusa != null && motivoRecusa.trim().isNotEmpty
