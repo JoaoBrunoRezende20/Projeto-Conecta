@@ -71,7 +71,7 @@ class TelaFaq extends StatelessWidget {
           ),
           _buildFaqItem(
             'Preciso anexar o Alvará ou Registro Profissional?',
-            'Não é obrigatório! O anexo de documentos ou certificados é opcional para prestadores de serviço.',
+            'A obrigatoriedade depende da sua área de atuação. Para profissões regulamentadas (como médicos, dentistas, advogados, etc.), o envio do documento profissional é essencial e obrigatório. Nesses casos, a falta da documentação resultará na recusa do cadastro pela nossa equipe de administração. Para outras profissões em geral, o anexo de certificados é opcional e não impedirá a sua aprovação.',
           ),
 
           const SizedBox(height: 40),
@@ -90,7 +90,7 @@ class TelaFaq extends StatelessWidget {
                 const Text("Ainda com dúvidas?", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 const Text(
-                  "Se não encontrou a resposta que procurava, entre em contacto com o nosso suporte técnico.",
+                  "Se não encontrou a resposta que procurava, entre em contato com o nosso suporte técnico.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12),
                 ),
