@@ -113,14 +113,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
             backgroundColor: Colors.white,
             elevation: 0,
             centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                }
-              },
-            ),
+            automaticallyImplyLeading: false,
           ),
           body: _carrinhoService.isEmpty
               ? Center(
