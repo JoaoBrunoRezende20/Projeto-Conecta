@@ -66,11 +66,11 @@ class TelaFaq extends StatelessWidget {
           // --- CATEGORIA: PRESTADORES ---
           _buildSecaoTitulo('Para Prestadores de Serviço'),
           _buildFaqItem(
-            'Como serei contactado pelos clientes?',
-            'O seu perfil (com as suas especialidades e telefone) fica disponível no nosso "Catálogo de Serviços". Os lojistas e clientes interessados entrarão em contacto direto consigo via telefone ou WhatsApp.',
+            'Como serei contatado pelos clientes?',
+            'O seu perfil (com as suas especialidades e telefone) fica disponível no nosso "Catálogo de Serviços". Os lojistas e clientes interessados entrarão em contato direto com você via telefone ou WhatsApp.',
           ),
           _buildFaqItem(
-            'Preciso anexar o Alvará ou Registo Profissional?',
+            'Preciso anexar o Alvará ou Registro Profissional?',
             'Não é obrigatório! O anexo de documentos ou certificados é opcional para prestadores de serviço.',
           ),
 
