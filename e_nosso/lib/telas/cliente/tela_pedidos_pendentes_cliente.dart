@@ -279,117 +279,45 @@ class _TelaPedidosPendentesClienteState
                 ),
               ),
               const SizedBox(height: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: itensList.map((item) {
-              final rawAds = item['adicionais'];
-              final List<dynamic> ads = (rawAds is List) ? rawAds : [];
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: itensList.map((item) {
+                  final rawAds = item['adicionais'];
+                  final List<dynamic> ads = (rawAds is List) ? rawAds : [];
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['nome'],
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
-                    ),
-                    if (ads.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2, bottom: 2),
-                        child: Text(
-                          "+ ${ads.map((a) => a is Map ? a['nome'] : a.toString()).join(', ')}",
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['nome'],
                           style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF4A5520),
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black,
                           ),
                         ),
-                      ),
-                    Text(
-                      "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "R\$ ${valorTotal.toStringAsFixed(2).replaceAll('.', ',')}",
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.credit_card, size: 18),
-              const SizedBox(width: 8),
-              Text("Pagamento no $pagamentoStr"),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(
-                dataString,
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Lógica de Status Visuais
-          if (isPendente) ...[
-            const Center(
-              child: Text(
-                "Aguardando confirmação do lojista",
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            if (dataCriacao != null)
-              CronometroWidget(
-                dataCriacao: dataCriacao,
-                onCancelar: () => _confirmarCancelamento(pedidoId),
-              ),
-          ] else if (isEmAndamento) ...[
-            const Center(
-              child: Text(
-                "Pedido em andamento",
-                style: TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-          ] else if (isRejeitado) ...[
-            const Center(
-              child: Text(
-                "Pedido Recusado",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-          ],
-          
-          if (!isRejeitado) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.chat_bubble_outline),
-                label: Text("Chat com ${nomeLojaExibicao.split(' ')[0]}"),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black87,
-                  side: const BorderSide(color: Colors.grey),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TelaChat(
-                        conversaId: pedidoId,
-                        tituloChat: nomeLojaExibicao,
-                        currentUserId: FirebaseAuth.instance.currentUser!.uid,
-                      ),
+                        if (ads.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, bottom: 2),
+                            child: Text(
+                              "+ ${ads.map((a) => a is Map ? a['nome'] : a.toString()).join(', ')}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF4A5520),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        Text(
+                          "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),

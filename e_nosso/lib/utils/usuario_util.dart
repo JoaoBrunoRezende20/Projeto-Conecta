@@ -187,7 +187,8 @@ class UsuarioUtil {
       }
 
       int q = qualidade;
-      Uint8List jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+      Uint8List jpgBytes =
+          Uint8List.fromList(img.encodeJpg(processada, quality: q));
 
       // Se ainda exceder o tamanho máximo permitido em bytes, reduz progressivamente
       while (jpgBytes.length > maxBytesPermitidos && q > 30) {
@@ -200,7 +201,8 @@ class UsuarioUtil {
             interpolation: img.Interpolation.linear,
           );
         }
-        jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+        jpgBytes =
+            Uint8List.fromList(img.encodeJpg(processada, quality: q));
       }
 
       return jpgBytes;
