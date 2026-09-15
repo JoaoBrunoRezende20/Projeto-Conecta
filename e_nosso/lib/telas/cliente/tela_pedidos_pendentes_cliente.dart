@@ -11,10 +11,12 @@ class TelaPedidosPendentesCliente extends StatefulWidget {
   const TelaPedidosPendentesCliente({super.key, this.onBackToHome});
 
   @override
-  State<TelaPedidosPendentesCliente> createState() => _TelaPedidosPendentesClienteState();
+  State<TelaPedidosPendentesCliente> createState() =>
+      _TelaPedidosPendentesClienteState();
 }
 
-class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesCliente> {
+class _TelaPedidosPendentesClienteState
+    extends State<TelaPedidosPendentesCliente> {
   final PedidoRepository _pedidoRepository = PedidoRepository();
   final String? clienteId = FirebaseAuth.instance.currentUser?.uid;
   @override
@@ -33,7 +35,9 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: const Text("Cancelar Pedido"),
-        content: const Text("Passaram-se 15 minutos e o lojista não confirmou. Deseja cancelar este pedido?"),
+        content: const Text(
+          "Passaram-se 15 minutos e o lojista não confirmou. Deseja cancelar este pedido?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -47,16 +51,21 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Pedido cancelado com sucesso.")),
+                  const SnackBar(
+                    content: Text("Pedido cancelado com sucesso."),
+                  ),
                 );
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Erro ao cancelar: $e")),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("Erro ao cancelar: $e")));
               }
             },
-            child: const Text("Sim, Cancelar", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Sim, Cancelar",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -87,7 +96,11 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.arrow_circle_left_outlined, color: Colors.black, size: 30),
+            icon: const Icon(
+              Icons.arrow_circle_left_outlined,
+              color: Colors.black,
+              size: 30,
+            ),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -117,15 +130,21 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                 }
 
                 final allDocs = snapshot.data?.docs ?? [];
-                
+
                 // Filtramos apenas produtos (excluindo serviços) que não foram avaliados ainda
                 // para que a tela não fique cheia de coisas muito antigas.
                 final docs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final tipo = data['tipo'] ?? 'produto';
                   final avaliado = data['avaliado'] ?? false;
-                  final status = data['status']?.toString().toLowerCase() ?? 'pendente';
-                  return tipo != 'servico' && !avaliado && status != 'concluido' && status != 'concluído' && status != 'cancelado' && status != 'rejeitado';
+                  final status =
+                      data['status']?.toString().toLowerCase() ?? 'pendente';
+                  return tipo != 'servico' &&
+                      !avaliado &&
+                      status != 'concluido' &&
+                      status != 'concluído' &&
+                      status != 'cancelado' &&
+                      status != 'rejeitado';
                 }).toList();
 
                 if (docs.isEmpty) {
@@ -177,7 +196,7 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
     final dataCriacao = data['dataCriacao'] as Timestamp?;
-    
+
     String pagamentoStr = "Crédito";
     if (data['pagamento'] != null && data['pagamento']['metodo'] != null) {
       pagamentoStr = data['pagamento']['metodo'];
@@ -188,7 +207,8 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
     String dataString = data['data'] ?? data['dia'] ?? "Sem data";
     if (dataCriacao != null) {
       final date = dataCriacao.toDate();
-      dataString = "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+      dataString =
+          "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
     }
 
     List<Map<String, dynamic>> itensList = [];
@@ -201,7 +221,7 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         });
       });
     } else if (data['itens'] is List) {
-      for(var item in data['itens']) {
+      for (var item in data['itens']) {
         itensList.add({
           'nome': item['nome'] ?? 'Produto',
           'quantidade': item['quantidade'] ?? 1,
@@ -216,9 +236,12 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
 
     // Regras de Status
     final statusNorm = (data['status'] ?? 'pendente').toString().toLowerCase();
-    final bool isPendente = statusNorm == 'pendente' || statusNorm == 'aguardando';
-    final bool isEmAndamento = statusNorm == 'em andamento' || statusNorm == 'confirmado';
-    final bool isRejeitado = statusNorm == 'rejeitado' || statusNorm == 'cancelado';
+    final bool isPendente =
+        statusNorm == 'pendente' || statusNorm == 'aguardando';
+    final bool isEmAndamento =
+        statusNorm == 'em andamento' || statusNorm == 'confirmado';
+    final bool isRejeitado =
+        statusNorm == 'rejeitado' || statusNorm == 'cancelado';
 
     return FutureBuilder<DocumentSnapshot>(
       future: alvoId.isNotEmpty
@@ -249,7 +272,11 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
             children: [
               Text(
                 nomeLojaExibicao,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
               const SizedBox(height: 15),
           Column(
@@ -365,13 +392,133 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                       ),
                     ),
                   );
-                },
+                }).toList(),
               ),
-            ),
-          ],
-        ],
-      ),
-    );
+              const SizedBox(height: 10),
+              Text(
+                "R\$ ${valorTotal.toStringAsFixed(2).replaceAll('.', ',')}",
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.credit_card, size: 18),
+                  const SizedBox(width: 8),
+                  Text("Pagamento no $pagamentoStr"),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    dataString,
+                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Lógica de Status Visuais
+              if (isPendente) ...[
+                const Center(
+                  child: Text(
+                    "Aguardando confirmação do lojista",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                if (dataCriacao != null)
+                  CronometroWidget(
+                    dataCriacao: dataCriacao,
+                    onCancelar: () => _confirmarCancelamento(pedidoId),
+                  ),
+              ] else if (isEmAndamento) ...[
+                const Center(
+                  child: Text(
+                    "Pedido em andamento",
+                    style: TextStyle(
+                      color: Color(0xFF4CAF50),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ] else if (isRejeitado) ...[
+                const Center(
+                  child: Text(
+                    "Pedido Recusado",
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+
+              if (!isRejeitado) ...[
+                const SizedBox(height: 16),
+                Builder(
+                  builder: (context) {
+                    int unreadCount = 0;
+                    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+                    if (data['mensagensNaoLidas'] != null &&
+                        data['mensagensNaoLidas'][uid] != null) {
+                      unreadCount = data['mensagensNaoLidas'][uid] is int
+                          ? data['mensagensNaoLidas'][uid] as int
+                          : 0;
+                    }
+                    return Badge(
+                      isLabelVisible: unreadCount > 0,
+                      label: Text(unreadCount.toString()),
+                      offset: const Offset(-5, -5),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          label: Text(
+                            "Chat com ${nomeLojaExibicao.split(' ')[0]}",
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: const BorderSide(color: Colors.grey),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TelaChat(
+                                  conversaId: pedidoId,
+                                  tituloChat: nomeLojaExibicao,
+                                  currentUserId:
+                                      FirebaseAuth.instance.currentUser!.uid,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
       },
     );
   }
@@ -381,7 +528,11 @@ class CronometroWidget extends StatefulWidget {
   final Timestamp dataCriacao;
   final VoidCallback onCancelar;
 
-  const CronometroWidget({super.key, required this.dataCriacao, required this.onCancelar});
+  const CronometroWidget({
+    super.key,
+    required this.dataCriacao,
+    required this.onCancelar,
+  });
 
   @override
   State<CronometroWidget> createState() => _CronometroWidgetState();
@@ -405,7 +556,7 @@ class _CronometroWidgetState extends State<CronometroWidget> {
     final diff = DateTime.now().difference(widget.dataCriacao.toDate());
     final secondsPassed = diff.inSeconds;
     final totalSeconds = 15 * 60;
-    
+
     if (secondsPassed >= totalSeconds) {
       if (!passou15Minutos) {
         if (mounted) {
@@ -445,9 +596,17 @@ class _CronometroWidgetState extends State<CronometroWidget> {
               onPressed: widget.onCancelar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text("Cancelar pedido", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Cancelar pedido",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -460,11 +619,14 @@ class _CronometroWidgetState extends State<CronometroWidget> {
         Center(
           child: Text(
             countdownText,
-            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 18),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
         ),
       ],
     );
   }
 }
-

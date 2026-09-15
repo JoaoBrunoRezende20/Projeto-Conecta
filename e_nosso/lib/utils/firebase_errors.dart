@@ -28,7 +28,7 @@ class FirebaseErrors {
       case 'invalid-credential':
         return 'As credenciais de autenticação são inválidas, estão malformadas ou expiraram.';
       default:
-        return 'Ocorreu um erro desconhecido. Tente novamente. (Código: \)';
+        return 'Ocorreu um erro desconhecido. Tente novamente. (Código: $code)';
     }
   }
 }

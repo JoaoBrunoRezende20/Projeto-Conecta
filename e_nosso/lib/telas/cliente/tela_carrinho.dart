@@ -4,15 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../auth/tela_login.dart';
 import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
+import 'tela_base_cliente.dart';
+import 'tela_produtos_disponiveis.dart';
 import '../../services/carrinho_service.dart';
 import '../../utils/usuario_util.dart';
 
 class TelaRevisaoCarrinho extends StatefulWidget {
   final String lojaName;
+  final VoidCallback? onContinuarComprando;
 
   const TelaRevisaoCarrinho({
     super.key,
     required this.lojaName,
+    this.onContinuarComprando,
   });
 
   @override
@@ -129,6 +133,38 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     }
   }
 
+  void _voltarParaCompras() {
+    if (widget.onContinuarComprando != null) {
+      widget.onContinuarComprando!();
+    } else if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const TelaBaseCliente()),
+        (route) => false,
+      );
+    }
+  }
+
+  void _irParaLojaOuCompras({String? lojaId, String? lojaNome, double rating = 5.0}) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else if (lojaId != null && lojaId.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TelaProdutosDisponiveis(
+            lojaId: lojaId,
+            storeName: lojaNome ?? "Loja",
+            rating: rating,
+          ),
+        ),
+      );
+    } else {
+      _voltarParaCompras();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -175,11 +211,7 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
-                        },
+                        onPressed: _voltarParaCompras,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurple,
                           foregroundColor: Colors.white,
@@ -209,54 +241,67 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                         builder: (context, snapshot) {
                           String? fotoLoja;
                           String nomeFinal = nomeLojaExibida;
+                          double ratingLoja = 5.0;
 
                           if (snapshot.hasData && snapshot.data!.exists) {
                             final data = snapshot.data!.data() as Map<String, dynamic>;
                             nomeFinal = data['razaoSocial'] ?? data['nomeFantasia'] ?? nomeFinal;
                             fotoLoja = (data['fotoPerfilUrl'] ?? data['logoUrl'] ?? data['imagemUrl']) as String?;
+                            ratingLoja = ((data['avaliacaoMedia'] ?? data['rating'] ?? 5.0) as num).toDouble();
                           } else if (_carrinhoService.isNotEmpty) {
                             fotoLoja = _carrinhoService.itens.values.first['lojaLogoUrl'] as String?;
                           }
 
+                          void navegarParaLoja() {
+                            final lojaId = _getLojaId();
+                            _irParaLojaOuCompras(
+                              lojaId: lojaId,
+                              lojaNome: nomeFinal,
+                              rating: ratingLoja,
+                            );
+                          }
+
                           return Row(
                             children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey.shade300),
+                              GestureDetector(
+                                onTap: navegarParaLoja,
+                                child: Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: (fotoLoja != null && fotoLoja.isNotEmpty)
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(30),
+                                          child: UsuarioUtil.buildImageWidget(
+                                            fotoLoja,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                      : const Icon(Icons.storefront, color: Colors.black54, size: 30),
                                 ),
-                                child: (fotoLoja != null && fotoLoja.isNotEmpty)
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(30),
-                                        child: UsuarioUtil.buildImageWidget(
-                                          fotoLoja,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : const Icon(Icons.storefront, color: Colors.black54, size: 30),
                               ),
                               const SizedBox(width: 15),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      nomeFinal,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
+                                    GestureDetector(
+                                      onTap: navegarParaLoja,
+                                      child: Text(
+                                        nomeFinal,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     InkWell(
-                                      onTap: () {
-                                        if (Navigator.canPop(context)) {
-                                          Navigator.pop(context);
-                                        }
-                                      },
+                                      onTap: navegarParaLoja,
                                       child: const Text(
                                         "Adicionar mais itens",
                                         style: TextStyle(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 
 class UsuarioUtil {
   /// Recupera o nome completo do usuário de forma consistente
@@ -149,6 +150,63 @@ class UsuarioUtil {
       } catch (e) {
         return const Icon(Icons.broken_image, color: Colors.grey);
       }
+    }
+  }
+
+  /// Redimensiona e comprime uma imagem (PNG, JPG, etc.) para JPEG de tamanho seguro.
+  /// Garante que a imagem caiba perfeitamente no limite de documentos do Firestore (< 1MB)
+  /// e seja enviada rapidamente para o Firebase Storage sem estourar tempo ou tamanho.
+  static Uint8List comprimirImagem(
+    Uint8List bytes, {
+    int maxLargura = 800,
+    int maxAltura = 800,
+    int qualidade = 75,
+    int maxBytesPermitidos = 350 * 1024, // 350 KB máximo
+  }) {
+    try {
+      final imagem = img.decodeImage(bytes);
+      if (imagem == null) return bytes;
+
+      img.Image processada = imagem;
+
+      // Redimensiona proporcionalmente mantendo o aspecto se exceder as dimensões máximas
+      if (imagem.width > maxLargura || imagem.height > maxAltura) {
+        if (imagem.width >= imagem.height) {
+          processada = img.copyResize(
+            imagem,
+            width: maxLargura,
+            interpolation: img.Interpolation.linear,
+          );
+        } else {
+          processada = img.copyResize(
+            imagem,
+            height: maxAltura,
+            interpolation: img.Interpolation.linear,
+          );
+        }
+      }
+
+      int q = qualidade;
+      Uint8List jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+
+      // Se ainda exceder o tamanho máximo permitido em bytes, reduz progressivamente
+      while (jpgBytes.length > maxBytesPermitidos && q > 30) {
+        q -= 15;
+        if (q <= 45 && (processada.width > 400 || processada.height > 400)) {
+          processada = img.copyResize(
+            processada,
+            width: (processada.width * 0.75).toInt(),
+            height: (processada.height * 0.75).toInt(),
+            interpolation: img.Interpolation.linear,
+          );
+        }
+        jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+      }
+
+      return jpgBytes;
+    } catch (e) {
+      debugPrint('Erro ao comprimir imagem: $e');
+      return bytes;
     }
   }
 }

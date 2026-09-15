@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:e_nosso/utils/suporte_config.dart';
@@ -6,6 +7,7 @@ import 'package:e_nosso/utils/cupom_util.dart';
 import 'package:e_nosso/utils/usuario_util.dart';
 import 'package:e_nosso/services/carrinho_service.dart';
 import 'package:e_nosso/telas/lojista/tela_inicial_lojista.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -304,6 +306,35 @@ void main() {
       final bytes = UsuarioUtil.decodificarBase64(dataUri);
       expect(bytes, isNotEmpty);
       expect(String.fromCharCodes(bytes), equals('hello world'));
+    });
+
+    test('Comprime imagem grande garantindo tamanho seguro para Firestore', () {
+      // Cria imagem simulada grande (1200x1200 px)
+      final rawImage = img.Image(width: 1200, height: 1200);
+      img.fill(rawImage, color: img.ColorRgb8(255, 100, 50));
+      final uncompressedBytes = Uint8List.fromList(img.encodePng(rawImage));
+
+      // Imagem PNG sem compressão pode ser pesada
+      expect(uncompressedBytes, isNotEmpty);
+
+      // Passa pela função de compressão automática
+      final compressed = UsuarioUtil.comprimirImagem(
+        uncompressedBytes,
+        maxLargura: 600,
+        maxAltura: 600,
+        qualidade: 75,
+        maxBytesPermitidos: 200 * 1024,
+      );
+
+      // Valida que os bytes foram reduzidos e cabem com folga no Firestore (< 1MB)
+      expect(compressed, isNotEmpty);
+      expect(compressed.length, lessThanOrEqualTo(200 * 1024));
+
+      // Decodifica a imagem comprimida para checar as dimensões
+      final decoded = img.decodeImage(compressed);
+      expect(decoded, isNotNull);
+      expect(decoded!.width, lessThanOrEqualTo(600));
+      expect(decoded.height, lessThanOrEqualTo(600));
     });
   });
 }
