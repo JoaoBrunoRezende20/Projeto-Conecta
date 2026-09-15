@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
 class UsuarioUtil {
-
   /// Recupera o nome completo do usuário de forma consistente
   ///
   /// Parâmetros:
@@ -13,15 +12,16 @@ class UsuarioUtil {
   ///   - colecao: Nome da coleção do Firestore
   ///
   /// Retorna o nome formatado ou 'Usuário' se não for encontrado
-  static String getNomeCompleto(Map<String, dynamic> dados, {
+  static String getNomeCompleto(
+    Map<String, dynamic> dados, {
     String? tipo,
     String? colecao,
   }) {
     // Lojista: prioriza razão social, depois dados do responsável
     if (colecao == 'lojistas' || tipo == 'lojista') {
       return dados['razaoSocial'] ??
-             dados['dadosDoResponsavel']?['nome'] ??
-             'Lojista';
+          dados['dadosDoResponsavel']?['nome'] ??
+          'Lojista';
     }
 
     // Prestador: nome + sobrenome
@@ -58,13 +58,14 @@ class UsuarioUtil {
 
     // Fallback geral: procura por campos comuns
     return dados['nome'] ??
-           dados['razaoSocial'] ??
-           dados['dadosDoResponsavel']?['nome'] ??
-           'Usuário';
+        dados['razaoSocial'] ??
+        dados['dadosDoResponsavel']?['nome'] ??
+        'Usuário';
   }
 
   /// Recupera um nome curto para exibição em listas
-  static String getNomeCurto(Map<String, dynamic> dados, {
+  static String getNomeCurto(
+    Map<String, dynamic> dados, {
     String? tipo,
     String? colecao,
   }) {
@@ -88,12 +89,16 @@ class UsuarioUtil {
   }
 
   /// Verifica se o usuário tem nome válido
-  static bool temNomeValido(Map<String, dynamic> dados, {
+  static bool temNomeValido(
+    Map<String, dynamic> dados, {
     String? tipo,
     String? colecao,
   }) {
     String nome = getNomeCompleto(dados, tipo: tipo, colecao: colecao);
-    return nome.isNotEmpty && nome != 'Usuário' && nome != 'Lojista' && nome != 'Prestador';
+    return nome.isNotEmpty &&
+        nome != 'Usuário' &&
+        nome != 'Lojista' &&
+        nome != 'Prestador';
   }
 
   /// Decodifica com segurança uma string Base64 (limpando cabeçalho, espaços e ajustando padding)
@@ -102,10 +107,10 @@ class UsuarioUtil {
       String limpa = base64String.contains(',')
           ? base64String.split(',').last
           : base64String;
-      
+
       // Remove espaços, quebras de linha e caracteres não-base64 seguros
       limpa = limpa.replaceAll(RegExp(r'[^A-Za-z0-9+/=]'), '');
-      
+
       // Ajusta o padding se necessário
       int padding = limpa.length % 4;
       if (padding != 0) {
@@ -117,9 +122,12 @@ class UsuarioUtil {
     }
   }
 
-  /// Retorna um widget de imagem capaz de renderizar tanto URLs (Firebase Storage) 
+  /// Retorna um widget de imagem capaz de renderizar tanto URLs (Firebase Storage)
   /// quanto strings legadas em formato Base64.
-  static Widget buildImageWidget(String imageData, {BoxFit fit = BoxFit.cover}) {
+  static Widget buildImageWidget(
+    String imageData, {
+    BoxFit fit = BoxFit.cover,
+  }) {
     if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
       return Image.network(
         imageData,
@@ -179,7 +187,8 @@ class UsuarioUtil {
       }
 
       int q = qualidade;
-      Uint8List jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+      Uint8List jpgBytes =
+          Uint8List.fromList(img.encodeJpg(processada, quality: q));
 
       // Se ainda exceder o tamanho máximo permitido em bytes, reduz progressivamente
       while (jpgBytes.length > maxBytesPermitidos && q > 30) {
@@ -192,7 +201,8 @@ class UsuarioUtil {
             interpolation: img.Interpolation.linear,
           );
         }
-        jpgBytes = Uint8List.fromList(img.encodeJpg(processada, quality: q));
+        jpgBytes =
+            Uint8List.fromList(img.encodeJpg(processada, quality: q));
       }
 
       return jpgBytes;
@@ -201,4 +211,4 @@ class UsuarioUtil {
       return bytes;
     }
   }
-}
+}

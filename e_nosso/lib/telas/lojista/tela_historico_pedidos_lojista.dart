@@ -141,6 +141,7 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
         itensList.add({
           'nome': val['nome'] ?? 'Produto',
           'quantidade': val['quantidade'] ?? 1,
+          'adicionais': val['adicionais'],
         });
       });
     }
@@ -212,6 +213,9 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: itensList.map((item) {
+                    final rawAds = item['adicionais'];
+                    final List<dynamic> ads = (rawAds is List) ? rawAds : [];
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Column(
@@ -225,6 +229,18 @@ class _TelaHistoricoPedidosLojistaState extends State<TelaHistoricoPedidosLojist
                               color: Colors.black,
                             ),
                           ),
+                          if (ads.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2, bottom: 2),
+                              child: Text(
+                                "+ ${ads.map((a) => a is Map ? a['nome'] : a.toString()).join(', ')}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF4A5520),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                           Text(
                             "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
                             style: const TextStyle(fontSize: 12, color: Colors.grey),

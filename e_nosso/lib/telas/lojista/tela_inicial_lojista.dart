@@ -20,6 +20,7 @@ class Produto {
   final String? imagem;
   bool ativo;
   final String? imagemUrl;
+  final List<Map<String, dynamic>> adicionais;
 
   Produto({
     required this.id,
@@ -30,18 +31,30 @@ class Produto {
     this.imagem,
     required this.ativo,
     this.imagemUrl,
+    this.adicionais = const [],
   });
 
   factory Produto.fromMap(Map<dynamic, dynamic> data, String id) {
+    final rawAds = data['adicionais'];
+    final List<Map<String, dynamic>> listaAdicionais = (rawAds is List)
+        ? rawAds
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : [];
+
     return Produto(
       id: id,
       nome: data['nome'] ?? 'Nome indisponível',
       descricao: data['descricao'] ?? '',
       preco: (data['preco'] ?? 0).toDouble(),
       estoque: data['estoque'] ?? 0,
-      imagem: (data['imagemUrl'] ?? data['imagemBase64'] ?? data['imagem']) as String?,
+      imagem:
+          (data['imagemUrl'] ?? data['imagemBase64'] ?? data['imagem'])
+              as String?,
       ativo: data['ativo'] ?? false,
       imagemUrl: data['imagemUrl'] ?? data['imagemBase64'] ?? data['fotoUrl'],
+      adicionais: listaAdicionais,
     );
   }
 
@@ -58,6 +71,7 @@ class Produto {
       'estoque': estoque,
       'imagem': imagem,
       'ativo': ativo,
+      'adicionais': adicionais,
     };
   }
 }
@@ -290,9 +304,14 @@ class _TelaInicialLojistaState extends State<TelaInicialLojista> {
             icon: const Icon(Icons.star_rate_rounded, color: Colors.amber),
             tooltip: "Ver avaliações e comentários",
             onPressed: () {
-              final nomeLoja = dadosLojista['nomeFantasia'] ?? dadosLojista['nome'] ?? 'Minha Loja';
-              final double media = ((dadosLojista['mediaEstrelas'] ?? 0.0) as num).toDouble();
-              final int total = ((dadosLojista['quantidadeAvaliacoes'] ?? 0) as num).toInt();
+              final nomeLoja =
+                  dadosLojista['nomeFantasia'] ??
+                  dadosLojista['nome'] ??
+                  'Minha Loja';
+              final double media =
+                  ((dadosLojista['mediaEstrelas'] ?? 0.0) as num).toDouble();
+              final int total =
+                  ((dadosLojista['quantidadeAvaliacoes'] ?? 0) as num).toInt();
               ModalAvaliacoes.exibir(
                 context,
                 alvoId: lojistaId!,
