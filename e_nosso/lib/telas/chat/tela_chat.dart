@@ -23,6 +23,12 @@ class _TelaChatState extends State<TelaChat> {
   final ChatRepository _chatRepository = ChatRepository();
   bool _isSending = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _chatRepository.marcarComoLido(widget.conversaId, widget.currentUserId);
+  }
+
   void _enviarMensagem() async {
     final texto = _mensagemController.text.trim();
     if (texto.isEmpty || _isSending) return;
@@ -44,7 +50,10 @@ class _TelaChatState extends State<TelaChat> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text(widget.tituloChat, style: const TextStyle(color: Colors.black)),
+        title: Text(
+          widget.tituloChat,
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 1,
@@ -80,33 +89,46 @@ class _TelaChatState extends State<TelaChat> {
                   itemCount: mensagens.length,
                   itemBuilder: (context, index) {
                     final msg = mensagens[index].data() as Map<String, dynamic>;
-                    final bool isMe = msg['remetenteId'] == widget.currentUserId;
+                    final bool isMe =
+                        msg['remetenteId'] == widget.currentUserId;
                     final String texto = msg['texto'] ?? '';
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: isMe ? Colors.green[100] : Colors.white,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(12),
                             topRight: const Radius.circular(12),
-                            bottomLeft: isMe ? const Radius.circular(12) : Radius.zero,
-                            bottomRight: isMe ? Radius.zero : const Radius.circular(12),
+                            bottomLeft: isMe
+                                ? const Radius.circular(12)
+                                : Radius.zero,
+                            bottomRight: isMe
+                                ? Radius.zero
+                                : const Radius.circular(12),
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.05),
                               blurRadius: 2,
                               offset: const Offset(0, 1),
-                            )
+                            ),
                           ],
                         ),
                         child: Text(
                           texto,
-                          style: const TextStyle(fontSize: 15, color: Colors.black87),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     );
@@ -135,7 +157,10 @@ class _TelaChatState extends State<TelaChat> {
                         ),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
                       onSubmitted: (_) => _enviarMensagem(),
                     ),
@@ -148,7 +173,10 @@ class _TelaChatState extends State<TelaChat> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Icon(Icons.send, color: Colors.white),
                       onPressed: _enviarMensagem,

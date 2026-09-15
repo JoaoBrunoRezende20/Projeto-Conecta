@@ -435,38 +435,53 @@ class _AbaPedidosLojistaState extends State<AbaPedidosLojista> {
           ],
 
           // BOTÃO CHAT
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TelaChat(
-                      conversaId: pedidoId,
-                      tituloChat: nomeCliente,
-                      currentUserId: widget.lojistaId,
+          Builder(
+            builder: (context) {
+              int unreadCount = 0;
+              if (pedido['mensagensNaoLidas'] != null && pedido['mensagensNaoLidas'][widget.lojistaId] != null) {
+                unreadCount = pedido['mensagensNaoLidas'][widget.lojistaId] is int 
+                    ? pedido['mensagensNaoLidas'][widget.lojistaId] as int 
+                    : 0;
+              }
+              return Badge(
+                isLabelVisible: unreadCount > 0,
+                label: Text(unreadCount.toString()),
+                offset: const Offset(-5, -5),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TelaChat(
+                            conversaId: pedidoId,
+                            tituloChat: nomeCliente,
+                            currentUserId: widget.lojistaId,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8E8E8E), // Cinza botão
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      "Entrar em chat com cliente",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8E8E8E), // Cinza botão
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
-              ),
-              child: const Text(
-                "Entrar em chat com cliente",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),

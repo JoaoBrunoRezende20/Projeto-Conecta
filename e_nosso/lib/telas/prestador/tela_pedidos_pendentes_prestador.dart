@@ -11,10 +11,12 @@ class TelaPedidosPendentesPrestador extends StatefulWidget {
   const TelaPedidosPendentesPrestador({super.key});
 
   @override
-  State<TelaPedidosPendentesPrestador> createState() => _TelaPedidosPendentesPrestadorState();
+  State<TelaPedidosPendentesPrestador> createState() =>
+      _TelaPedidosPendentesPrestadorState();
 }
 
-class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPrestador> {
+class _TelaPedidosPendentesPrestadorState
+    extends State<TelaPedidosPendentesPrestador> {
   Stream<QuerySnapshot>? _pedidosStream;
   String? _nomeUsuario;
   final PedidoRepository _pedidoRepository = PedidoRepository();
@@ -25,8 +27,11 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _pedidosStream = _pedidoRepository.getPedidosPorPrestador(user.uid, 'Pendente');
-      
+      _pedidosStream = _pedidoRepository.getPedidosPorPrestador(
+        user.uid,
+        'Pendente',
+      );
+
       _buscarNomeUsuario(user.uid);
     }
   }
@@ -35,12 +40,19 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
     final doc = await _usuarioRepository.getUsuario(uid, 'prestadorServicos');
     if (doc.exists) {
       setState(() {
-        _nomeUsuario = UsuarioUtil.getNomeCompleto(doc.data() as Map<String, dynamic>, colecao: 'prestadorServicos');
+        _nomeUsuario = UsuarioUtil.getNomeCompleto(
+          doc.data() as Map<String, dynamic>,
+          colecao: 'prestadorServicos',
+        );
       });
     }
   }
 
-  void _atualizarStatusPedido(String pedidoId, String novoStatus, {String? clienteId}) async {
+  void _atualizarStatusPedido(
+    String pedidoId,
+    String novoStatus, {
+    String? clienteId,
+  }) async {
     try {
       await _pedidoRepository.atualizarStatusPedido(pedidoId, novoStatus);
 
@@ -61,27 +73,35 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
             destinatarioId: clienteId,
             colecaoDestinatario: 'usuarioComum',
             titulo: 'Solicitação Recusada',
-            mensagem: '$nomePrestador não pôde aceitar a sua solicitação de serviço.',
+            mensagem:
+                '$nomePrestador não pôde aceitar a sua solicitação de serviço.',
             tipo: 'servico_recusado',
             pedidoId: pedidoId,
           );
         }
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(novoStatus == 'Confirmado' 
-                ? "Pedido aceito com sucesso!" 
-                : "Pedido recusado."),
-            backgroundColor: novoStatus == 'Confirmado' ? Colors.green : Colors.red,
+            content: Text(
+              novoStatus == 'Confirmado'
+                  ? "Pedido aceito com sucesso!"
+                  : "Pedido recusado.",
+            ),
+            backgroundColor: novoStatus == 'Confirmado'
+                ? Colors.green
+                : Colors.red,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao atualizar pedido: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Erro ao atualizar pedido: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -106,7 +126,11 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
               final canPop = ModalRoute.of(context)?.canPop ?? false;
               if (!canPop) return const SizedBox.shrink();
               return IconButton(
-                icon: const Icon(Icons.arrow_circle_left_outlined, color: Colors.black, size: 30),
+                icon: const Icon(
+                  Icons.arrow_circle_left_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
                 onPressed: () => Navigator.pop(context),
               );
             },
@@ -132,7 +156,9 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("Nenhum pedido pendente no momento."));
+                  return const Center(
+                    child: Text("Nenhum pedido pendente no momento."),
+                  );
                 }
 
                 return ListView.builder(
@@ -141,10 +167,12 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                   itemBuilder: (context, index) {
                     final doc = snapshot.data!.docs[index];
                     final data = doc.data() as Map<String, dynamic>;
-                    
+
                     // Extrai nomes dos serviços da lista
                     final List servicos = data['servicos'] ?? [];
-                    final String nomesServicos = servicos.map((s) => s['nome']).join(", ");
+                    final String nomesServicos = servicos
+                        .map((s) => s['nome'])
+                        .join(", ");
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 20),
@@ -157,41 +185,45 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            nomesServicos.isNotEmpty ? nomesServicos : "Nome do Serviço",
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                            nomesServicos.isNotEmpty
+                                ? nomesServicos
+                                : "Nome do Serviço",
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 15),
                           Text(
                             "R\$ ${(data['valor'] ?? 0).toStringAsFixed(2)}",
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Row(
                             children: [
                               const Icon(Icons.credit_card, size: 18),
                               const SizedBox(width: 8),
-                              Text("Pagamento no ${data['pagamento'] ?? 'Crédito'}"),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                              const SizedBox(width: 8),
                               Text(
-                                "${data['data'] ?? data['dia']} às ${data['horario'] ?? ''}",
-                                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                "Pagamento no ${data['pagamento'] ?? 'Crédito'}",
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  data['endereco'] ?? 'Endereço não informado',
-                                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                              Text(
+                                "${data['data'] ?? data['dia']} às ${data['horario'] ?? ''}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
                                 ),
                               ),
                             ],
@@ -199,11 +231,38 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.phone_outlined, size: 16, color: Colors.grey),
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  data['endereco'] ?? 'Endereço não informado',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.phone_outlined,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 data['telefone'] ?? 'Telefone não informado',
-                                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
                               ),
                             ],
                           ),
@@ -219,9 +278,14 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
                                   ),
-                                  child: const Text("Rejeitar", style: TextStyle(color: Colors.white)),
+                                  child: const Text(
+                                    "Rejeitar",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 15),
@@ -233,36 +297,83 @@ class _TelaPedidosPendentesPrestadorState extends State<TelaPedidosPendentesPres
                                     clienteId: data['clienteId'],
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF00A36C), // Green
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                    backgroundColor: const Color(
+                                      0xFF00A36C,
+                                    ), // Green
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
                                   ),
-                                  child: const Text("Confirmar", style: TextStyle(color: Colors.white)),
+                                  child: const Text(
+                                    "Confirmar",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TelaChat(
-                                      conversaId: doc.id,
-                                      tituloChat: data['nomeCliente'] ?? data['dadosCliente']?['nome'] ?? 'Cliente',
-                                      currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                          Builder(
+                            builder: (context) {
+                              int unreadCount = 0;
+
+                              final uid =
+                                  FirebaseAuth.instance.currentUser?.uid ?? '';
+
+                              if (data['mensagensNaoLidas'] != null &&
+                                  data['mensagensNaoLidas'][uid] != null) {
+                                unreadCount =
+                                    data['mensagensNaoLidas'][uid] is int
+                                    ? data['mensagensNaoLidas'][uid] as int
+                                    : 0;
+                              }
+
+                              return Badge(
+                                isLabelVisible: unreadCount > 0,
+
+                                label: Text(unreadCount.toString()),
+
+                                offset: const Offset(-5, -5),
+
+                                child: SizedBox(
+                                  width: double.infinity,
+
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+
+                                        MaterialPageRoute(
+                                          builder: (_) => TelaChat(
+                                            conversaId: doc.id,
+
+                                            tituloChat:
+                                                data['nomeCliente'] ??
+                                                data['dadosCliente']?['nome'] ??
+                                                'Cliente',
+
+                                            currentUserId: uid,
+                                          ),
+                                        ),
+                                      );
+                                    },
+
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey[600],
+
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                    ),
+
+                                    child: const Text(
+                                      "Entrar em contato com o cliente",
+                                      style: TextStyle(color: Colors.white),
                                     ),
                                   ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[600],
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                              ),
-                              child: const Text("Entrar em contato com o cliente", style: TextStyle(color: Colors.white)),
-                            ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
