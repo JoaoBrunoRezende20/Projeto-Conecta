@@ -113,7 +113,14 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final String? motivoRecusa =
         data['motivoRecusa'] ?? data['motivoCancelamento'] ?? data['motivo'];
 
-    final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
+    final lojaFallback = data['nomeLoja'] ??
+        data['lojaNome'] ??
+        data['loja'] ??
+        data['prestador'] ??
+        (data['itens'] is Map && (data['itens'] as Map).isNotEmpty
+            ? (data['itens'] as Map).values.first['lojaNome']
+            : null) ??
+        "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
 
     String pagamentoStr = "Crédito";
@@ -153,6 +160,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final String? pId = data['prestadorId'] as String?;
     final bool isPrestador = pId != null && pId.isNotEmpty;
     final String alvoId = isPrestador ? pId : (lojistaId ?? "");
+    final String colecao = isPrestador ? 'prestadores' : 'lojistas';
 
     Color statusColor =
         concluido ? Colors.green : (isRecusado ? Colors.red : Colors.grey);
@@ -160,7 +168,24 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         ? "Pedido Concluído"
         : (isRecusado ? "Pedido Recusado" : "Finalizado");
 
-    return Container(
+    return FutureBuilder<DocumentSnapshot>(
+      future: alvoId.isNotEmpty
+          ? FirebaseFirestore.instance.collection(colecao).doc(alvoId).get()
+          : null,
+      builder: (context, snapshot) {
+        String nomeLojaExibicao = lojaFallback;
+        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+          final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
+          if (dadosLojista != null) {
+            nomeLojaExibicao = dadosLojista['razaoSocial'] ??
+                               dadosLojista['nomeFantasia'] ??
+                               dadosLojista['nome'] ??
+                               dadosLojista['dadosDoResponsavel']?['nome'] ??
+                               lojaFallback;
+          }
+        }
+
+        return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -182,7 +207,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
             children: [
               Expanded(
                 child: Text(
-                  loja,
+                  nomeLojaExibicao,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -315,7 +340,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                       builder: (_) => TelaAvaliacaoServico(
                         pedidoId: id,
                         prestadorId: alvoId,
-                        nomePrestador: loja,
+                        nomePrestador: nomeLojaExibicao,
                         tipoAlvo: 'lojista',
                       ),
                     ),
@@ -342,6 +367,8 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           ],
         ],
       ),
+    );
+      },
     );
   }
 
