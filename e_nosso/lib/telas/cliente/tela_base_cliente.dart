@@ -77,7 +77,18 @@ class _TelaBaseClienteState extends State<TelaBaseCliente> {
                 });
               },
             )),
-            _buildTabNavigator(3, const TelaRevisaoCarrinho(lojaName: "Sua Sacola")),
+            _buildTabNavigator(
+              3,
+              TelaRevisaoCarrinho(
+                lojaName: "Sua Sacola",
+                onContinuarComprando: () {
+                  _navigatorKeys[3].currentState?.popUntil((route) => route.isFirst);
+                  setState(() {
+                    _currentIndex = 0;
+                  });
+                },
+              ),
+            ),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
