@@ -59,8 +59,9 @@ class _TelaCadastroServicoPrestadorState
       if (imagemSelecionada == null) return;
 
       final bytes = await imagemSelecionada.readAsBytes();
+      final bytesOtimizados = UsuarioUtil.comprimirImagem(bytes, maxLargura: 600, maxAltura: 600);
       setState(() {
-        _imagemBytes = bytes;
+        _imagemBytes = bytesOtimizados;
       });
     } catch (e) {
       if (mounted) {

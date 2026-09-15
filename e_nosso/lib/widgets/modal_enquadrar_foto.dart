@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import '../utils/usuario_util.dart';
 
 /// Modal interativo para enquadramento e recorte de fotos em proporção fixa 1:1.
 class ModalEnquadrarFoto extends StatefulWidget {
@@ -72,14 +73,24 @@ class _ModalEnquadrarFotoState extends State<ModalEnquadrarFoto> {
           await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
-        final Uint8List croppedBytes = byteData.buffer.asUint8List();
+        final Uint8List rawBytes = byteData.buffer.asUint8List();
+        // Converte o PNG recortado para JPEG leve (< 200 KB) e otimizado mantendo excelente qualidade
+        final Uint8List croppedBytes = UsuarioUtil.comprimirImagem(
+          rawBytes,
+          maxLargura: 600,
+          maxAltura: 600,
+          qualidade: 80,
+          maxBytesPermitidos: 200 * 1024,
+        );
         if (mounted) Navigator.pop(context, croppedBytes);
       } else {
-        if (mounted) Navigator.pop(context, widget.imageBytes);
+        final fallback = UsuarioUtil.comprimirImagem(widget.imageBytes);
+        if (mounted) Navigator.pop(context, fallback);
       }
     } catch (e) {
       debugPrint('Erro ao recortar imagem: $e');
-      if (mounted) Navigator.pop(context, widget.imageBytes);
+      final fallback = UsuarioUtil.comprimirImagem(widget.imageBytes);
+      if (mounted) Navigator.pop(context, fallback);
     } finally {
       if (mounted) setState(() => _processando = false);
     }
