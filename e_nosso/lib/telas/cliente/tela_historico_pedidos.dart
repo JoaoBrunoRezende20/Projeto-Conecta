@@ -153,7 +153,6 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final String? pId = data['prestadorId'] as String?;
     final bool isPrestador = pId != null && pId.isNotEmpty;
     final String alvoId = isPrestador ? pId : (lojistaId ?? "");
-    final String tipoAlvo = isPrestador ? "prestador" : "lojista";
 
     Color statusColor =
         concluido ? Colors.green : (isRecusado ? Colors.red : Colors.grey);
@@ -304,7 +303,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
               ),
             ),
           ],
-          if (concluido && !avaliado) ...[
+          if (concluido && !avaliado && !isPrestador) ...[
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -317,7 +316,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                         pedidoId: id,
                         prestadorId: alvoId,
                         nomePrestador: loja,
-                        tipoAlvo: tipoAlvo,
+                        tipoAlvo: 'lojista',
                       ),
                     ),
                   );
@@ -331,9 +330,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  isPrestador ? "AVALIAR PRESTADOR" : "AVALIAR LOJA",
-                  style: const TextStyle(
+                child: const Text(
+                  "AVALIAR LOJA",
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),

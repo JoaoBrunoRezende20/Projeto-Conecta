@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'tela_detalhes_servico.dart';
 import '../../utils/usuario_util.dart';
-import '../../widgets/modal_avaliacoes.dart';
 
 class TelaPerfilPrestador extends StatefulWidget {
   final String prestadorId;
@@ -146,10 +145,6 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
     final qualificacoes = (data['qualificacoes'] ?? '').toString();
     final disponibilidade =
         (data['disponibilidadeAtendimento'] ?? 'Não informado').toString();
-    final mediaAvaliacoes =
-        (data['mediaEstrelas'] ?? data['mediaAvaliacoes'] ?? 0.0).toDouble();
-    final int qtdAvaliacoes =
-        (data['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
     final fotoPerfilUrl = data['fotoPerfilUrl'] as String?;
     final bool isOnline = data['isOnline'] ?? false;
 
@@ -161,10 +156,6 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
         areaAtendimento = bairros.join(', ');
       }
     }
-
-    // Fotos do portfólio salvas no campo 'fotosPortfolio' como lista de URLs
-    final List<dynamic> fotosRaw = data['fotosPortfolio'] ?? [];
-    final List<String> fotos = fotosRaw.map((e) => e.toString()).toList();
 
     return Column(
       children: [
@@ -239,46 +230,6 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            InkWell(
-                              onTap: () {
-                                ModalAvaliacoes.exibir(
-                                  context,
-                                  alvoId: widget.prestadorId,
-                                  nomeAlvo: nomeCompleto,
-                                  tipoAlvo: 'prestador',
-                                  media: mediaAvaliacoes,
-                                  total: qtdAvaliacoes,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(6),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  ),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    mediaAvaliacoes > 0
-                                        ? '${mediaAvaliacoes.toStringAsFixed(1)} ($qtdAvaliacoes)'
-                                        : 'Sem avaliações',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '• Ver avaliações',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.blue[700],
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 2),
                             Text(
                               areaAtuacao,
                               style: const TextStyle(
@@ -414,77 +365,6 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                         areaAtendimento,
                       ),
                     ],
-                  ),
-                ),
-
-                const Divider(height: 1, indent: 20, endIndent: 20),
-
-                // ── Avaliações dos Clientes ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      ModalAvaliacoes.exibir(
-                        context,
-                        alvoId: widget.prestadorId,
-                        nomeAlvo: nomeCompleto,
-                        tipoAlvo: 'prestador',
-                        media: mediaAvaliacoes,
-                        total: qtdAvaliacoes,
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.star_rate_rounded, color: Colors.amber, size: 28),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Avaliações e Comentários",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  mediaAvaliacoes > 0
-                                      ? "Nota ${mediaAvaliacoes.toStringAsFixed(1)} ($qtdAvaliacoes ${qtdAvaliacoes == 1 ? 'avaliação' : 'avaliações'})"
-                                      : "Toque para ver os comentários recebidos",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Text(
-                            "Ver todas",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right, color: Colors.blue, size: 18),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
 

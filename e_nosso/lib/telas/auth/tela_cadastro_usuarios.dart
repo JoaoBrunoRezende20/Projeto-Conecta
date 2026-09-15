@@ -425,6 +425,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
     String pasta,
     String uid,
   ) async {
+    // Comprime a foto de perfil/logo para tamanho seguro (< 200 KB)
+    final Uint8List bytesProcessados = UsuarioUtil.comprimirImagem(
+      fotoBytes,
+      maxLargura: 600,
+      maxAltura: 600,
+      qualidade: 75,
+      maxBytesPermitidos: 200 * 1024,
+    );
+
     try {
       final ref = FirebaseStorage.instance
           .ref()
@@ -434,34 +443,42 @@ class _TelaCadastroState extends State<TelaCadastro> {
           .child('perfil_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
       final uploadTask = ref.putData(
-        fotoBytes,
+        bytesProcessados,
         SettableMetadata(contentType: 'image/jpeg'),
       );
 
-      final snapshot = await uploadTask.timeout(const Duration(seconds: 5));
-      final url = await snapshot.ref.getDownloadURL().timeout(const Duration(seconds: 4));
+      final snapshot = await uploadTask.timeout(const Duration(seconds: 8));
+      final url = await snapshot.ref.getDownloadURL().timeout(const Duration(seconds: 6));
       return url;
     } catch (e) {
       debugPrint('>>> [STORAGE] Fallback para Base64 na foto ($e)');
-      return base64Encode(fotoBytes);
+      return base64Encode(bytesProcessados);
     }
   }
 
-  // --- FUNÇÕES DE IMAGEM CORRIGIDAS (SEM BASE64) ---
+  // --- FUNÇÕES DE IMAGEM CORRIGIDAS (SEM BASE64 PESADO) ---
   Future<void> _selecionarImagem(bool isPortfolio) async {
     try {
       final List<XFile> imagensSelecionadas = await _picker.pickMultiImage(
-        imageQuality: 50,
+        imageQuality: 70,
       );
       if (imagensSelecionadas.isEmpty) return;
 
       for (var imagem in imagensSelecionadas) {
         final bytes = await imagem.readAsBytes();
+        // Comprime a imagem do documento ou portfólio para caber perfeitamente no banco (< 250 KB)
+        final bytesComprimidos = UsuarioUtil.comprimirImagem(
+          bytes,
+          maxLargura: 800,
+          maxAltura: 800,
+          qualidade: 70,
+          maxBytesPermitidos: 250 * 1024,
+        );
         setState(() {
           if (isPortfolio) {
-            _imagensPortfolioBytes.add(bytes);
+            _imagensPortfolioBytes.add(bytesComprimidos);
           } else {
-            _imagensDocumentosBytes.add(bytes);
+            _imagensDocumentosBytes.add(bytesComprimidos);
           }
         });
       }
@@ -484,7 +501,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     });
   }
 
-  // NOVO: Função para enviar imagens para o Firebase Storage com fallback em Base64
+  // NOVO: Função para enviar imagens para o Firebase Storage com fallback em Base64 otimizado
   Future<List<String>> _uploadImagensFirebase(
     List<Uint8List> imagens,
     String pasta,
@@ -496,6 +513,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
     for (int i = 0; i < imagens.length; i++) {
       debugPrint(
         '>>> [STORAGE] Processando imagem ${i + 1}/${imagens.length} para pasta "$pasta"...',
+      );
+
+      // Garante que a imagem esteja devidamente comprimida antes de subir
+      final bytesProcessados = UsuarioUtil.comprimirImagem(
+        imagens[i],
+        maxLargura: 800,
+        maxAltura: 800,
+        qualidade: 70,
+        maxBytesPermitidos: 250 * 1024,
       );
 
       if (storageDisponivel) {
@@ -510,13 +536,13 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
           // Faz o upload dos bytes
           final uploadTask = ref.putData(
-            imagens[i],
+            bytesProcessados,
             SettableMetadata(contentType: 'image/jpeg'),
           );
 
           // Aguarda com timeout para não travar
           final snapshot = await uploadTask.timeout(
-            const Duration(seconds: 4),
+            const Duration(seconds: 8),
             onTimeout: () {
               throw TimeoutException(
                 'Tempo esgotado ao enviar imagem para o Firebase Storage.',
@@ -526,7 +552,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
           // Obtém o link público para salvar no Firestore
           final url = await snapshot.ref.getDownloadURL().timeout(
-            const Duration(seconds: 3),
+            const Duration(seconds: 6),
             onTimeout: () => throw TimeoutException(
               'Tempo esgotado ao obter link da imagem salva.',
             ),
@@ -544,9 +570,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
         }
       }
 
-      // Fallback seguro: converte para Base64 instantaneamente
-      urls.add(base64Encode(imagens[i]));
-      debugPrint('>>> [STORAGE] Imagem ${i + 1} convertida para Base64.');
+      // Fallback seguro: converte para Base64 instantaneamente com tamanho otimizado
+      urls.add(base64Encode(bytesProcessados));
+      debugPrint('>>> [STORAGE] Imagem ${i + 1} convertida para Base64 otimizada.');
     }
     return urls;
   }
