@@ -113,7 +113,20 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
     final String? motivoRecusa =
         data['motivoRecusa'] ?? data['motivoCancelamento'] ?? data['motivo'];
 
-    final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
+    final String? lojistaId = data['lojistaId'] as String?;
+    final String? pId = data['prestadorId'] as String?;
+    final bool isPrestador = pId != null && pId.isNotEmpty;
+    final String alvoId = isPrestador ? pId : (lojistaId ?? "");
+    final String colecao = isPrestador ? 'prestadores' : 'lojistas';
+
+    final String lojaFallback = data['nomeLoja'] ??
+        data['lojaNome'] ??
+        data['loja'] ??
+        data['prestador'] ??
+        (data['itens'] is Map && (data['itens'] as Map).isNotEmpty
+            ? (data['itens'] as Map).values.first['lojaNome']
+            : null) ??
+        "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
 
     String pagamentoStr = "Crédito";
@@ -137,6 +150,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         itensList.add({
           'nome': val['nome'] ?? 'Produto',
           'quantidade': val['quantidade'] ?? 1,
+          'adicionais': val['adicionais'],
         });
       });
     } else if (data['itens'] is List) {
@@ -144,15 +158,12 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         itensList.add({
           'nome': item['nome'] ?? 'Produto',
           'quantidade': item['quantidade'] ?? 1,
+          'adicionais': item['adicionais'],
         });
       }
     }
 
     final bool avaliado = data['avaliado'] ?? false;
-    final String? lojistaId = data['lojistaId'] as String?;
-    final String? pId = data['prestadorId'] as String?;
-    final bool isPrestador = pId != null && pId.isNotEmpty;
-    final String alvoId = isPrestador ? pId : (lojistaId ?? "");
     final String tipoAlvo = isPrestador ? "prestador" : "lojista";
 
     Color statusColor =
@@ -161,37 +172,54 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         ? "Pedido Concluído"
         : (isRecusado ? "Pedido Recusado" : "Finalizado");
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey[200], // Fundo cinza claro conforme imagem
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  loja,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+    return FutureBuilder<DocumentSnapshot>(
+      future: alvoId.isNotEmpty
+          ? FirebaseFirestore.instance.collection(colecao).doc(alvoId).get()
+          : null,
+      builder: (context, snapshot) {
+        String nomeLojaExibicao = lojaFallback;
+        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+          final dadosLoja = snapshot.data!.data() as Map<String, dynamic>?;
+          if (dadosLoja != null) {
+            nomeLojaExibicao = dadosLoja['razaoSocial'] ??
+                dadosLoja['nomeFantasia'] ??
+                dadosLoja['nome'] ??
+                dadosLoja['dadosDoResponsavel']?['nome'] ??
+                lojaFallback;
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[200], // Fundo cinza claro conforme imagem
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      nomeLojaExibicao,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -214,6 +242,9 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: itensList.map((item) {
+              final rawAds = item['adicionais'];
+              final List<dynamic> ads = (rawAds is List) ? rawAds : [];
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Column(
@@ -227,6 +258,18 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                         color: Colors.black,
                       ),
                     ),
+                    if (ads.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 2),
+                        child: Text(
+                          "+ ${ads.map((a) => a is Map ? a['nome'] : a.toString()).join(', ')}",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4A5520),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     Text(
                       "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
                       style:
@@ -316,7 +359,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
                       builder: (_) => TelaAvaliacaoServico(
                         pedidoId: id,
                         prestadorId: alvoId,
-                        nomePrestador: loja,
+                        nomePrestador: nomeLojaExibicao,
                         tipoAlvo: tipoAlvo,
                       ),
                     ),
@@ -344,7 +387,7 @@ class _TelaHistoricoPedidosState extends State<TelaHistoricoPedidos> {
         ],
       ),
     );
+      },
+    );
   }
-
-
 }

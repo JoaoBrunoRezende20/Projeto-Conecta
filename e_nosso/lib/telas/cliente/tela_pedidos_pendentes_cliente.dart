@@ -161,8 +161,20 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
   }
 
   Widget _buildCardPedido(String pedidoId, Map<String, dynamic> data) {
-    final prestadorId = data['lojistaId'] ?? data['prestadorId'] ?? "";
-    final loja = data['nomeLoja'] ?? data['loja'] ?? data['prestador'] ?? "Loja";
+    final String lojistaId = (data['lojistaId'] ?? '').toString();
+    final String pId = (data['prestadorId'] ?? '').toString();
+    final bool isPrestador = pId.isNotEmpty;
+    final String alvoId = isPrestador ? pId : (lojistaId.isNotEmpty ? lojistaId : (data['prestadorId'] ?? ''));
+    final String colecao = isPrestador ? 'prestadores' : 'lojistas';
+
+    final lojaFallback = data['nomeLoja'] ??
+        data['lojaNome'] ??
+        data['loja'] ??
+        data['prestador'] ??
+        (data['itens'] is Map && (data['itens'] as Map).isNotEmpty
+            ? (data['itens'] as Map).values.first['lojaNome']
+            : null) ??
+        "Loja";
     final valorTotal = (data['valorTotal'] ?? data['valor'] ?? 0.0).toDouble();
     final dataCriacao = data['dataCriacao'] as Timestamp?;
     
@@ -185,6 +197,7 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         itensList.add({
           'nome': val['nome'] ?? 'Produto',
           'quantidade': val['quantidade'] ?? 1,
+          'adicionais': val['adicionais'],
         });
       });
     } else if (data['itens'] is List) {
@@ -192,6 +205,7 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
         itensList.add({
           'nome': item['nome'] ?? 'Produto',
           'quantidade': item['quantidade'] ?? 1,
+          'adicionais': item['adicionais'],
         });
       }
     }
@@ -207,16 +221,19 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
     final bool isRejeitado = statusNorm == 'rejeitado' || statusNorm == 'cancelado';
 
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('lojistas').doc(prestadorId).get(),
+      future: alvoId.isNotEmpty
+          ? FirebaseFirestore.instance.collection(colecao).doc(alvoId).get()
+          : null,
       builder: (context, snapshot) {
-        String nomeLojaExibicao = loja;
+        String nomeLojaExibicao = lojaFallback;
         if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
           final dadosLojista = snapshot.data!.data() as Map<String, dynamic>?;
           if (dadosLojista != null) {
             nomeLojaExibicao = dadosLojista['razaoSocial'] ??
+                               dadosLojista['nomeFantasia'] ??
                                dadosLojista['nome'] ??
                                dadosLojista['dadosDoResponsavel']?['nome'] ??
-                               loja;
+                               lojaFallback;
           }
         }
 
@@ -238,6 +255,9 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: itensList.map((item) {
+              final rawAds = item['adicionais'];
+              final List<dynamic> ads = (rawAds is List) ? rawAds : [];
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Column(
@@ -247,6 +267,18 @@ class _TelaPedidosPendentesClienteState extends State<TelaPedidosPendentesClient
                       item['nome'],
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
                     ),
+                    if (ads.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 2),
+                        child: Text(
+                          "+ ${ads.map((a) => a is Map ? a['nome'] : a.toString()).join(', ')}",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4A5520),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     Text(
                       "${item['quantidade']} Unidade${item['quantidade'] > 1 ? 's' : ''}",
                       style: const TextStyle(fontSize: 14, color: Colors.grey),

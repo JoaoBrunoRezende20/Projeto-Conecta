@@ -22,9 +22,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TelaCadastroProdutoLojista(
-          lojistaId: widget.lojistaId,
-        ),
+        builder: (_) => TelaCadastroProdutoLojista(lojistaId: widget.lojistaId),
       ),
     );
   }
@@ -33,9 +31,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TelaCuponsLojista(
-          lojistaId: widget.lojistaId,
-        ),
+        builder: (_) => TelaCuponsLojista(lojistaId: widget.lojistaId),
       ),
     );
   }
@@ -52,6 +48,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
           precoAtual: produto.preco,
           estoqueAtual: produto.estoque,
           imagemUrlAtual: produto.imagemUrl,
+          adicionaisAtuais: produto.adicionais,
         ),
       ),
     );
@@ -81,7 +78,9 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
 
   void _abrirDialogoTaxaEntrega(BuildContext context, double taxaAtual) {
     final TextEditingController controller = TextEditingController(
-      text: taxaAtual > 0 ? taxaAtual.toStringAsFixed(2).replaceAll('.', ',') : '0,00',
+      text: taxaAtual > 0
+          ? taxaAtual.toStringAsFixed(2).replaceAll('.', ',')
+          : '0,00',
     );
     bool entregaGratis = taxaAtual == 0;
 
@@ -91,12 +90,17 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Row(
                 children: [
                   Icon(Icons.delivery_dining, color: Colors.teal, size: 26),
                   SizedBox(width: 8),
-                  Text("Taxa de Entrega", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(
+                    "Taxa de Entrega",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                 ],
               ),
               content: Column(
@@ -110,8 +114,17 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   const SizedBox(height: 16),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text("Oferecer Entrega Grátis", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    subtitle: const Text("Isenta a taxa de frete para todos os pedidos da sua loja.", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    title: const Text(
+                      "Oferecer Entrega Grátis",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      "Isenta a taxa de frete para todos os pedidos da sua loja.",
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
                     value: entregaGratis,
                     activeThumbColor: Colors.teal,
                     onChanged: (val) {
@@ -129,15 +142,22 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   if (!entregaGratis)
                     TextField(
                       controller: controller,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Valor do Frete (R\$)",
                         prefixText: "R\$ ",
                         hintText: "Ex: 5,00",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.teal, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.teal,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),
@@ -146,17 +166,24 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    "Cancelar",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: () async {
                     double novoValor = 0.0;
                     if (!entregaGratis) {
-                      final strLimpa = controller.text.replaceAll(',', '.').trim();
+                      final strLimpa = controller.text
+                          .replaceAll(',', '.')
+                          .trim();
                       novoValor = double.tryParse(strLimpa) ?? 0.0;
                     }
 
@@ -183,7 +210,13 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                       debugPrint("Erro ao atualizar taxa de entrega: $e");
                     }
                   },
-                  child: const Text("Salvar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Salvar",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -212,10 +245,16 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
               onTap: () => _abrirCupons(context),
               borderRadius: BorderRadius.circular(14),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.deepPurple.shade600, Colors.deepPurple.shade400],
+                    colors: [
+                      Colors.deepPurple.shade600,
+                      Colors.deepPurple.shade400,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -230,7 +269,11 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.discount_outlined, color: Colors.white, size: 24),
+                    Icon(
+                      Icons.discount_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -246,12 +289,19 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                           ),
                           Text(
                             "Crie códigos em % ou R\$ para seus clientes",
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                   ],
                 ),
               ),
@@ -266,13 +316,17 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   .snapshots(),
               builder: (context, snap) {
                 final data = snap.data?.data() as Map<String, dynamic>?;
-                final double taxa = ((data?['taxaEntrega'] ?? 5.0) as num).toDouble();
+                final double taxa = ((data?['taxaEntrega'] ?? 5.0) as num)
+                    .toDouble();
 
                 return InkWell(
                   onTap: () => _abrirDialogoTaxaEntrega(context, taxa),
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Colors.teal.shade700, Colors.teal.shade500],
@@ -290,7 +344,11 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.delivery_dining, color: Colors.white, size: 26),
+                        const Icon(
+                          Icons.delivery_dining,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -307,9 +365,14 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.25),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.25,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -328,7 +391,10 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                               const SizedBox(height: 2),
                               const Text(
                                 "Toque para alterar o valor de frete da sua loja",
-                                style: TextStyle(color: Colors.white70, fontSize: 11),
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -416,7 +482,11 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                       fit: BoxFit.cover,
                     ),
                   )
-                : const Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 30),
+                : const Icon(
+                    Icons.shopping_bag_outlined,
+                    color: Colors.grey,
+                    size: 30,
+                  ),
           ),
           const SizedBox(width: 12),
 
@@ -441,10 +511,7 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                     const SizedBox(height: 2),
                     Text(
                       produto.descricao,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -477,13 +544,21 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey, size: 22),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.blueGrey,
+                  size: 22,
+                ),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Editar Produto',
                 onPressed: () => _abrirEdicaoProduto(context, produto),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                  size: 22,
+                ),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Excluir Produto',
                 onPressed: () => _excluirProduto(produto.id, produto.nome),
@@ -495,4 +570,3 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
     );
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../auth/tela_login.dart';
 import '../auth/tela_cadastro_usuarios.dart';
 import 'tela_finalizacao_compra.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/carrinho_service.dart';
 import '../../utils/usuario_util.dart';
 
@@ -98,7 +97,8 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
 
       // Consulta o estoque atual do produto no Firestore
       try {
-        final doc = await FirebaseFirestore.instance.collection('produtos').doc(id).get();
+        final String prodId = (item?['produtoId'] ?? id).toString();
+        final doc = await FirebaseFirestore.instance.collection('produtos').doc(prodId).get();
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
           final int estoque = (data['estoque'] as num?)?.toInt() ?? 0;
@@ -345,6 +345,18 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
+                if (item['adicionais'] is List && (item['adicionais'] as List).isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2, bottom: 2),
+                    child: Text(
+                      "+ ${(item['adicionais'] as List).map((a) => a['nome']).join(', ')}",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.green.shade800,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 Text(
                   "${item['quantidade']} unidades",
                   style: TextStyle(

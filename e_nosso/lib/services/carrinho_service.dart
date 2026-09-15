@@ -81,6 +81,15 @@ class CarrinhoService extends ChangeNotifier {
       if (item.containsKey('lojaNome')) {
         _itens[id]!['lojaNome'] = item['lojaNome'];
       }
+      if (item.containsKey('adicionais')) {
+        _itens[id]!['adicionais'] = item['adicionais'];
+      }
+      if (item.containsKey('produtoId')) {
+        _itens[id]!['produtoId'] = item['produtoId'];
+      }
+      if (item.containsKey('precoBase')) {
+        _itens[id]!['precoBase'] = item['precoBase'];
+      }
       if (!_itens[id]!.containsKey('lojaId') ||
           _itens[id]!['lojaId'] == null ||
           _itens[id]!['lojaId'].toString().isEmpty) {

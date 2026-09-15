@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../repositories/produto_repository.dart';
@@ -18,6 +19,7 @@ class TelaCadastroProdutoLojista extends StatefulWidget {
   final double? precoAtual;
   final int? estoqueAtual;
   final String? imagemUrlAtual;
+  final List<Map<String, dynamic>> adicionaisAtuais;
 
   const TelaCadastroProdutoLojista({
     super.key,
@@ -28,6 +30,7 @@ class TelaCadastroProdutoLojista extends StatefulWidget {
     this.precoAtual,
     this.estoqueAtual,
     this.imagemUrlAtual,
+    this.adicionaisAtuais = const [],
   });
 
   @override
@@ -48,6 +51,7 @@ class _TelaCadastroProdutoLojistaState
   String? _imagemUrl;
   Uint8List? _imagemBytes;
   bool _isLoading = false;
+  List<Map<String, dynamic>> _adicionais = [];
 
   @override
   void initState() {
@@ -61,6 +65,36 @@ class _TelaCadastroProdutoLojistaState
     }
     if (widget.imagemUrlAtual != null && widget.imagemUrlAtual!.isNotEmpty) {
       _imagemUrl = widget.imagemUrlAtual;
+    }
+    _adicionais = List<Map<String, dynamic>>.from(
+      widget.adicionaisAtuais.map((e) => Map<String, dynamic>.from(e)),
+    );
+
+    if (widget.produtoId != null && _adicionais.isEmpty) {
+      _carregarAdicionaisDoFirestore();
+    }
+  }
+
+  Future<void> _carregarAdicionaisDoFirestore() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('produtos')
+          .doc(widget.produtoId)
+          .get();
+      if (doc.exists && mounted) {
+        final data = doc.data() as Map<String, dynamic>;
+        final rawAds = data['adicionais'];
+        if (rawAds is List && rawAds.isNotEmpty) {
+          setState(() {
+            _adicionais = rawAds
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar adicionais existentes: $e");
     }
   }
 
@@ -97,6 +131,95 @@ class _TelaCadastroProdutoLojistaState
         );
       }
     }
+  }
+
+  void _abrirDialogAdicional({int? index}) {
+    final bool isEdicao = index != null;
+    final TextEditingController nomeCtrl = TextEditingController(
+      text: isEdicao ? _adicionais[index]['nome'] ?? '' : '',
+    );
+    final TextEditingController precoCtrl = TextEditingController(
+      text: isEdicao && _adicionais[index]['preco'] != null
+          ? (_adicionais[index]['preco'] as num).toStringAsFixed(2)
+          : '',
+    );
+    final formKeyDialog = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(isEdicao ? 'Editar Adicional' : 'Novo Adicional'),
+          content: Form(
+            key: formKeyDialog,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nomeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do Adicional',
+                    hintText: 'Ex: Queijo Extra, Bacon',
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Informe o nome' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: precoCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Preço (R\$)',
+                    hintText: '0.00',
+                    prefixText: 'R\$ ',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Informe o preço';
+                    final val = double.tryParse(v.replaceAll(',', '.').trim());
+                    if (val == null || val < 0) return 'Preço inválido';
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!formKeyDialog.currentState!.validate()) return;
+                final double preco = double.parse(
+                  precoCtrl.text.replaceAll(',', '.').trim(),
+                );
+                final novoAdicional = {
+                  'nome': nomeCtrl.text.trim(),
+                  'preco': preco,
+                };
+                setState(() {
+                  if (isEdicao) {
+                    _adicionais[index] = novoAdicional;
+                  } else {
+                    _adicionais.add(novoAdicional);
+                  }
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _removerAdicional(int index) {
+    setState(() {
+      _adicionais.removeAt(index);
+    });
   }
 
   Future<void> _salvarProduto() async {
@@ -154,6 +277,7 @@ class _TelaCadastroProdutoLojistaState
         'ativo': true,
         'imagemUrl': urlFinal,
         'lojistaId': lojistaId,
+        'adicionais': _adicionais,
       };
 
       if (widget.produtoId == null) {
@@ -350,6 +474,85 @@ class _TelaCadastroProdutoLojistaState
                         return null;
                       },
                     ),
+                    const SizedBox(height: 24),
+
+                    // Seção de Adicionais
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Adicionais',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => _abrirDialogAdicional(),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Adicionar'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_adicionais.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Nenhum adicional cadastrado.',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _adicionais.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final ad = _adicionais[index];
+                          final double precoAd =
+                              (ad['preco'] as num?)?.toDouble() ?? 0.0;
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              ad['nome'] ?? '',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '+ R\$ ${precoAd.toStringAsFixed(2).replaceAll('.', ',')}',
+                              style: TextStyle(color: Colors.green.shade700),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, size: 20),
+                                  onPressed: () =>
+                                      _abrirDialogAdicional(index: index),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    size: 20,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _removerAdicional(index),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     const SizedBox(height: 32),
 
                     // Botão Salvar

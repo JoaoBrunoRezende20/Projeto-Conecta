@@ -766,10 +766,28 @@ class _TelaDadosEntregaState extends State<TelaDadosEntrega> {
         }
       }
 
+      String nomeLojaFinal = "Loja";
+      final String? finalLojaId = widget.lojaId ?? carrinhoService.lojaId;
+      if (carrinhoService.isNotEmpty && carrinhoService.itens.values.first['lojaNome'] != null) {
+        nomeLojaFinal = carrinhoService.itens.values.first['lojaNome'] as String;
+      }
+      if (finalLojaId != null && finalLojaId.isNotEmpty) {
+        try {
+          final docLoja = await FirebaseFirestore.instance.collection('lojistas').doc(finalLojaId).get();
+          if (docLoja.exists && docLoja.data() != null) {
+            final d = docLoja.data()!;
+            nomeLojaFinal = d['razaoSocial'] ?? d['nomeFantasia'] ?? d['nome'] ?? nomeLojaFinal;
+          }
+        } catch (_) {}
+      }
+
       final pedidoData = <String, dynamic>{
         'clienteId': clienteId,
         'nomeCliente': nomeCliente,
         'lojistaId': carrinhoService.lojaId ?? 'desconhecido',
+        'nomeLoja': nomeLojaFinal,
+        'lojaNome': nomeLojaFinal,
+        'loja': nomeLojaFinal,
         'itens': itensCopia,
         'valorTotal': _totalGeral,
         'status': 'pendente',
