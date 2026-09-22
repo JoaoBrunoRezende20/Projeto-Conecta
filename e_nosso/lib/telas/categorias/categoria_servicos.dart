@@ -14,10 +14,29 @@ class CategoriaServicos extends StatefulWidget {
 
 class _CategoriaServicosState extends State<CategoriaServicos> {
   String pesquisa = "";
+  final TextEditingController _searchController = TextEditingController();
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _removerAcentos(String texto) {
+    var comAcento = 'ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÌÍÎÏìíîïÙÚÛÜùúûüÿÑñÇç';
+    var semAcento = 'AAAAAAaaaaaaOOOOOOooooooEEEEeeeeIIIIiiiiUUUUuuuuyNnCc';
+    String resultado = texto;
+    for (int i = 0; i < comAcento.length; i++) {
+      resultado = resultado.replaceAll(comAcento[i], semAcento[i]);
+    }
+    return resultado;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final queryNormalized = _removerAcentos(pesquisa.trim().toLowerCase());
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -41,11 +60,21 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextField(
-                onChanged: (v) => setState(() => pesquisa = v.trim()),
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.search),
-                  hintText: "Pesquisar Prestador...",
+                controller: _searchController,
+                onChanged: (v) => setState(() => pesquisa = v),
+                decoration: InputDecoration(
+                  icon: const Icon(Icons.search),
+                  hintText: "Pesquisar por nome ou serviço...",
                   border: InputBorder.none,
+                  suffixIcon: pesquisa.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => pesquisa = "");
+                          },
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -74,12 +103,21 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
+                  if (queryNormalized.isEmpty) return true;
+
                   final data = doc.data() as Map<String, dynamic>;
-                  final nome =
-                      (data["razaoSocial"] ?? data["nomeLojista"] ?? "")
-                          .toString()
-                          .toLowerCase();
-                  return nome.contains(pesquisa.toLowerCase());
+                  final nome = (data["nome"] ?? "").toString();
+                  final sobrenome = (data["sobrenome"] ?? "").toString();
+                  final nomeCompleto = "$nome $sobrenome".trim();
+                  final areaAtuacao = (data["areaAtuacao"] ?? "").toString();
+                  final descricao = (data["descricaoServicos"] ?? data["descricao"] ?? "").toString();
+                  final outrosNomes = (data["nomeprestadorServicos"] ?? data["razaoSocial"] ?? "").toString();
+
+                  final textoParaBusca = _removerAcentos(
+                    "$nomeCompleto $areaAtuacao $descricao $outrosNomes".toLowerCase(),
+                  );
+
+                  return textoParaBusca.contains(queryNormalized);
                 }).toList();
 
                 docs.sort((a, b) {
@@ -99,8 +137,36 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 });
 
                 if (docs.isEmpty) {
-                  return const Center(
-                    child: Text("Nenhum serviço encontrado."),
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            pesquisa.isNotEmpty
+                                ? "Nenhum prestador encontrado para \"$pesquisa\""
+                                : "Nenhum serviço disponível no momento.",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          if (pesquisa.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            const Text(
+                              "Tente buscar pelo nome do profissional ou especialidade (ex: pintor, eletricista, aulas...).",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   );
                 }
 
@@ -108,8 +174,12 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final nome = (data["nome"] ?? data["nomeprestadorServicos"] ?? "")
-                        .toString();
+                    final nomeCompleto = UsuarioUtil.getNomeCompleto(
+                      data,
+                      tipo: 'prestador',
+                      colecao: 'prestadorServicos',
+                    );
+                    final areaAtuacao = (data["areaAtuacao"] ?? "").toString().trim();
                     final telefone = (data["telefone"] ?? "Não informado")
                         .toString();
                     final bool isOnline = data["isOnline"] ?? false;
@@ -122,7 +192,8 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                     return _buildLojaCard(
                       context: context,
                       lojaId: docs[index].id,
-                      nome: nome,
+                      nome: nomeCompleto,
+                      areaAtuacao: areaAtuacao,
                       telefone: telefone,
                       isOnline: isOnline,
                       fotoUrl: fotoUrl,
@@ -144,6 +215,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
     required String telefone,
     required bool isOnline,
     String? fotoUrl,
+    String? areaAtuacao,
   }) {
     return GestureDetector(
       onTap: () {
@@ -197,6 +269,24 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                       fontSize: 16,
                     ),
                   ),
+                  if (areaAtuacao != null && areaAtuacao.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        areaAtuacao,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 6),
                   Row(
                     children: [
