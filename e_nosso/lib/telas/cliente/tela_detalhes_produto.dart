@@ -721,6 +721,56 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
       }
     } catch (_) {}
 
+    // REGRA DE CARRINHO UNILOJISTA: Se a sacola tiver produtos de outro estabelecimento
+    if (!_carrinhoService.pertenceAMesmaLoja(widget.lojaId)) {
+      if (!mounted) return;
+      final String lojaAnterior = _carrinhoService.lojaNomeAtual ?? "outro estabelecimento";
+
+      final bool? trocarLoja = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.store_mall_directory_outlined, color: Colors.orange, size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Sua sacola é de outra loja",
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            "Você já possui itens de \"$lojaAnterior\" na sacola.\n\nPara fazer pedidos em lojas diferentes, é necessário finalizar ou limpar a compra anterior primeiro.\n\nDeseja esvaziar a sacola para adicionar os itens de \"$storeName\"?",
+            style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Manter Sacola Anterior", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Esvaziar e Adicionar"),
+            ),
+          ],
+        ),
+      );
+
+      if (trocarLoja != true) {
+        return;
+      }
+
+      await _carrinhoService.limparCarrinho();
+    }
+
     final itemAdicionado = {
       'nome': dadosLive['nome'] ?? 'Produto',
       'preco': ((dadosLive['preco'] ?? 0.0) as num).toDouble(),

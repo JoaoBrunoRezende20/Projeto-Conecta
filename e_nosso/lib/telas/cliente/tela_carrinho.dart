@@ -164,6 +164,35 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
     }
   }
 
+  Future<bool> _validarDisponibilidadeItens() async {
+    for (final entry in _carrinhoService.itens.entries) {
+      final produtoId = entry.key;
+      final nome = entry.value['nome'] ?? 'Produto';
+      try {
+        final doc = await FirebaseFirestore.instance.collection('produtos').doc(produtoId).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          final bool ativo = data['ativo'] ?? true;
+          if (!ativo) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('O produto "$nome" está indisponível no momento. Remova-o para prosseguir.'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+            return false;
+          }
+        }
+      } catch (e) {
+        debugPrint("Erro ao validar disponibilidade do produto $produtoId: $e");
+      }
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -486,7 +515,10 @@ class _TelaRevisaoCarrinhoState extends State<TelaRevisaoCarrinho> {
               ],
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final bool itensDisponiveis = await _validarDisponibilidadeItens();
+                if (!itensDisponiveis || !mounted) return;
+
                 final user = FirebaseAuth.instance.currentUser;
                 final isVisitor = user == null || user.isAnonymous;
 
