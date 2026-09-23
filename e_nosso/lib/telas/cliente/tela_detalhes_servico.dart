@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/usuario_util.dart';
+import '../../utils/auth_guard_util.dart';
 import 'tela_detalhes_prestador.dart';
 
 class TelaDetalhesServico extends StatefulWidget {
@@ -186,18 +187,28 @@ class _TelaDetalhesServicoState extends State<TelaDetalhesServico> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  final telefone = widget.prestador['telefone'] ?? '';
-                  if (telefone.isNotEmpty) {
-                    final numWhats = telefone.replaceAll(RegExp(r'[^0-9]'), '');
-                    final uri = Uri.parse("https://wa.me/55$numWhats");
-                    launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Telefone não informado pelo prestador."),
-                      ),
-                    );
-                  }
+                  AuthGuardUtil.executarComAutenticacao(
+                    context,
+                    onAutenticado: () {
+                      final telefone = widget.prestador['telefone'] ?? '';
+                      if (telefone.isNotEmpty) {
+                        final numWhats = telefone.replaceAll(
+                          RegExp(r'[^0-9]'),
+                          '',
+                        );
+                        final uri = Uri.parse("https://wa.me/55$numWhats");
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Telefone não informado pelo prestador.",
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  );
                 },
                 icon: const Icon(Icons.phone),
                 label: const Text("Entrar em Contato"),

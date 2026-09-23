@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/usuario_util.dart';
+import '../../utils/auth_guard_util.dart';
 
 class TelaDetalhesPrestador extends StatelessWidget {
   final String prestadorId;
@@ -165,12 +167,52 @@ class TelaDetalhesPrestador extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      _buildInfoRow(Icons.email_outlined, email),
+                      _buildInfoRow(
+                        Icons.email_outlined,
+                        email,
+                        onTap: (email.isNotEmpty && email != 'Não informado')
+                            ? () {
+                                AuthGuardUtil.executarComAutenticacao(
+                                  context,
+                                  onAutenticado: () {
+                                    final uri = Uri.parse('mailto:$email');
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                                );
+                              }
+                            : null,
+                      ),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
                         child: Divider(height: 1, color: Colors.black12),
                       ),
-                      _buildInfoRow(Icons.phone_outlined, telefone),
+                      _buildInfoRow(
+                        Icons.phone_outlined,
+                        telefone,
+                        onTap: (telefone.isNotEmpty && telefone != 'Não informado')
+                            ? () {
+                                AuthGuardUtil.executarComAutenticacao(
+                                  context,
+                                  onAutenticado: () {
+                                    final numWhats = telefone.replaceAll(
+                                      RegExp(r'[^0-9]'),
+                                      '',
+                                    );
+                                    final uri = Uri.parse(
+                                      'https://wa.me/55$numWhats',
+                                    );
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                                );
+                              }
+                            : null,
+                      ),
                     ],
                   ),
                 ),
@@ -223,8 +265,8 @@ class TelaDetalhesPrestador extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
-    return Row(
+  Widget _buildInfoRow(IconData icon, String text, {VoidCallback? onTap}) {
+    final row = Row(
       children: [
         Icon(icon, color: Colors.grey[600], size: 22),
         const SizedBox(width: 15),
@@ -234,8 +276,22 @@ class TelaDetalhesPrestador extends StatelessWidget {
             style: const TextStyle(fontSize: 15, color: Colors.black87),
           ),
         ),
+        if (onTap != null)
+          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
       ],
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: row,
+        ),
+      );
+    }
+    return row;
   }
 
   Widget _buildPortfolioImage(String imageData) {
