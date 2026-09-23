@@ -5,6 +5,7 @@ import 'package:e_nosso/utils/suporte_config.dart';
 import 'package:e_nosso/utils/carrinho_util.dart';
 import 'package:e_nosso/utils/cupom_util.dart';
 import 'package:e_nosso/utils/usuario_util.dart';
+import 'package:e_nosso/utils/auth_guard_util.dart';
 import 'package:e_nosso/services/carrinho_service.dart';
 import 'package:e_nosso/telas/lojista/tela_inicial_lojista.dart';
 import 'package:image/image.dart' as img;
@@ -335,6 +336,14 @@ void main() {
       expect(decoded, isNotNull);
       expect(decoded!.width, lessThanOrEqualTo(600));
       expect(decoded.height, lessThanOrEqualTo(600));
+    });
+  });
+
+  group('AuthGuardUtil Tests', () {
+    test('Identifica estado de visitante quando não há usuário logado', () {
+      // Quando FirebaseAuth.instance.currentUser for null no ambiente de teste
+      expect(AuthGuardUtil.isUsuarioAutenticado, isFalse);
+      expect(AuthGuardUtil.isVisitante, isTrue);
     });
   });
 }

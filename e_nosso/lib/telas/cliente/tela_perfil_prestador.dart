@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'tela_detalhes_servico.dart';
 import '../../utils/usuario_util.dart';
+import '../../utils/auth_guard_util.dart';
 
 class TelaPerfilPrestador extends StatefulWidget {
   final String prestadorId;
@@ -99,30 +100,45 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, {VoidCallback? onTap}) {
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+        ),
+        if (onTap != null)
+          const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+      ],
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: row,
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
-            ),
-          ),
-        ],
-      ),
+      child: row,
     );
   }
 
@@ -357,8 +373,50 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                         'Informações para Contato',
                         Icons.contact_phone_outlined,
                       ),
-                      _buildInfoRow(Icons.phone_outlined, 'Telefone', telefone),
-                      _buildInfoRow(Icons.email_outlined, 'Email', email),
+                      _buildInfoRow(
+                        Icons.phone_outlined,
+                        'Telefone',
+                        telefone,
+                        onTap: (telefone.isNotEmpty && telefone != 'Não informado')
+                            ? () {
+                                AuthGuardUtil.executarComAutenticacao(
+                                  context,
+                                  onAutenticado: () {
+                                    final numWhats = telefone.replaceAll(
+                                      RegExp(r'[^0-9]'),
+                                      '',
+                                    );
+                                    final uri = Uri.parse(
+                                      'https://wa.me/55$numWhats',
+                                    );
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                                );
+                              }
+                            : null,
+                      ),
+                      _buildInfoRow(
+                        Icons.email_outlined,
+                        'Email',
+                        email,
+                        onTap: (email.isNotEmpty && email != 'Não informado')
+                            ? () {
+                                AuthGuardUtil.executarComAutenticacao(
+                                  context,
+                                  onAutenticado: () {
+                                    final uri = Uri.parse('mailto:$email');
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                                );
+                              }
+                            : null,
+                      ),
                       _buildInfoRow(
                         Icons.location_on_outlined,
                         'Área de Atendimento',
@@ -378,28 +436,33 @@ class _TelaPerfilPrestadorState extends State<TelaPerfilPrestador> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            final tel = telefone;
-                            if (tel.isNotEmpty && tel != 'Não informado') {
-                              final numWhats = tel.replaceAll(
-                                RegExp(r'[^0-9]'),
-                                '',
-                              );
-                              final uri = Uri.parse(
-                                "https://wa.me/55$numWhats",
-                              );
-                              launchUrl(
-                                uri,
-                                mode: LaunchMode.externalApplication,
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Telefone não informado pelo prestador.',
-                                  ),
-                                ),
-                              );
-                            }
+                            AuthGuardUtil.executarComAutenticacao(
+                              context,
+                              onAutenticado: () {
+                                final tel = telefone;
+                                if (tel.isNotEmpty && tel != 'Não informado') {
+                                  final numWhats = tel.replaceAll(
+                                    RegExp(r'[^0-9]'),
+                                    '',
+                                  );
+                                  final uri = Uri.parse(
+                                    "https://wa.me/55$numWhats",
+                                  );
+                                  launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Telefone não informado pelo prestador.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.black38),
