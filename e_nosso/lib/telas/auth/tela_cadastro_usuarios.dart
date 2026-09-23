@@ -146,7 +146,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     'Comidas',
     'Bebidas',
     'Feira Livre',
-    'Serviços',
     'Outros',
   ];
 

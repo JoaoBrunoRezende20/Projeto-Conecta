@@ -24,6 +24,7 @@ class ChatRepository {
           'nomeParceiro': nomeParceiro,
           'ultimaMensagem': 'Chat iniciado',
           'ultimaAtualizacao': FieldValue.serverTimestamp(),
+          'mensagensNaoLidas': {clienteId: 0, parceiroId: 0},
         });
       }
     } catch (e) {
@@ -39,21 +40,61 @@ class ChatRepository {
   }) async {
     try {
       final conversaRef = _firestore.collection('conversas').doc(pedidoId);
+      final doc = await conversaRef.get();
+      String outroId = '';
+      if (doc.exists) {
+        List p = doc.data()?['participantes'] ?? [];
+        outroId = p.firstWhere((id) => id != remetenteId, orElse: () => '');
+      }
 
-      // Adiciona a mensagem na subcoleção 'mensagens'
+      // Adiciona a mensagem na subcolecao 'mensagens'
       await conversaRef.collection('mensagens').add({
         'remetenteId': remetenteId,
         'texto': texto,
         'data': FieldValue.serverTimestamp(),
       });
 
-      // Atualiza os dados da conversa raiz
-      await conversaRef.update({
+      Map<String, dynamic> updates = {
         'ultimaMensagem': texto,
         'ultimaAtualizacao': FieldValue.serverTimestamp(),
-      });
+      };
+
+      if (outroId.isNotEmpty) {
+        updates['mensagensNaoLidas.$outroId'] = FieldValue.increment(1);
+      }
+
+      // Atualiza os dados da conversa raiz
+      await conversaRef.update(updates);
+
+      // Tambem atualiza o pedido para refletir notificacoes pendentes
+      if (outroId.isNotEmpty) {
+        await _firestore
+            .collection('pedidos')
+            .doc(pedidoId)
+            .update({'mensagensNaoLidas.$outroId': FieldValue.increment(1)})
+            .catchError((_) => null);
+      }
     } catch (e) {
       debugPrint('Erro ao enviar mensagem: $e');
+    }
+  }
+
+  /// Marca a conversa como lida para um determinado usuario
+  Future<void> marcarComoLido(String pedidoId, String usuarioLogadoId) async {
+    try {
+      await _firestore
+          .collection('conversas')
+          .doc(pedidoId)
+          .update({'mensagensNaoLidas.$usuarioLogadoId': 0})
+          .catchError((_) => null);
+
+      await _firestore
+          .collection('pedidos')
+          .doc(pedidoId)
+          .update({'mensagensNaoLidas.$usuarioLogadoId': 0})
+          .catchError((_) => null);
+    } catch (e) {
+      debugPrint('Erro ao marcar como lido: $e');
     }
   }
 
@@ -67,7 +108,7 @@ class ChatRepository {
         .snapshots();
   }
 
-  /// Opcional: Retorna as conversas ativas de um usuário (para futura lista de chats)
+  /// Opcional: Retorna as conversas ativas de um usuario (para futura lista de chats)
   Stream<QuerySnapshot> getConversasAtivas(String usuarioId) {
     return _firestore
         .collection('conversas')

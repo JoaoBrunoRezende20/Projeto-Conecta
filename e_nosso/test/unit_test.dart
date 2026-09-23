@@ -172,6 +172,28 @@ void main() {
       final map = produtoSemImagem.toMap();
       expect(map['imagem'], isNull);
     });
+
+    test('Produto serializa e desserializa adicionais corretamente', () {
+      final produtoComAdicionais = Produto.fromMap({
+        'nome': 'Hambúrguer Artesanal',
+        'preco': 30.0,
+        'descricao': 'Com queijo e bacon',
+        'adicionais': [
+          {'nome': 'Bacon Extra', 'preco': 4.5},
+          {'nome': 'Cheddar Duplo', 'preco': 3.0},
+        ],
+      }, 'prod_789');
+
+      expect(produtoComAdicionais.id, equals('prod_789'));
+      expect(produtoComAdicionais.adicionais.length, equals(2));
+      expect(produtoComAdicionais.adicionais[0]['nome'], equals('Bacon Extra'));
+      expect(produtoComAdicionais.adicionais[0]['preco'], equals(4.5));
+      expect(produtoComAdicionais.adicionais[1]['nome'], equals('Cheddar Duplo'));
+
+      final map = produtoComAdicionais.toMap();
+      expect(map['adicionais'], isNotEmpty);
+      expect((map['adicionais'] as List).length, equals(2));
+    });
   });
 
   group('Carrinho & Persistência Tests (Continuar Comprando)', () {

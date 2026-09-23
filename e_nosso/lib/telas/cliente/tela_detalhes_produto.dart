@@ -23,6 +23,7 @@ class TelaDetalhesProduto extends StatefulWidget {
 class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
   final CarrinhoService _carrinhoService = CarrinhoService();
   int quantidade = 1;
+  final Set<int> _adicionaisSelecionados = {};
 
   @override
   Widget build(BuildContext context) {
@@ -90,17 +91,35 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
           final String nome = dadosLive['nome'] ?? "Pão de queijo";
           final String descricao =
               dadosLive['descricao'] ?? "Descrição do produto";
-          final double preco = ((dadosLive['preco'] ?? 0) as num).toDouble();
+          final double precoBase = ((dadosLive['preco'] ?? 0) as num).toDouble();
           final String? imagem =
               (dadosLive['imagemUrl'] ?? dadosLive['imagemBase64']) as String?;
 
+          final rawAds = dadosLive['adicionais'];
+          final List<Map<String, dynamic>> adicionais = (rawAds is List)
+              ? rawAds
+                  .whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e))
+                  .toList()
+              : [];
+
+          double somaAdicionais = 0.0;
+          for (int i = 0; i < adicionais.length; i++) {
+            if (_adicionaisSelecionados.contains(i)) {
+              somaAdicionais += ((adicionais[i]['preco'] ?? 0) as num).toDouble();
+            }
+          }
+          final double precoUnitarioComAdicionais = precoBase + somaAdicionais;
+
           final String? idProduto = dadosLive['id'] ?? widget.produto['id'];
-          final int qtdJaNaSacola =
-              (idProduto != null &&
-                  _carrinhoService.itens.containsKey(idProduto))
-              ? ((_carrinhoService.itens[idProduto]!['quantidade'] ?? 0) as num)
-                    .toInt()
-              : 0;
+          int qtdJaNaSacola = 0;
+          if (idProduto != null) {
+            _carrinhoService.itens.forEach((k, v) {
+              if (k == idProduto || v['produtoId'] == idProduto) {
+                qtdJaNaSacola += ((v['quantidade'] ?? 0) as num).toInt();
+              }
+            });
+          }
           final int disponivelRestante = (estoque - qtdJaNaSacola).clamp(
             0,
             estoque,
@@ -117,6 +136,8 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
           } else if (qtdAjustada <= 0 && disponivelRestante > 0) {
             qtdAjustada = 1;
           }
+
+          final double valorTotalCalculado = precoUnitarioComAdicionais * qtdAjustada;
 
           const ColorFilter greyscaleFilter = ColorFilter.matrix(<double>[
             0.2126,
@@ -232,16 +253,56 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                Text(
-                                  "R\$ ${preco.toStringAsFixed(2).replaceAll('.', ',')}",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: isIndisponivel
-                                        ? Colors.grey
-                                        : Colors.black87,
+                                if (somaAdicionais > 0)
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      Text(
+                                        "R\$ ${precoUnitarioComAdicionais.toStringAsFixed(2).replaceAll('.', ',')}",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: isIndisponivel
+                                              ? Colors.grey
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade50,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: Colors.green.shade200,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "+ R\$ ${somaAdicionais.toStringAsFixed(2).replaceAll('.', ',')} adicionais",
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green.shade800,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Text(
+                                    "R\$ ${precoBase.toStringAsFixed(2).replaceAll('.', ',')}",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: isIndisponivel
+                                          ? Colors.grey
+                                          : Colors.black87,
+                                    ),
                                   ),
-                                ),
                                 const SizedBox(height: 8),
                                 // Indicador de Disponibilidade / Estoque
                                 if (isIndisponivel)
@@ -310,53 +371,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                       ],
                                     ),
                                   ),
-                                  if (qtdJaNaSacola > 0) ...[
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: limiteSacolaAtingido
-                                            ? Colors.orange.shade50
-                                            : Colors.blue.shade50,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: limiteSacolaAtingido
-                                              ? Colors.orange.shade200
-                                              : Colors.blue.shade200,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            limiteSacolaAtingido
-                                                ? Icons.warning_amber_rounded
-                                                : Icons.shopping_bag_outlined,
-                                            color: limiteSacolaAtingido
-                                                ? Colors.orange.shade800
-                                                : Colors.blue.shade800,
-                                            size: 13,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            limiteSacolaAtingido
-                                                ? "Máximo na sacola ($qtdJaNaSacola/$estoque un.)"
-                                                : "Na sacola: $qtdJaNaSacola un. (restam $disponivelRestante)",
-                                            style: TextStyle(
-                                              color: limiteSacolaAtingido
-                                                  ? Colors.orange.shade900
-                                                  : Colors.blue.shade900,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+
                                 ],
                               ],
                             ),
@@ -442,6 +457,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                       _adicionarNaSacola(
                                         dadosLive,
                                         qtdAjustada,
+                                        adicionais,
                                       );
                                     },
                               style: ElevatedButton.styleFrom(
@@ -466,10 +482,12 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                                     ? "Produto Indisponível"
                                     : (limiteSacolaAtingido
                                           ? "Limite na Sacola Atingido"
-                                          : "Adicionar à sacola"),
+                                          : (qtdAjustada > 0
+                                              ? "Adicionar à sacola • R\$ ${valorTotalCalculado.toStringAsFixed(2).replaceAll('.', ',')}"
+                                              : "Adicionar à sacola")),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 15,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
@@ -480,42 +498,187 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
                   ),
                 ),
 
-                const SizedBox(height: 35),
-                const Text(
-                  "Adicionais",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 15),
-
                 // ==========================================
-                // --- GRID DE ADICIONAIS (MOCKUP) ---
+                // --- SEÇÃO DE ADICIONAIS ---
                 // ==========================================
-                GridView.builder(
-                  shrinkWrap: true, // Necessário para rolar dentro do Column
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Desativa rolagem própria
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // 3 por linha como no Figma
-                    mainAxisSpacing: 15,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 2.8, // Ajuste para altura dos itens
+                if (adicionais.isNotEmpty) ...[
+                  const SizedBox(height: 35),
+                  Row(
+                    children: [
+                      const Text(
+                        "Adicionais",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (_adicionaisSelecionados.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B9467),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "${_adicionaisSelecionados.length} selecionado${_adicionaisSelecionados.length > 1 ? 's' : ''}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  itemCount: 6, // Exemplo de 6 adicionais
-                  itemBuilder: (context, index) {
-                    return Column(
-                      children: [
-                        Text(
-                          "Adicional ${String.fromCharCode(65 + index)}",
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        const Text(
-                          "Preço \$",
-                          style: TextStyle(fontSize: 9, color: Colors.grey),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: adicionais.length,
+                      separatorBuilder: (context, index) => const Divider(
+                        height: 1,
+                        indent: 16,
+                        endIndent: 16,
+                      ),
+                      itemBuilder: (context, index) {
+                        final ad = adicionais[index];
+                        final double precoAd =
+                            ((ad['preco'] ?? 0) as num).toDouble();
+                        final bool isSelecionado =
+                            _adicionaisSelecionados.contains(index);
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelecionado
+                                ? const Color(0xFFF4F6EC)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelecionado
+                                    ? Icons.check_circle
+                                    : Icons.add_circle_outline,
+                                color: isSelecionado
+                                    ? const Color(0xFF8B9467)
+                                    : Colors.grey.shade400,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      ad['nome'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isSelecionado
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '+ R\$ ${precoAd.toStringAsFixed(2).replaceAll('.', ',')}',
+                                      style: const TextStyle(
+                                        color: Color(0xFF5A6635),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (isSelecionado)
+                                ElevatedButton.icon(
+                                  onPressed: isIndisponivel
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _adicionaisSelecionados.remove(index);
+                                          });
+                                        },
+                                  icon: const Icon(Icons.remove, size: 14),
+                                  label: const Text(
+                                    "Remover",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade50,
+                                    foregroundColor: Colors.red.shade700,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      side: BorderSide(
+                                        color: Colors.red.shade200,
+                                      ),
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                )
+                              else
+                                ElevatedButton.icon(
+                                  onPressed: isIndisponivel
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _adicionaisSelecionados.add(index);
+                                          });
+                                        },
+                                  icon: const Icon(Icons.add, size: 14),
+                                  label: const Text(
+                                    "Adicionar",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF8B9467),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 35),
                 const Text(
@@ -663,6 +826,7 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
   Future<void> _adicionarNaSacola(
     Map<String, dynamic> dadosLive,
     int qtd,
+    List<Map<String, dynamic>> adicionaisDisponiveis,
   ) async {
     final String? id = dadosLive['id'] ?? widget.produto['id'];
     if (id == null) return;
@@ -681,8 +845,12 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
       return;
     }
 
-    final int qtdJaNaSacola =
-        (_carrinhoService.itens[id]?['quantidade'] as num?)?.toInt() ?? 0;
+    int qtdJaNaSacola = 0;
+    _carrinhoService.itens.forEach((k, v) {
+      if (k == id || v['produtoId'] == id) {
+        qtdJaNaSacola += ((v['quantidade'] ?? 0) as num).toInt();
+      }
+    });
     final int totalAposAdicionar = qtdJaNaSacola + qtd;
 
     if (totalAposAdicionar > estoqueAtual) {
@@ -771,13 +939,39 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
       await _carrinhoService.limparCarrinho();
     }
 
+    final List<Map<String, dynamic>> adicionaisEscolhidos = [];
+    double somaAds = 0.0;
+    for (int i = 0; i < adicionaisDisponiveis.length; i++) {
+      if (_adicionaisSelecionados.contains(i)) {
+        final ad = adicionaisDisponiveis[i];
+        final double pAd = ((ad['preco'] ?? 0) as num).toDouble();
+        somaAds += pAd;
+        adicionaisEscolhidos.add({
+          'nome': ad['nome'] ?? '',
+          'preco': pAd,
+        });
+      }
+    }
+
+    final double precoBase = ((dadosLive['preco'] ?? 0.0) as num).toDouble();
+    final double precoFinalUnitario = precoBase + somaAds;
+
+    String cartKey = id;
+    if (adicionaisEscolhidos.isNotEmpty) {
+      final adsKeys = adicionaisEscolhidos.map((a) => a['nome']).join('_');
+      cartKey = '${id}_ads_${adsKeys.hashCode}';
+    }
+
     final itemAdicionado = {
+      'produtoId': id,
       'nome': dadosLive['nome'] ?? 'Produto',
-      'preco': ((dadosLive['preco'] ?? 0.0) as num).toDouble(),
+      'preco': precoFinalUnitario,
+      'precoBase': precoBase,
       'quantidade': qtd,
       'lojaId': widget.lojaId,
       'lojaNome': storeName,
       'lojaLogoUrl': storeLogo,
+      'adicionais': adicionaisEscolhidos,
       'imagem':
           (dadosLive['imagemUrl'] ??
                   dadosLive['imagemBase64'] ??
@@ -786,9 +980,14 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
               as String?,
     };
 
-    await _carrinhoService.adicionarItem(id, itemAdicionado, widget.lojaId);
+    await _carrinhoService.adicionarItem(cartKey, itemAdicionado, widget.lojaId);
 
     if (!mounted) return;
+
+    final String nomeExibido = dadosLive['nome'] ?? 'Produto';
+    final String resumoAds = adicionaisEscolhidos.isNotEmpty
+        ? " (+ ${adicionaisEscolhidos.map((e) => e['nome']).join(', ')})"
+        : "";
 
     // Mostra o bottom sheet de confirmação
     showModalBottomSheet(
@@ -811,9 +1010,19 @@ class _TelaDetalhesProdutoState extends State<TelaDetalhesProduto> {
             ),
             const SizedBox(height: 8),
             Text(
-              "$quantidade x ${widget.produto['nome'] ?? 'Produto'}",
+              "$qtd x $nomeExibido$resumoAds",
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
+              style: const TextStyle(fontSize: 15, color: Colors.grey),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Total: R\$ ${(precoFinalUnitario * qtd).toStringAsFixed(2).replaceAll('.', ',')}",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5A6635),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
