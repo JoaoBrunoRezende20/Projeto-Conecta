@@ -6,7 +6,14 @@ import '../../repositories/categoria_repository.dart';
 import '../../utils/usuario_util.dart';
 
 class CategoriaServicos extends StatefulWidget {
-  const CategoriaServicos({super.key});
+  final String? categoriaSelecionada;
+  final String tituloCategoria;
+
+  const CategoriaServicos({
+    super.key,
+    this.categoriaSelecionada,
+    this.tituloCategoria = "Serviços",
+  });
 
   @override
   State<CategoriaServicos> createState() => _CategoriaServicosState();
@@ -47,10 +54,14 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text("Serviços", style: TextStyle(color: Colors.black)),
+        title: Text(
+          widget.tituloCategoria,
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [
+          // ── Campo de Pesquisa ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -80,6 +91,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
             ),
           ),
 
+          // ── Lista de Prestadores ──
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _categoriaRepository.getPrestadoresAprovados(),
@@ -110,8 +122,10 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                   final sobrenome = (data["sobrenome"] ?? "").toString();
                   final nomeCompleto = "$nome $sobrenome".trim();
                   final areaAtuacao = (data["areaAtuacao"] ?? "").toString();
-                  final descricao = (data["descricaoServicos"] ?? data["descricao"] ?? "").toString();
-                  final outrosNomes = (data["nomeprestadorServicos"] ?? data["razaoSocial"] ?? "").toString();
+                  final descricao =
+                      (data["descricaoServicos"] ?? data["descricao"] ?? "").toString();
+                  final outrosNomes =
+                      (data["nomeprestadorServicos"] ?? data["razaoSocial"] ?? "").toString();
 
                   final textoParaBusca = _removerAcentos(
                     "$nomeCompleto $areaAtuacao $descricao $outrosNomes".toLowerCase(),
@@ -123,16 +137,18 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
                   final dataB = b.data() as Map<String, dynamic>;
-                  
-                  final mediaA = (dataA['mediaEstrelas'] ?? dataA['mediaAvaliacoes'] ?? 0.0) as num;
-                  final mediaB = (dataB['mediaEstrelas'] ?? dataB['mediaAvaliacoes'] ?? 0.0) as num;
-                  
+
+                  final mediaA =
+                      (dataA['mediaEstrelas'] ?? dataA['mediaAvaliacoes'] ?? 0.0) as num;
+                  final mediaB =
+                      (dataB['mediaEstrelas'] ?? dataB['mediaAvaliacoes'] ?? 0.0) as num;
+
                   final cmpMedia = mediaB.compareTo(mediaA);
                   if (cmpMedia != 0) return cmpMedia;
-                  
+
                   final qtdA = (dataA['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
                   final qtdB = (dataB['quantidadeAvaliacoes'] as num?)?.toInt() ?? 0;
-                  
+
                   return qtdB.compareTo(qtdA);
                 });
 
@@ -163,6 +179,26 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 13, color: Colors.grey),
                             ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => pesquisa = "");
+                              },
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text("Limpar busca"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF673AB7),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -172,6 +208,7 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
 
                 return ListView.builder(
                   itemCount: docs.length,
+                  padding: const EdgeInsets.only(bottom: 16),
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final nomeCompleto = UsuarioUtil.getNomeCompleto(
@@ -180,14 +217,14 @@ class _CategoriaServicosState extends State<CategoriaServicos> {
                       colecao: 'prestadorServicos',
                     );
                     final areaAtuacao = (data["areaAtuacao"] ?? "").toString().trim();
-                    final telefone = (data["telefone"] ?? "Não informado")
-                        .toString();
+                    final telefone =
+                        (data["telefone"] ?? "Não informado").toString();
                     final bool isOnline = data["isOnline"] ?? false;
 
                     final fotoUrl = (data["fotoPerfilUrl"] ??
-                            data["fotoUrl"] ??
-                            data["imagemUrl"] ??
-                            data["logoUrl"]) as String?;
+                        data["fotoUrl"] ??
+                        data["imagemUrl"] ??
+                        data["logoUrl"]) as String?;
 
                     return _buildLojaCard(
                       context: context,
