@@ -48,10 +48,42 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
           precoAtual: produto.preco,
           estoqueAtual: produto.estoque,
           imagemUrlAtual: produto.imagemUrl,
+          ativoAtual: produto.ativo != false,
           adicionaisAtuais: produto.adicionais,
         ),
       ),
     );
+  }
+
+  Future<void> _alternarDisponibilidade(Produto produto) async {
+    final bool novoStatus = !(produto.ativo != false);
+    try {
+      await _produtoRepository.atualizarProduto(produto.id, {
+        'ativo': novoStatus,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              novoStatus
+                  ? 'Produto "${produto.nome}" marcado como DISPONÍVEL.'
+                  : 'Produto "${produto.nome}" marcado como INDISPONÍVEL.',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: novoStatus ? Colors.green : Colors.grey[800],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao alterar disponibilidade: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _excluirProduto(String id, String nome) async {
@@ -456,37 +488,77 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
   Widget _buildProductTile(Produto produto) {
     final bool temImagem =
         produto.imagemUrl != null && produto.imagemUrl!.trim().isNotEmpty;
+    final bool isAtivo = produto.ativo != false;
+
+    const ColorFilter greyscaleFilter = ColorFilter.matrix(<double>[
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0.2126, 0.7152, 0.0722, 0, 0,
+      0,      0,      0,      1, 0,
+    ]);
+
+    Widget imgWidget = temImagem
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: UsuarioUtil.buildImageWidget(
+              produto.imagemUrl!,
+              fit: BoxFit.cover,
+            ),
+          )
+        : const Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 30);
+
+    if (!isAtivo) {
+      imgWidget = ColorFiltered(
+        colorFilter: greyscaleFilter,
+        child: Opacity(opacity: 0.6, child: imgWidget),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: isAtivo ? const Color(0xFFF5F5F5) : const Color(0xFFEBEBEB),
         borderRadius: BorderRadius.circular(16),
+        border: isAtivo ? null : Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
         children: [
           // Imagem do Produto
-          Container(
-            width: 65,
-            height: 65,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: temImagem
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: UsuarioUtil.buildImageWidget(
-                      produto.imagemUrl!,
-                      fit: BoxFit.cover,
+          Stack(
+            children: [
+              Container(
+                width: 65,
+                height: 65,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: imgWidget,
+              ),
+              if (!isAtivo)
+                Positioned(
+                  bottom: 2,
+                  left: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  )
-                : const Icon(
-                    Icons.shopping_bag_outlined,
-                    color: Colors.grey,
-                    size: 30,
+                    child: const Text(
+                      "PAUSADO",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
 
@@ -500,9 +572,10 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                 children: [
                   Text(
                     produto.nome,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: isAtivo ? Colors.black : Colors.black54,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -519,30 +592,68 @@ class _AbaProdutosLojistaState extends State<AbaProdutosLojista> {
                   const SizedBox(height: 4),
                   Text(
                     "R\$ ${produto.preco.toStringAsFixed(2)}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: isAtivo ? Colors.black87 : Colors.grey[700],
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    produto.ativo != false ? "Disponível" : "Indisponível",
-                    style: TextStyle(
-                      color: produto.ativo != false ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isAtivo ? Icons.check_circle : Icons.pause_circle_filled,
+                        size: 13,
+                        color: isAtivo ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isAtivo ? "Disponível" : "Indisponível",
+                        style: TextStyle(
+                          color: isAtivo ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
 
-          // Controles (Editar, Excluir)
+          // Controles (Switch de disponibilidade, Editar, Excluir)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Tooltip(
+                message: isAtivo ? 'Pausar venda' : 'Ativar venda',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.scale(
+                      scale: 0.75,
+                      child: Switch(
+                        value: isAtivo,
+                        activeThumbColor: Colors.green,
+                        activeTrackColor: Colors.green.shade200,
+                        inactiveThumbColor: Colors.grey.shade600,
+                        inactiveTrackColor: Colors.grey.shade300,
+                        onChanged: (val) => _alternarDisponibilidade(produto),
+                      ),
+                    ),
+                    Text(
+                      isAtivo ? "Ativo" : "Pausado",
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: isAtivo ? Colors.green.shade800 : Colors.red.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               IconButton(
                 icon: const Icon(
                   Icons.edit_outlined,

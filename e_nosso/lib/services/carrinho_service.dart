@@ -55,6 +55,16 @@ class CarrinhoService extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool pertenceAMesmaLoja(String outraLojaId) {
+    if (_itens.isEmpty || _lojaId == null || _lojaId!.isEmpty) return true;
+    return _lojaId == outraLojaId;
+  }
+
+  String? get lojaNomeAtual {
+    if (_itens.isEmpty) return null;
+    return _itens.values.first['lojaNome'] as String?;
+  }
+
   Future<void> adicionarItem(
     String id,
     Map<String, dynamic> item,
@@ -64,7 +74,11 @@ class CarrinhoService extends ChangeNotifier {
       await inicializar();
     }
 
-    if (_lojaId == null || _lojaId!.isEmpty) {
+    if (_lojaId == null || _lojaId!.isEmpty || _itens.isEmpty) {
+      _lojaId = lojaId;
+    } else if (_lojaId != lojaId) {
+      // Regra Unilojista: se for de uma loja diferente, limpa a anterior para evitar conflito de pedidos
+      _itens.clear();
       _lojaId = lojaId;
     }
 

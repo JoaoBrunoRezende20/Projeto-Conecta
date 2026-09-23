@@ -19,6 +19,7 @@ class TelaCadastroProdutoLojista extends StatefulWidget {
   final double? precoAtual;
   final int? estoqueAtual;
   final String? imagemUrlAtual;
+  final bool? ativoAtual;
   final List<Map<String, dynamic>> adicionaisAtuais;
 
   const TelaCadastroProdutoLojista({
@@ -30,6 +31,7 @@ class TelaCadastroProdutoLojista extends StatefulWidget {
     this.precoAtual,
     this.estoqueAtual,
     this.imagemUrlAtual,
+    this.ativoAtual,
     this.adicionaisAtuais = const [],
   });
 
@@ -51,11 +53,13 @@ class _TelaCadastroProdutoLojistaState
   String? _imagemUrl;
   Uint8List? _imagemBytes;
   bool _isLoading = false;
+  bool _ativo = true;
   List<Map<String, dynamic>> _adicionais = [];
 
   @override
   void initState() {
     super.initState();
+    if (widget.ativoAtual != null) _ativo = widget.ativoAtual!;
     if (widget.nomeAtual != null) _nomeController.text = widget.nomeAtual!;
     if (widget.descricaoAtual != null) {
       _descricaoController.text = widget.descricaoAtual!;
@@ -274,7 +278,7 @@ class _TelaCadastroProdutoLojistaState
         'descricao': _descricaoController.text.trim(),
         'preco': preco,
         'estoque': 999999,
-        'ativo': true,
+        'ativo': _ativo,
         'imagemUrl': urlFinal,
         'lojistaId': lojistaId,
         'adicionais': _adicionais,
@@ -473,6 +477,48 @@ class _TelaCadastroProdutoLojistaState
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Switch de Disponibilidade do Produto
+                    Container(
+                      decoration: BoxDecoration(
+                        color: _ativo ? Colors.green.shade50 : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _ativo ? Colors.green.shade200 : Colors.red.shade200,
+                        ),
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        title: Text(
+                          _ativo ? "Produto Disponível para Venda" : "Produto Indisponível (Pausado)",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: _ativo ? Colors.green.shade900 : Colors.red.shade900,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _ativo
+                              ? "Os clientes podem visualizar e comprar este item normalmente."
+                              : "O item fica em escala de cinza e com o botão de compra bloqueado.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _ativo ? Colors.green.shade700 : Colors.red.shade700,
+                          ),
+                        ),
+                        value: _ativo,
+                        activeThumbColor: Colors.green,
+                        activeTrackColor: Colors.green.shade200,
+                        inactiveThumbColor: Colors.red.shade400,
+                        inactiveTrackColor: Colors.red.shade100,
+                        onChanged: (val) {
+                          setState(() {
+                            _ativo = val;
+                          });
+                        },
+                      ),
                     ),
                     const SizedBox(height: 24),
 
